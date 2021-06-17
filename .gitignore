@@ -1,0 +1,37 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+*_cachedir
+
+*.dot
+*.csv
+
+# Gurobi stuff
+*.lp
+*.sol
+
+# TeX stuff
+tex/
+*.tex
+*.aux
+*.pdf
+
+
+# output files
+result*.json
+*.progress
+*.dat
+*.map3
+*.log
+dot_output
+dot
+*distribution.json
+*.db
+
+# pyenv stuff
+.python-version
+
+# venv stuff
+env
