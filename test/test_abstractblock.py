@@ -108,11 +108,37 @@ def test_concrete_ab_join_equal_len(ctx):
 
 
 def test_concrete_ab_join_shorter(ctx):
-    pass
+    bb1 = iwho.BasicBlock(ctx)
+    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
+
+    bb2 = iwho.BasicBlock(ctx)
+    bb2.append(ctx.parse_asm("add rax, 0x2a"))
+
+    ab = AbstractBlock(bb1)
+    ab.join(bb2)
+
+    new_bb = ab.sample(ctx)
+
+    assert len(bb1) >= len(new_bb) >= len(bb2)
+    for new, old in zip(new_bb, bb1):
+        assert new.scheme == old.scheme
 
 
 def test_concrete_ab_join_longer(ctx):
-    pass
+    bb1 = iwho.BasicBlock(ctx)
+    bb1.append(ctx.parse_asm("add rax, 0x2a"))
+
+    bb2 = iwho.BasicBlock(ctx)
+    bb2.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
+
+    ab = AbstractBlock(bb1)
+    ab.join(bb2)
+
+    new_bb = ab.sample(ctx)
+
+    assert len(bb1) <= len(new_bb) <= len(bb2)
+    for new, old in zip(new_bb, bb2):
+        assert new.scheme == old.scheme
 
 def test_join_everything(ctx):
     # see what happens if we join an instance of every insnscheme together
