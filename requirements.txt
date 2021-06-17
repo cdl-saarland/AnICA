@@ -1,3 +1,4 @@
+pytest
 
 -r lib/iwho/requirements.txt
 -e lib/iwho
