@@ -35,3 +35,6 @@ dot
 
 # venv stuff
 env
+
+*.egg-info
+dist/
