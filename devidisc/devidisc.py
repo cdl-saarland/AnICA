@@ -3,23 +3,26 @@
 """DeviDisc: the deviation discovery tool for basic block throughput predictors.
 """
 
-import iwho
-import iwho.x86 as x86
-
+from abc import ABC, abstractmethod
+import argparse
 from collections import defaultdict
+from functools import partial
 import json
+import multiprocessing
+from multiprocessing import Pool
 import random
 import textwrap
+from timeit import default_timer as timer
+
+import iwho
+from iwho.predictors import Predictor
+from iwho.utils import parse_args_with_logging
+import iwho.x86 as x86
+
 
 import logging
 logger = logging.getLogger(__name__)
 
-from timeit import default_timer as timer
-
-
-from iwho.predictors import Predictor
-
-from abc import ABC, abstractmethod
 
 class AbstractFeature(ABC):
     @abstractmethod
@@ -142,10 +145,6 @@ class AbstractBlock:
         # TODO dependencies
 
 
-from functools import partial
-import multiprocessing
-from multiprocessing import Pool
-
 def evaluate_bb(bb, pred):
     try:
         result = pred.evaluate(bb, disable_logging=True)
@@ -203,9 +202,6 @@ class PredictorManager:
 
 
 def main():
-    import argparse
-    from utils import parse_args_with_logging
-
     argparser = argparse.ArgumentParser(description=__doc__)
     # argparser.add_argument('infile', metavar="CSVFILE", help='')
     args = parse_args_with_logging(argparser, "info")
