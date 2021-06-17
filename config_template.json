@@ -1,0 +1,20 @@
+{
+"iaca.skl": {
+    "tool": "iaca",
+    "version": "v3.0-28-g1ba2cbb",
+    "config": {
+            "kind": "iaca",
+            "iaca_path": "TODO: add path of IACA binary",
+            "iaca_opts": ["-arch", "SKL"]
+        }
+},
+"llvm-mca.12-dbg.skl": {
+    "tool": "llvm-mca",
+    "version": "12-dbg",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca binary",
+            "llvmmca_opts": ["-mcpu", "skylake"]
+        }
+}
+}

@@ -38,3 +38,7 @@ env
 
 *.egg-info
 dist/
+
+# local config files:
+config.json
+

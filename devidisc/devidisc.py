@@ -9,6 +9,7 @@ from functools import partial
 import json
 import multiprocessing
 from multiprocessing import Pool
+import pathlib
 import random
 from timeit import default_timer as timer
 
@@ -79,31 +80,45 @@ class PredictorManager:
 
 
 def main():
-    argparser = argparse.ArgumentParser(description=__doc__)
-    # argparser.add_argument('infile', metavar="CSVFILE", help='')
+    HERE = pathlib.Path(__file__).parent
+
+    default_config = HERE.parent / "config.json"
+    default_jobs = multiprocessing.cpu_count()
+    default_seed = 424242
+
+    argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    argparser.add_argument('-c', '--config', default=default_config, metavar="CONFIG",
+            help='configuration file in json format')
+
+    argparser.add_argument('-j', '--jobs', type=int, default=default_jobs, metavar="N",
+            help='number of worker processes to use at most for running predictors')
+
+    argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
+            help='seed for the rng')
+
+    argparser.add_argument('predictors', nargs=2, metavar="PREDICTOR_ID", help='two identifiers of predictors specified in the config')
+
     args = parse_args_with_logging(argparser, "info")
 
-    num_experiments = 1000
-    max_num_insns = 10
-    random.seed(424242)
-
+    with open(args.config, 'r') as config_file:
+        config = json.load(config_file)
 
     # get a list of throughput predictors
     predictors = []
+    for pkey in args.predictors:
+        pred_entry = config[pkey]
+        pred_config = pred_entry['config']
+        res = dict(**pred_entry)
+        res['key'] = pkey
+        res['pred'] = Predictor.get(pred_config)
+        predictors.append(res)
 
-    iaca_config = {
-            "kind": "iaca",
-            "iaca_path": "/opt/iaca/iaca",
-            "iaca_opts": ["-arch", "SKL"]
-        }
-    predictors.append(Predictor.get(iaca_config))
+    random.seed(args.seed)
+    num_processes = args.jobs
 
-    llvmmca_config = {
-            "kind": "llvmmca",
-            "llvmmca_path": "/home/ritter/projects/portmapping/llvm/install/bin/llvm-mca",
-            "llvmmca_opts": ["-mcpu", "skylake"]
-        }
-    predictors.append(Predictor.get(llvmmca_config))
+    # TODO configurable?
+    num_experiments = 1000
+    max_num_insns = 10
 
 
     # get an iwho context with appropriate schemes
@@ -124,7 +139,7 @@ def main():
             bb.append(instor(ischeme))
         bbs.append(bb)
 
-    predman = PredictorManager(16)
+    predman = PredictorManager(num_processes)
 
     end = timer()
     diff = end - start
@@ -132,9 +147,9 @@ def main():
 
     results = dict()
     for p in predictors:
-        pred_name = p.predictor_name
+        pred_name = p['key']
         start = timer()
-        results[pred_name] = predman.do(p, bbs)
+        results[pred_name] = predman.do(p['pred'], bbs)
         end = timer()
         diff = end - start
         print(f"started all {pred_name} jobs in {diff:.2f} seconds")
