@@ -3,6 +3,7 @@
 
 from abc import ABC, abstractmethod
 import random
+from typing import Optional
 
 import iwho
 
@@ -67,15 +68,19 @@ class AbstractInsn:
 
     def sample(self, ctx):
         feasible_schemes = []
-        for ai in ctx.insn_schemes:
-            if all([v.subsumes(ai.features[k]) for k, v in self.features.items()]):
-                feasible_schemes.append()
+        for ischeme in ctx.insn_schemes:
+            # ischeme_features = ctx.get_features(ischeme)
+            ischeme_features = {'exact_scheme': str(ischeme)}
+            if all([v.subsumes(ischeme_features[k]) for k, v in self.features.items()]):
+                feasible_schemes.append(ischeme)
         if len(feasible_schemes) == 0:
             return None
         return random.choice(feasible_schemes)
 
     def join(self, insn_scheme):
-        insn_features = dict(insn_scheme.features)
+
+        insn_features = dict()
+        # insn_features = ctx.get_features(insn_scheme)
         insn_features['exact_scheme'] = insn_scheme
         for k, v in self.features.items():
             v.join(insn_features[k])
@@ -83,14 +88,18 @@ class AbstractInsn:
 
 class AbstractBlock:
 
-    def __init__(self):
+    def __init__(self, bb: Optional[iwho.BasicBlock]=None):
         self.abs_insns = []
-        self.abs_deps = dict()
+
         # operand j of instruction i aliases with operand y of instruction x
+        self.abs_deps = dict()
+
+        if bb is not None:
+            self.join(bb)
 
     def sample(self, ctx):
         insn_schemes = []
-        for ai in abs_insns:
+        for ai in self.abs_insns:
             insn_scheme = ai.sample(ctx) # may be None
             insn_schemes.append(insn_scheme)
 
@@ -109,18 +118,18 @@ class AbstractBlock:
         #   if yes: take the same (with adjusted width). if it is also chosen in the not_same set, fail
         #   if no: choose one that is not chosen in its not_same set
 
-        bb = iwho.BasicBlock()
+        bb = iwho.BasicBlock(ctx)
         return bb
 
     def join(self, bb):
-        len_diff = len(self.abs_insn) - len(bb)
+        len_diff = len(self.abs_insns) - len(bb)
 
         bb_insns = list(bb)
 
         if len_diff > 0:
             for x in range(len_diff):
                 bb_insns.append(None)
-        elif len_diff > 0:
+        elif len_diff < 0:
             for x in range(-len_diff):
                 self.abs_insns.append(AbstractInsn())
 
