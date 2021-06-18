@@ -23,11 +23,18 @@ def test_concrete_ab_single_insn(ctx):
     bb.append(ctx.parse_asm("add rax, 0x2a"))
     ab = AbstractBlock(bb)
 
+    assert ab.subsumes(ab)
+
     new_bb = ab.sample(ctx)
 
     assert len(new_bb) == len(bb)
     for new, old in zip(new_bb, bb):
         assert new.scheme == old.scheme
+
+    new_ab = AbstractBlock(new_bb)
+
+    assert ab.subsumes(new_ab)
+    assert new_ab.subsumes(ab)
 
 
 def test_concrete_ab_single_insn_mem(ctx):
@@ -35,11 +42,19 @@ def test_concrete_ab_single_insn_mem(ctx):
     bb.append(ctx.parse_asm("add rax, [rbx + 0x20]"))
     ab = AbstractBlock(bb)
 
+    assert ab.subsumes(ab)
+
     new_bb = ab.sample(ctx)
 
     assert len(new_bb) == len(bb)
     for new, old in zip(new_bb, bb):
         assert new.scheme == old.scheme
+
+    new_ab = AbstractBlock(new_bb)
+
+    assert ab.subsumes(new_ab)
+    assert new_ab.subsumes(ab)
+    # TODO also check subsumption in the other tests
 
 
 def test_concrete_ab_multiple_insns(ctx):
