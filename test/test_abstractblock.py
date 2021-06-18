@@ -21,7 +21,7 @@ def ctx():
 def test_concrete_ab_single_insn(ctx):
     bb = iwho.BasicBlock(ctx)
     bb.append(ctx.parse_asm("add rax, 0x2a"))
-    ab = AbstractBlock(bb)
+    ab = AbstractBlock(4, bb)
 
     assert ab.subsumes(ab)
 
@@ -29,7 +29,7 @@ def test_concrete_ab_single_insn(ctx):
 def test_concrete_ab_single_insn_sample(ctx):
     bb = iwho.BasicBlock(ctx)
     bb.append(ctx.parse_asm("add rax, 0x2a"))
-    ab = AbstractBlock(bb)
+    ab = AbstractBlock(4, bb)
 
     assert ab.subsumes(ab)
 
@@ -39,7 +39,7 @@ def test_concrete_ab_single_insn_sample(ctx):
     for new, old in zip(new_bb, bb):
         assert new.scheme == old.scheme
 
-    new_ab = AbstractBlock(new_bb)
+    new_ab = AbstractBlock(4, new_bb)
     assert ab.subsumes(new_ab)
     assert new_ab.subsumes(ab)
 
@@ -47,7 +47,7 @@ def test_concrete_ab_single_insn_sample(ctx):
 def test_concrete_ab_single_insn_mem(ctx):
     bb = iwho.BasicBlock(ctx)
     bb.append(ctx.parse_asm("add rax, [rbx + 0x20]"))
-    ab = AbstractBlock(bb)
+    ab = AbstractBlock(4, bb)
 
     assert ab.subsumes(ab)
 
@@ -55,7 +55,7 @@ def test_concrete_ab_single_insn_mem(ctx):
 def test_concrete_ab_single_insn_mem_sample(ctx):
     bb = iwho.BasicBlock(ctx)
     bb.append(ctx.parse_asm("add rax, [rbx + 0x20]"))
-    ab = AbstractBlock(bb)
+    ab = AbstractBlock(4, bb)
 
     assert ab.subsumes(ab)
 
@@ -65,7 +65,7 @@ def test_concrete_ab_single_insn_mem_sample(ctx):
     for new, old in zip(new_bb, bb):
         assert new.scheme == old.scheme
 
-    new_ab = AbstractBlock(new_bb)
+    new_ab = AbstractBlock(4, new_bb)
     assert ab.subsumes(new_ab)
     assert new_ab.subsumes(ab)
 
@@ -74,7 +74,7 @@ def test_concrete_ab_multiple_insns(ctx):
     bb = iwho.BasicBlock(ctx)
     bb.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
 
-    ab = AbstractBlock(bb)
+    ab = AbstractBlock(4, bb)
 
     assert ab.subsumes(ab)
 
@@ -83,7 +83,7 @@ def test_concrete_ab_multiple_insns_sample(ctx):
     bb = iwho.BasicBlock(ctx)
     bb.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
 
-    ab = AbstractBlock(bb)
+    ab = AbstractBlock(4, bb)
 
     assert ab.subsumes(ab)
 
@@ -93,7 +93,7 @@ def test_concrete_ab_multiple_insns_sample(ctx):
     for new, old in zip(new_bb, bb):
         assert new.scheme == old.scheme
 
-    new_ab = AbstractBlock(new_bb)
+    new_ab = AbstractBlock(4, new_bb)
     assert ab.subsumes(new_ab)
     assert new_ab.subsumes(ab)
 
@@ -102,22 +102,22 @@ def test_join_equal(ctx):
     bb = iwho.BasicBlock(ctx)
     bb.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
 
-    ab = AbstractBlock(bb)
+    ab = AbstractBlock(4, bb)
     ab.join(bb)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb))
+    assert ab.subsumes(AbstractBlock(4, bb))
 
 
 def test_join_equal_sample(ctx):
     bb = iwho.BasicBlock(ctx)
     bb.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
 
-    ab = AbstractBlock(bb)
+    ab = AbstractBlock(4, bb)
     ab.join(bb)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb))
+    assert ab.subsumes(AbstractBlock(4, bb))
 
     new_bb = ab.sample(ctx)
 
@@ -125,7 +125,7 @@ def test_join_equal_sample(ctx):
     for new, old in zip(new_bb, bb):
         assert new.scheme == old.scheme
 
-    new_ab = AbstractBlock(new_bb)
+    new_ab = AbstractBlock(4, new_bb)
     assert ab.subsumes(new_ab)
     assert new_ab.subsumes(ab)
 
@@ -137,12 +137,12 @@ def test_join_different_regs(ctx):
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rcx, 0x2b\nsub rdx, rcx"))
 
-    ab = AbstractBlock(bb1)
+    ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb1))
-    assert ab.subsumes(AbstractBlock(bb2))
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
 
 
 def test_join_different_regs_sample(ctx):
@@ -152,12 +152,12 @@ def test_join_different_regs_sample(ctx):
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rcx, 0x2b\nsub rdx, rcx"))
 
-    ab = AbstractBlock(bb1)
+    ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb1))
-    assert ab.subsumes(AbstractBlock(bb2))
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
 
     new_bb = ab.sample(ctx)
 
@@ -165,7 +165,7 @@ def test_join_different_regs_sample(ctx):
     for new, old in zip(new_bb, bb1):
         assert new.scheme == old.scheme
 
-    new_ab = AbstractBlock(new_bb)
+    new_ab = AbstractBlock(4, new_bb)
     assert ab.subsumes(new_ab)
 
 
@@ -176,12 +176,12 @@ def test_join_different_deps(ctx):
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rbx, 0x2a\nsub rbx, rax"))
 
-    ab = AbstractBlock(bb1)
+    ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb1))
-    assert ab.subsumes(AbstractBlock(bb2))
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
 
 
 def test_join_different_deps_sample(ctx):
@@ -191,12 +191,12 @@ def test_join_different_deps_sample(ctx):
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rbx, 0x2a\nsub rbx, rax"))
 
-    ab = AbstractBlock(bb1)
+    ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb1))
-    assert ab.subsumes(AbstractBlock(bb2))
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
 
     new_bb = ab.sample(ctx)
 
@@ -204,7 +204,7 @@ def test_join_different_deps_sample(ctx):
     for new, old in zip(new_bb, bb1):
         assert new.scheme == old.scheme
 
-    new_ab = AbstractBlock(new_bb)
+    new_ab = AbstractBlock(4, new_bb)
     assert ab.subsumes(new_ab)
 
 
@@ -225,12 +225,12 @@ def test_join_shorter(ctx):
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rax, 0x2a"))
 
-    ab = AbstractBlock(bb1)
+    ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb1))
-    assert ab.subsumes(AbstractBlock(bb2))
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
 
 
 def test_join_shorter_sample(ctx):
@@ -240,12 +240,12 @@ def test_join_shorter_sample(ctx):
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rax, 0x2a"))
 
-    ab = AbstractBlock(bb1)
+    ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb1))
-    assert ab.subsumes(AbstractBlock(bb2))
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
 
     new_bb = ab.sample(ctx)
 
@@ -253,7 +253,7 @@ def test_join_shorter_sample(ctx):
     for new, old in zip(new_bb, bb1):
         assert new.scheme == old.scheme
 
-    new_ab = AbstractBlock(new_bb)
+    new_ab = AbstractBlock(4, new_bb)
     assert ab.subsumes(new_ab)
 
 
@@ -264,12 +264,12 @@ def test_join_longer(ctx):
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
 
-    ab = AbstractBlock(bb1)
+    ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb1))
-    assert ab.subsumes(AbstractBlock(bb2))
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
 
 
 def test_join_longer_sample(ctx):
@@ -279,12 +279,12 @@ def test_join_longer_sample(ctx):
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
 
-    ab = AbstractBlock(bb1)
+    ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
     assert ab.subsumes(ab)
-    assert ab.subsumes(AbstractBlock(bb1))
-    assert ab.subsumes(AbstractBlock(bb2))
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
 
     new_bb = ab.sample(ctx)
 
@@ -292,7 +292,7 @@ def test_join_longer_sample(ctx):
     for new, old in zip(new_bb, bb2):
         assert new.scheme == old.scheme
 
-    new_ab = AbstractBlock(new_bb)
+    new_ab = AbstractBlock(4, new_bb)
     assert ab.subsumes(new_ab)
 
 
