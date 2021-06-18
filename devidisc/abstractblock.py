@@ -85,6 +85,10 @@ class AbstractInsn:
         for k, v in self.features.items():
             v.join(insn_features[k])
 
+    def subsumes(self, other_ab):
+        #TODO
+        return False
+
 
 class AbstractBlock:
 
@@ -139,4 +143,7 @@ class AbstractBlock:
             a.join(b.scheme)
         # TODO dependencies
 
+    def subsumes(self, other_ab):
+        #TODO
+        return False
 
