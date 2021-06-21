@@ -12,7 +12,7 @@ from iwho.x86 import DefaultInstantiator
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractblock import AbstractBlock
+from devidisc.abstractblock import AbstractBlock, AbstractionConfig
 
 @pytest.fixture(scope="module")
 def ctx():
@@ -21,10 +21,12 @@ def ctx():
 def test_join_everything(ctx):
     # see what happens if we join an instance of every insnscheme together
 
+    acfg = AbstractionConfig(ctx, 2)
+
     instor = DefaultInstantiator(ctx)
 
-    ab = AbstractBlock(2)
-    ab_pre = AbstractBlock(2)
+    ab = AbstractBlock(acfg)
+    ab_pre = AbstractBlock(acfg)
 
     for scheme in ctx.insn_schemes:
         # create a BB with only an instruction instance of this scheme
@@ -42,7 +44,7 @@ def test_join_everything(ctx):
 
         # sample a block an check that it is subsumed
         new_bb = ab.sample(ctx)
-        new_ab = AbstractBlock(2, new_bb)
+        new_ab = AbstractBlock(acfg, new_bb)
         assert ab.subsumes(new_ab)
 
 
@@ -50,13 +52,15 @@ def test_join_every_pair(ctx):
     # see what happens if we join instance pairs for every pair of insn schemes
     # together.
 
+    acfg = AbstractionConfig(ctx, 2)
+
     instor = DefaultInstantiator(ctx)
 
     # only take every 50th insn, since this test takes a long time otherwise
     reduced_schemes = ctx.insn_schemes[::50]
 
     for scheme1, scheme2 in itertools.combinations(reduced_schemes, 2):
-        ab = AbstractBlock(2)
+        ab = AbstractBlock(acfg)
         bb1 = iwho.BasicBlock(ctx, [instor(scheme1)])
         bb2 = iwho.BasicBlock(ctx, [instor(scheme2)])
         ab.join(bb1)
@@ -64,13 +68,13 @@ def test_join_every_pair(ctx):
 
         assert ab.subsumes(ab)
 
-        ab1 = AbstractBlock(2, bb1)
-        ab2 = AbstractBlock(2, bb2)
+        ab1 = AbstractBlock(acfg, bb1)
+        ab2 = AbstractBlock(acfg, bb2)
 
         assert ab.subsumes(ab1)
         assert ab.subsumes(ab2)
 
         new_bb = ab.sample(ctx)
-        new_ab = AbstractBlock(2, new_bb)
+        new_ab = AbstractBlock(acfg, new_bb)
         assert ab.subsumes(new_ab)
 

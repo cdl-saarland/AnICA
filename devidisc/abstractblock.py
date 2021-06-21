@@ -52,9 +52,11 @@ class SingletonAbstractFeature(AbstractFeature):
             return True
         if self.is_bot or other.is_top:
             return False
-        return self.val == feature
+        return self.val == other.val
 
     def subsumes_feature(self, feature) -> bool:
+        if feature is None:
+            return True
         if self.is_top:
             return True
         if self.is_bot:
@@ -62,6 +64,8 @@ class SingletonAbstractFeature(AbstractFeature):
         return self.val == feature
 
     def join(self, feature):
+        if feature is None:
+            return
         if self.is_top:
             return
         if self.is_bot:
@@ -89,10 +93,13 @@ class PowerSetAbstractFeature(AbstractFeature):
         return self.vals.issuperset(other.vals)
 
     def subsumes_feature(self, feature) -> bool:
+        if feature is None:
+            return True
         return feature in self.vals
 
     def join(self, feature):
-        self.vals.add(feature)
+        if feature is not None:
+            self.vals.add(feature)
 
 
 class AbstractInsn:
@@ -100,40 +107,20 @@ class AbstractInsn:
     that share certain features.
     """
 
-    def __init__(self):
-        self.features = dict()
-        self.features['exact_scheme'] = SingletonAbstractFeature()
-        self.features['present'] = SingletonAbstractFeature()
-        # features not in the dict are considered bottom
-        # TODO this decision might lead to inconsistencies
-
-        # TODO add more features here?
+    def __init__(self, acfg: "AbstractionConfig"):
+        self.acfg = acfg
+        self.features = self.acfg.init_abstract_features()
 
     def __str__(self) -> str:
-        special_keys = ['exact_scheme', 'present']
-        keys = set(self.features.keys())
-        keys.difference_update(special_keys)
-        order = special_keys + sorted(keys)
-        return "\n".join((f"{k}: {self.features[k]}" for k in order))
+        return self.acfg.stringify_abstract_features(self.features)
 
     def subsumes(self, other: "AbstractInsn") -> bool:
         """ Check if all concrete instruction instances represented by other
         are also represented by self.
-
-        That is the case if
-            (1) all features present in self are not present in other or
-                subsume the abstract feature present in other and
-            (2) all features from other that are not present in self are bottom.
         """
         for k, abs_feature in self.features.items():
-            other_feature = other.features.get(abs_feature, None)
-            if other_feature is None:
-                continue
-            if not abs_feature.subsumes(other_feture):
-                return False
-
-        for k, other_feature in other.features.items():
-            if (not other_feature.is_bottom()) and k not in self.features.keys():
+            other_feature = other.features[k]
+            if not abs_feature.subsumes(other_feature):
                 return False
 
         return True
@@ -147,16 +134,10 @@ class AbstractInsn:
         the basic block.
         """
 
-        if insn_scheme is None:
-            self.features['present'].join(False)
-            return
+        insn_features = self.acfg.extract_features(insn_scheme)
 
-        insn_features = dict()
-        # TODO get other features insn_features = ctx.get_features(insn_scheme)
-        insn_features['exact_scheme'] = insn_scheme
-        insn_features['present'] = True
-        for k, v in self.features.items():
-            v.join(insn_features[k])
+        for k, v in insn_features.items():
+            self.features[k].join(v)
 
     def sample(self, ctx: iwho.Context) -> iwho.InsnInstance:
         """ TODO document
@@ -174,9 +155,8 @@ class AbstractInsn:
         # this should probably be sped up using indices.
         feasible_schemes = []
         for ischeme in ctx.insn_schemes:
-            # ischeme_features = ctx.get_features(ischeme)
-            ischeme_features = {'exact_scheme': ischeme, 'present': True}
-            if all([v.subsumes_feature(ischeme_features[k]) for k, v in self.features.items()]):
+            ischeme_features = self.acfg.extract_features(ischeme)
+            if all([v.subsumes_feature(ischeme_features.get(k)) for k, v in self.features.items()]):
                 feasible_schemes.append(ischeme)
         if len(feasible_schemes) == 0:
             return None
@@ -188,9 +168,10 @@ class AbstractBlock:
     (up to a fixed length maxlen).
     """
 
-    def __init__(self, maxlen: int, bb: Optional[iwho.BasicBlock]=None):
-        self.abs_insns = [ AbstractInsn() for i in range(maxlen) ]
-        self.maxlen = maxlen
+    def __init__(self, acfg: "AbstractionConfig", bb: Optional[iwho.BasicBlock]=None):
+        self.acfg = acfg
+        self.maxlen = acfg.max_block_len
+        self.abs_insns = [ AbstractInsn(self.acfg) for i in range(self.maxlen) ]
 
         # operand j of instruction i aliases with operand y of instruction x
         self.abs_deps = dict()
@@ -278,4 +259,44 @@ class AbstractBlock:
             bb.append(instance)
 
         return bb
+
+
+class AbstractionConfig:
+    """ Configuration Class for AbstractBlock and subcomponents
+
+    This encapsulates several configuration options like which features of the
+    instructions to use for abstraction and how they are abstracted.
+    """
+
+    def __init__(self, ctx: iwho.Context, max_block_len):
+        self.ctx = ctx
+
+        self.feature_keys = ['exact_scheme', 'present', 'mnemonic', 'skl_uops']
+
+        self.max_block_len = max_block_len
+
+    def init_abstract_features(self):
+        res = dict()
+        res['exact_scheme'] = SingletonAbstractFeature()
+        res['present'] = SingletonAbstractFeature()
+        res['mnemonic'] = SingletonAbstractFeature()
+        res['skl_uops'] = PowerSetAbstractFeature()
+        return res
+
+    def extract_features(self, ischeme: Union[iwho.InsnScheme, None]):
+        if ischeme is None:
+            return {'present': False}
+        res = {'present': True}
+        res['exact_scheme'] = ischeme
+        res['mnemonic'] = self.ctx.extract_mnemonic(ischeme)
+        res['skl_uops'] = None
+
+        from_scheme = self.ctx.get_features(ischeme)
+        if from_scheme is not None:
+            res['skl_uops'] = from_scheme[0].get("SKL")
+
+        return res
+
+    def stringify_abstract_features(self, afeatures):
+        return "\n".join((f"{k}: {afeatures[k]}" for k in self.feature_keys))
 
