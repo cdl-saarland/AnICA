@@ -227,13 +227,49 @@ def test_join_different_deps_sample(ctx):
 
 
 def test_join_equal_len(ctx):
-    # TODO
-    pass
+    bb1 = iwho.BasicBlock(ctx)
+    bb1.append(ctx.parse_asm("add rcx, 0x2a\nsub rbx, rcx"))
+
+    bb2 = iwho.BasicBlock(ctx)
+    bb2.append(ctx.parse_asm("adc rbx, 0x2a\ntest rbx, rcx"))
+
+    ab = AbstractBlock(4, bb1)
+    ab.join(bb2)
+
+    print(ab)
+    assert ab.abs_insns[0].features['exact_scheme'].is_top
+    assert ab.abs_insns[1].features['exact_scheme'].is_top
+
+    assert ab.subsumes(ab)
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
 
 
 def test_join_equal_len_sample(ctx):
-    # TODO
-    pass
+    bb1 = iwho.BasicBlock(ctx)
+    bb1.append(ctx.parse_asm("add rcx, 0x2a\nsub rbx, rcx"))
+
+    bb2 = iwho.BasicBlock(ctx)
+    bb2.append(ctx.parse_asm("adc rbx, 0x2a\ntest rbx, rcx"))
+
+    ab = AbstractBlock(4, bb1)
+    ab.join(bb2)
+
+    print(ab)
+    assert ab.abs_insns[0].features['exact_scheme'].is_top
+    assert ab.abs_insns[1].features['exact_scheme'].is_top
+
+    assert ab.subsumes(ab)
+    assert ab.subsumes(AbstractBlock(4, bb1))
+    assert ab.subsumes(AbstractBlock(4, bb2))
+
+    new_bb = ab.sample(ctx)
+    print(new_bb)
+
+    assert len(new_bb) == len(bb1)
+
+    new_ab = AbstractBlock(4, new_bb)
+    assert ab.subsumes(new_ab)
 
 
 def test_join_shorter(ctx):
