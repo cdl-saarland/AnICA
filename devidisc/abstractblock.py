@@ -97,7 +97,6 @@ class AbstractInsn:
         # TODO this decision might lead to inconsistencies
 
         # TODO add more features here?
-        # TODO add a "present" feature?
 
     def subsumes(self, other: "AbstractInsn") -> bool:
         """ Check if all concrete instruction instances represented by other
@@ -121,21 +120,22 @@ class AbstractInsn:
 
         return True
 
-    def join(self, insn: Union[iwho.InsnInstance, None]):
-        """ Update self so that it additionally represents insn (and possibly,
-        due to over-approximation, even more insn instances).
+    def join(self, insn_scheme: Union[iwho.InsnInstance, None]):
+        """ Update self so that it additionally represents all instances of
+        insn_scheme (and possibly, due to over-approximation, even more
+        insn instances).
 
-        If insn is None, the instruction is considered "not present" in the
-        basic block.
+        If insn_scheme is None, the instruction is considered "not present" in
+        the basic block.
         """
 
-        if insn is None:
+        if insn_scheme is None:
             self.features['present'].join(False)
             return
 
         insn_features = dict()
         # TODO get other features insn_features = ctx.get_features(insn_scheme)
-        insn_features['exact_scheme'] = insn.scheme
+        insn_features['exact_scheme'] = insn_scheme
         insn_features['present'] = True
         for k, v in self.features.items():
             v.join(insn_features[k])
@@ -212,7 +212,8 @@ class AbstractBlock:
         assert(len(bb_insns) == len(self.abs_insns))
 
         for a, b in zip(self.abs_insns, bb_insns):
-            a.join(b)
+            scheme = None if b is None else b.scheme
+            a.join(scheme)
         # TODO dependencies
 
     def sample(self, ctx: iwho.Context) -> iwho.BasicBlock:
