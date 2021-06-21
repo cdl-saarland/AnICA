@@ -3,6 +3,7 @@
 
 from abc import ABC, abstractmethod
 import random
+import textwrap
 from typing import Optional, Union
 
 import iwho
@@ -34,6 +35,13 @@ class SingletonAbstractFeature(AbstractFeature):
         self.is_top = False
         self.is_bot = True
         self.val = None
+
+    def __str__(self) -> str:
+        if self.is_top:
+            return "TOP"
+        if self.is_bot:
+            return "BOT"
+        return str(self.val)
 
     def is_bottom(self) -> bool:
         return self.is_bot
@@ -71,6 +79,9 @@ class PowerSetAbstractFeature(AbstractFeature):
     def __init__(self):
         self.vals = set()
 
+    def __str__(self) -> str:
+        return "{" + ", ".join(sorted(map(str, self.vals))) + "}"
+
     def is_bottom(self) -> bool:
         return len(self.vals) == 0
 
@@ -97,6 +108,13 @@ class AbstractInsn:
         # TODO this decision might lead to inconsistencies
 
         # TODO add more features here?
+
+    def __str__(self) -> str:
+        special_keys = ['exact_scheme', 'present']
+        keys = set(self.features.keys())
+        keys.difference_update(special_keys)
+        order = special_keys + sorted(keys)
+        return "\n".join((f"{k}: {self.features[k]}" for k in order))
 
     def subsumes(self, other: "AbstractInsn") -> bool:
         """ Check if all concrete instruction instances represented by other
@@ -152,10 +170,12 @@ class AbstractInsn:
                 # TODO one might want to adjust the probabilities here...
                 return None
 
+        # Collect all insn schemes that match the AbstractInsn. If necessary,
+        # this should probably be sped up using indices.
         feasible_schemes = []
         for ischeme in ctx.insn_schemes:
             # ischeme_features = ctx.get_features(ischeme)
-            ischeme_features = {'exact_scheme': str(ischeme), 'present': True}
+            ischeme_features = {'exact_scheme': ischeme, 'present': True}
             if all([v.subsumes_feature(ischeme_features[k]) for k, v in self.features.items()]):
                 feasible_schemes.append(ischeme)
         if len(feasible_schemes) == 0:
@@ -177,6 +197,16 @@ class AbstractBlock:
 
         if bb is not None:
             self.join(bb)
+
+    def __str__(self) -> str:
+        def format_insn(x):
+            idx, abs_insn = x
+            return "{:2}:\n{}".format(idx, textwrap.indent(str(abs_insn), '  '))
+
+        insn_part = "\n".join(map(format_insn, enumerate(self.abs_insns)))
+        res = "AbstractInsns:\n" + textwrap.indent(insn_part, '  ')
+        # TODO dependency part
+        return res
 
     def subsumes(self, other: "AbstractBlock") -> bool:
         """ Check if all concrete basic blocks represented by other are also
@@ -239,7 +269,14 @@ class AbstractBlock:
         # go through all operands for all insns and check if one from its "same" set has a chosen operand.
         #   if yes: take the same (with adjusted width). if it is also chosen in the not_same set, fail
         #   if no: choose one that is not chosen in its not_same set
+        from iwho.x86 import DefaultInstantiator
+        instor = DefaultInstantiator(ctx)
 
         bb = iwho.BasicBlock(ctx)
+        for scheme in insn_schemes:
+            if scheme is not None:
+                # TODO bbs should allow for None entries, so that the naive alignment works
+                bb.append(instor(scheme))
+
         return bb
 

@@ -23,6 +23,7 @@ def test_concrete_ab_single_insn(ctx):
     bb.append(ctx.parse_asm("add rax, 0x2a"))
     ab = AbstractBlock(4, bb)
 
+    print(ab)
     assert ab.subsumes(ab)
 
 
@@ -31,9 +32,11 @@ def test_concrete_ab_single_insn_sample(ctx):
     bb.append(ctx.parse_asm("add rax, 0x2a"))
     ab = AbstractBlock(4, bb)
 
+    print(ab)
     assert ab.subsumes(ab)
 
     new_bb = ab.sample(ctx)
+    print(new_bb)
 
     assert len(new_bb) == len(bb)
     for new, old in zip(new_bb, bb):
@@ -49,6 +52,7 @@ def test_concrete_ab_single_insn_mem(ctx):
     bb.append(ctx.parse_asm("add rax, [rbx + 0x20]"))
     ab = AbstractBlock(4, bb)
 
+    print(ab)
     assert ab.subsumes(ab)
 
 
@@ -57,9 +61,11 @@ def test_concrete_ab_single_insn_mem_sample(ctx):
     bb.append(ctx.parse_asm("add rax, [rbx + 0x20]"))
     ab = AbstractBlock(4, bb)
 
+    print(ab)
     assert ab.subsumes(ab)
 
     new_bb = ab.sample(ctx)
+    print(new_bb)
 
     assert len(new_bb) == len(bb)
     for new, old in zip(new_bb, bb):
@@ -76,6 +82,7 @@ def test_concrete_ab_multiple_insns(ctx):
 
     ab = AbstractBlock(4, bb)
 
+    print(ab)
     assert ab.subsumes(ab)
 
 
@@ -85,9 +92,11 @@ def test_concrete_ab_multiple_insns_sample(ctx):
 
     ab = AbstractBlock(4, bb)
 
+    print(ab)
     assert ab.subsumes(ab)
 
     new_bb = ab.sample(ctx)
+    print(new_bb)
 
     assert len(new_bb) == len(bb)
     for new, old in zip(new_bb, bb):
@@ -105,6 +114,7 @@ def test_join_equal(ctx):
     ab = AbstractBlock(4, bb)
     ab.join(bb)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb))
 
@@ -116,10 +126,12 @@ def test_join_equal_sample(ctx):
     ab = AbstractBlock(4, bb)
     ab.join(bb)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb))
 
     new_bb = ab.sample(ctx)
+    print(new_bb)
 
     assert len(new_bb) == len(bb)
     for new, old in zip(new_bb, bb):
@@ -132,7 +144,7 @@ def test_join_equal_sample(ctx):
 
 def test_join_different_regs(ctx):
     bb1 = iwho.BasicBlock(ctx)
-    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
+    bb1.append(ctx.parse_asm("add rbx, 0x2a\nsub rbx, rax"))
 
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rcx, 0x2b\nsub rdx, rcx"))
@@ -140,6 +152,7 @@ def test_join_different_regs(ctx):
     ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb1))
     assert ab.subsumes(AbstractBlock(4, bb2))
@@ -147,7 +160,7 @@ def test_join_different_regs(ctx):
 
 def test_join_different_regs_sample(ctx):
     bb1 = iwho.BasicBlock(ctx)
-    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
+    bb1.append(ctx.parse_asm("add rbx, 0x2a\nsub rbx, rax"))
 
     bb2 = iwho.BasicBlock(ctx)
     bb2.append(ctx.parse_asm("add rcx, 0x2b\nsub rdx, rcx"))
@@ -155,11 +168,13 @@ def test_join_different_regs_sample(ctx):
     ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb1))
     assert ab.subsumes(AbstractBlock(4, bb2))
 
     new_bb = ab.sample(ctx)
+    print(new_bb)
 
     assert len(new_bb) == len(bb1)
     for new, old in zip(new_bb, bb1):
@@ -171,14 +186,15 @@ def test_join_different_regs_sample(ctx):
 
 def test_join_different_deps(ctx):
     bb1 = iwho.BasicBlock(ctx)
-    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
+    bb1.append(ctx.parse_asm("add rcx, 0x2a\nsub rbx, rcx"))
 
     bb2 = iwho.BasicBlock(ctx)
-    bb2.append(ctx.parse_asm("add rbx, 0x2a\nsub rbx, rax"))
+    bb2.append(ctx.parse_asm("add rbx, 0x2a\nsub rbx, rcx"))
 
     ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb1))
     assert ab.subsumes(AbstractBlock(4, bb2))
@@ -186,19 +202,21 @@ def test_join_different_deps(ctx):
 
 def test_join_different_deps_sample(ctx):
     bb1 = iwho.BasicBlock(ctx)
-    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
+    bb1.append(ctx.parse_asm("add rcx, 0x2a\nsub rbx, rcx"))
 
     bb2 = iwho.BasicBlock(ctx)
-    bb2.append(ctx.parse_asm("add rbx, 0x2a\nsub rbx, rax"))
+    bb2.append(ctx.parse_asm("add rbx, 0x2a\nsub rbx, rcx"))
 
     ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb1))
     assert ab.subsumes(AbstractBlock(4, bb2))
 
     new_bb = ab.sample(ctx)
+    print(new_bb)
 
     assert len(new_bb) == len(bb1)
     for new, old in zip(new_bb, bb1):
@@ -228,6 +246,7 @@ def test_join_shorter(ctx):
     ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb1))
     assert ab.subsumes(AbstractBlock(4, bb2))
@@ -243,11 +262,13 @@ def test_join_shorter_sample(ctx):
     ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb1))
     assert ab.subsumes(AbstractBlock(4, bb2))
 
     new_bb = ab.sample(ctx)
+    print(new_bb)
 
     assert len(bb1) >= len(new_bb) >= len(bb2)
     for new, old in zip(new_bb, bb1):
@@ -267,6 +288,7 @@ def test_join_longer(ctx):
     ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb1))
     assert ab.subsumes(AbstractBlock(4, bb2))
@@ -282,11 +304,13 @@ def test_join_longer_sample(ctx):
     ab = AbstractBlock(4, bb1)
     ab.join(bb2)
 
+    print(ab)
     assert ab.subsumes(ab)
     assert ab.subsumes(AbstractBlock(4, bb1))
     assert ab.subsumes(AbstractBlock(4, bb2))
 
     new_bb = ab.sample(ctx)
+    print(new_bb)
 
     assert len(bb1) <= len(new_bb) <= len(bb2)
     for new, old in zip(new_bb, bb2):
