@@ -355,15 +355,3 @@ def test_join_longer_sample(ctx):
     new_ab = AbstractBlock(4, new_bb)
     assert ab.subsumes(new_ab)
 
-
-def test_join_everything(ctx):
-    # see what happens if we join an instance of every insnscheme together
-    # TODO this should be moved to a separate file with long-running tests
-    pass
-
-def test_join_every_pair(ctx):
-    # see what happens if we join instance pairs for every pair of insn schemes
-    # together.
-    # TODO this should be moved to a separate file with long-running tests
-    pass
-
