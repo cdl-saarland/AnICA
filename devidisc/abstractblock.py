@@ -230,11 +230,11 @@ class AbstractBlock:
         """ Update self so that it additionally represents bb (and possibly,
         due to over-approximation, even more basic blocks).
         """
-        assert self.maxlen >= len(bb)
+        assert self.maxlen >= len(bb.insns)
 
-        len_diff = self.maxlen - len(bb)
+        len_diff = self.maxlen - len(bb.insns)
 
-        bb_insns = list(bb)
+        bb_insns = list(bb.insns)
 
         for x in range(len_diff):
             bb_insns.append(None)
@@ -274,9 +274,8 @@ class AbstractBlock:
 
         bb = iwho.BasicBlock(ctx)
         for scheme in insn_schemes:
-            if scheme is not None:
-                # TODO bbs should allow for None entries, so that the naive alignment works
-                bb.append(instor(scheme))
+            instance = None if scheme is None else instor(scheme)
+            bb.append(instance)
 
         return bb
 

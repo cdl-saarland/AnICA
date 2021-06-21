@@ -107,6 +107,29 @@ def test_concrete_ab_multiple_insns_sample(ctx):
     assert new_ab.subsumes(ab)
 
 
+def test_sparse_sample(ctx):
+    bb1 = iwho.BasicBlock(ctx)
+    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
+
+    bb2 = iwho.BasicBlock(ctx)
+    bb2.append(None)
+    bb2.append(ctx.parse_asm("sub rbx, rax"))
+
+    ab = AbstractBlock(4, bb1)
+    ab.join(bb2)
+
+    one_was_none = False
+    for k in range(10):
+        # it should be quite likely that at least one sample has a None insn
+        # first
+        new_bb = ab.sample(ctx)
+        one_was_none = one_was_none or new_bb.insns[0] is None
+        new_ab = AbstractBlock(4, new_bb)
+        assert ab.subsumes(new_ab)
+
+    assert one_was_none, "Careful, this might randomly fail!"
+
+
 def test_join_equal(ctx):
     bb = iwho.BasicBlock(ctx)
     bb.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
