@@ -1,0 +1,21 @@
+
+{
+    "series_date": "2021-06-14T23:34:30",
+    "source_computer": "skylake",
+    "measurements": [
+        {
+          "predictor": ["llvm-mca", "12.0"],
+          "uarch": "skl",
+          "input": "49ffabcdef",
+          "result": 42.17,
+          "remark": null
+        },
+        {
+          "predictor": ["iaca", "3.0"],
+          "uarch": "skl",
+          "input": "49ffabcdef",
+          "result": null,
+          "remark": "an error occured!"
+        }
+    ]
+}
