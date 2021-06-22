@@ -2,6 +2,8 @@
 """
 
 from abc import ABC, abstractmethod
+from collections import defaultdict
+import itertools
 import random
 import textwrap
 from typing import Optional, Union
@@ -45,6 +47,11 @@ class SingletonAbstractFeature(AbstractFeature):
 
     def is_bottom(self) -> bool:
         return self.is_bot
+
+    def set_to_top(self):
+        self.is_top = True
+        self.is_bot = False
+        self.val = None
 
     def subsumes(self, other: AbstractFeature) -> bool:
         assert isinstance(other, SingletonAbstractFeature)
@@ -174,7 +181,7 @@ class AbstractBlock:
         self.abs_insns = [ AbstractInsn(self.acfg) for i in range(self.maxlen) ]
 
         # operand j of instruction i aliases with operand y of instruction x
-        self.abs_deps = dict()
+        self.abs_deps = defaultdict(SingletonAbstractFeature)
 
         if bb is not None:
             self.join(bb)
@@ -184,9 +191,29 @@ class AbstractBlock:
             idx, abs_insn = x
             return "{:2}:\n{}".format(idx, textwrap.indent(str(abs_insn), '  '))
 
+        # instruction part
         insn_part = "\n".join(map(format_insn, enumerate(self.abs_insns)))
         res = "AbstractInsns:\n" + textwrap.indent(insn_part, '  ')
-        # TODO dependency part
+
+        # dependency part
+        entries = []
+        for ((iidx1, oidx1), (iidx2,oidx2)), absval in self.abs_deps.items():
+            if absval.is_top:
+                valtxt = "TOP"
+            elif absval.is_bot:
+                valtxt = "BOTTOM"
+            elif absval.val is False:
+                valtxt = "must not alias"
+            elif absval.val is True:
+                valtxt = "must alias"
+            else:
+                assert False
+
+            entries.append(f"{iidx1}:{oidx1} - {iidx2}:{oidx2} : {valtxt}")
+
+        entries.sort()
+        res += "\nAliasing:\n" + textwrap.indent("\n".join(entries), '  ')
+
         return res
 
     def subsumes(self, other: "AbstractBlock") -> bool:
@@ -225,7 +252,45 @@ class AbstractBlock:
         for a, b in zip(self.abs_insns, bb_insns):
             scheme = None if b is None else b.scheme
             a.join(scheme)
-        # TODO dependencies
+
+        aliasing_partition = []
+        idx2partition = dict()
+
+        running_id = 0
+
+        # collect the dependencies of bb
+        for insn_idx, ii in enumerate(bb_insns):
+            if ii is None:
+                continue
+            for operand, (op_idx, opscheme, key) in ii.indexable_operands():
+                idx = (insn_idx, op_idx)
+                for ks, vs, n in aliasing_partition:
+                    if any(map(lambda x: self.acfg.must_alias(operand, x), ks)):
+                        ks.add(operand)
+                        vs.add(idx)
+                        idx2partition[idx] = n
+                        break
+                else:
+                    aliasing_partition.append(({operand}, {idx}, running_id))
+                    idx2partition[idx] = running_id
+                    running_id += 1
+
+        for ks, vs, n in aliasing_partition:
+            for idx1, idx2 in itertools.combinations(vs, 2): # are combinations enough here?
+                self.abs_deps[(idx1, idx2)].join(True)
+
+        # TODO use may-alias or must-not-alias info?
+
+        # for (idx1, idx2), val in self.abs_deps.items():
+        #     pid1 = idx2partition.get(idx1, None)
+        #     pid2 = idx2partition.get(idx2, None)
+        #     if pid1 is None or pid2 is None:
+        #         val.set_to_top() # TODO we could also just remove it
+        #     if pid1 == pid2:
+        #         val.join(True)
+        #     else:
+        #         val.join(False)
+
 
     def sample(self, ctx: iwho.Context) -> iwho.BasicBlock:
         """ Randomly sample a basic block that is represented by self.
@@ -235,15 +300,15 @@ class AbstractBlock:
             insn_scheme = ai.sample(ctx) # may be None
             insn_schemes.append(insn_scheme)
 
-        for (insn_op1, insn_op2), should_alias in self.abs_deps.items():
-            if should_alias:
-                same[insn_op1].add(insn_op2)
-                same[insn_op2].add(insn_op1)
-            else:
-                not_same[insn_op1].add(insn_op2)
-                not_same[insn_op2].add(insn_op1)
-
-        chosen_operands = dict()
+        # for (insn_op1, insn_op2), should_alias in self.abs_deps.items():
+        #     if should_alias:
+        #         same[insn_op1].add(insn_op2)
+        #         same[insn_op2].add(insn_op1)
+        #     else:
+        #         not_same[insn_op1].add(insn_op2)
+        #         not_same[insn_op2].add(insn_op1)
+        #
+        # chosen_operands = dict()
 
         # TODO dependencies
         # go through all insn_schemes and pin each fixed operand
@@ -274,6 +339,12 @@ class AbstractionConfig:
         self.feature_keys = ['exact_scheme', 'present', 'mnemonic', 'skl_uops']
 
         self.max_block_len = max_block_len
+
+    def must_alias(self, op1: iwho.OperandInstance, op2: iwho.OperandInstance):
+        # TODO this could use additional information about the instantiation
+        # (in contrast to the iwho.Context method, which should be correct for
+        # all uses)
+        return self.ctx.must_alias(op1, op2)
 
     def init_abstract_features(self):
         res = dict()

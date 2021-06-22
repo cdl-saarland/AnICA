@@ -434,3 +434,40 @@ def test_join_longer_sample(ctx):
     new_ab = AbstractBlock(acfg, new_bb)
     assert ab.subsumes(new_ab)
 
+
+def test_aliasing_simple(ctx):
+    acfg = AbstractionConfig(ctx, 4)
+
+    bb1 = iwho.BasicBlock(ctx)
+    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
+
+    ab = AbstractBlock(acfg, bb1)
+
+    print(ab)
+    assert ab.subsumes(ab)
+
+    str_repr = str(ab)
+    assert "0:0 - 1:1 : must alias" in str_repr or "1:1 - 0:0 : must alias" in str_repr
+    # assert "0:0 - 1:0 : must not alias" in str_repr
+
+
+def test_aliasing_simple_sample(ctx):
+    acfg = AbstractionConfig(ctx, 4)
+
+    bb1 = iwho.BasicBlock(ctx)
+    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub rbx, rax"))
+
+    ab = AbstractBlock(acfg, bb1)
+
+    print(ab)
+    assert ab.subsumes(ab)
+
+    str_repr = str(ab)
+    assert "0:0 - 1:1 : must alias" in str_repr or "1:1 - 0:0 : must alias" in str_repr
+    # assert "0:0 - 1:0 : must not alias" in str_repr
+
+    new_bb = ab.sample(ctx)
+    print(new_bb)
+
+    # TODO add more interesting tests
+
