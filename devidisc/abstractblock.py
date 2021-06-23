@@ -181,7 +181,7 @@ class AbstractBlock:
         self.abs_insns = [ AbstractInsn(self.acfg) for i in range(self.maxlen) ]
 
         # TODO describe semantics - operand j of instruction i aliases with operand y of instruction x
-        self.abs_deps = dict()
+        self._abs_deps = dict()
 
         # the semantics of entries not present in the above map changes over
         # the lifetime of the AbstractBlock, through the value of the following
@@ -196,14 +196,14 @@ class AbstractBlock:
         if bb is not None:
             self.join(bb)
 
-    def _get_abs_deps(self, idx1, idx2):
+    def get_abs_deps(self, idx1, idx2):
         """ TODO document
         """
         key = tuple(sorted((idx1, idx2)))
-        res = self.abs_deps.get(key, None)
+        res = self._abs_deps.get(key, None)
         if res is None and self.abs_deps_init_bot:
             res = SingletonAbstractFeature()
-            self.abs_deps[key] = res
+            self._abs_deps[key] = res
         return res
 
     def __str__(self) -> str:
@@ -217,9 +217,9 @@ class AbstractBlock:
 
         # dependency part
         entries = []
-        for ((iidx1, oidx1), (iidx2,oidx2)), absval in self.abs_deps.items():
+        for ((iidx1, oidx1), (iidx2,oidx2)), absval in self._abs_deps.items():
             if absval.is_top:
-                valtxt = "TOP"
+                continue
             elif absval.is_bot:
                 valtxt = "BOTTOM"
             elif absval.val is False:
@@ -282,7 +282,7 @@ class AbstractBlock:
                 all_indices.append((idx, operand))
 
         for (idx1, op1), (idx2, op2) in itertools.combinations(all_indices, 2):
-            ad = self._get_abs_deps(idx1, idx2)
+            ad = self.get_abs_deps(idx1, idx2)
             if ad is None or ad.is_top:
                 continue
             if self.acfg.must_alias(op1, op2):
@@ -355,8 +355,7 @@ class AbstractionConfig:
         # TODO this could use additional information about the instantiation
         # (in contrast to the iwho.Context method, which should be correct for
         # all uses)
-        # TODO actually implement this!
-        return True
+        return self.ctx.may_alias(op1, op2)
 
     def init_abstract_features(self):
         res = dict()
