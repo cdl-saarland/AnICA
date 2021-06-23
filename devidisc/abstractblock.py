@@ -181,7 +181,7 @@ class AbstractBlock:
         self.abs_insns = [ AbstractInsn(self.acfg) for i in range(self.maxlen) ]
 
         # TODO describe semantics - operand j of instruction i aliases with operand y of instruction x
-        self._abs_deps = dict()
+        self._abs_aliasing = dict()
 
         # the semantics of entries not present in the above map changes over
         # the lifetime of the AbstractBlock, through the value of the following
@@ -191,19 +191,19 @@ class AbstractBlock:
         # map gets entries for all the observed relationships, and any
         # non-present relationship that might be encountered later should be
         # considered TOP.
-        self.abs_deps_init_bot = True
+        self.is_bot = True
 
         if bb is not None:
             self.join(bb)
 
-    def get_abs_deps(self, idx1, idx2):
+    def get_abs_aliasing(self, idx1, idx2):
         """ TODO document
         """
         key = tuple(sorted((idx1, idx2)))
-        res = self._abs_deps.get(key, None)
-        if res is None and self.abs_deps_init_bot:
+        res = self._abs_aliasing.get(key, None)
+        if res is None and self.is_bot:
             res = SingletonAbstractFeature()
-            self._abs_deps[key] = res
+            self._abs_aliasing[key] = res
         return res
 
     def __str__(self) -> str:
@@ -217,7 +217,7 @@ class AbstractBlock:
 
         # dependency part
         entries = []
-        for ((iidx1, oidx1), (iidx2,oidx2)), absval in self._abs_deps.items():
+        for ((iidx1, oidx1), (iidx2,oidx2)), absval in self._abs_aliasing.items():
             if absval.is_top:
                 continue
             elif absval.is_bot:
@@ -251,7 +251,21 @@ class AbstractBlock:
             if not self_ai.subsumes(other_ai):
                 return False
 
-        #TODO dependencies
+        # aliasing
+        if other.is_bot:
+            return True
+
+        if self.is_bot:
+            return False
+
+        # all items not present are considered TOP and subsume everything
+        for k, sv in self._abs_aliasing.items():
+            if sv.is_top:
+                continue
+            ov = other._abs_aliasing.get(k, None)
+            if ov is None or not sv.subsumes(ov):
+                return False
+
         return True
 
     def join(self, bb):
@@ -282,7 +296,7 @@ class AbstractBlock:
                 all_indices.append((idx, operand))
 
         for (idx1, op1), (idx2, op2) in itertools.combinations(all_indices, 2):
-            ad = self.get_abs_deps(idx1, idx2)
+            ad = self.get_abs_aliasing(idx1, idx2)
             if ad is None or ad.is_top:
                 continue
             if self.acfg.must_alias(op1, op2):
@@ -292,9 +306,9 @@ class AbstractBlock:
             else:
                 ad.set_to_top()
 
-        # if this was the first join, this switches the interpretation of
-        # non-present entries in the abs_deps dict.
-        self.abs_deps_init_bot = True
+        # if this is the first join, this switches the interpretation of
+        # non-present entries in the abs_aliasing dict.
+        self.is_bot = False
 
 
     def sample(self, ctx: iwho.Context) -> iwho.BasicBlock:
@@ -305,7 +319,7 @@ class AbstractBlock:
             insn_scheme = ai.sample(ctx) # may be None
             insn_schemes.append(insn_scheme)
 
-        # for (insn_op1, insn_op2), should_alias in self.abs_deps.items():
+        # for (insn_op1, insn_op2), should_alias in self.abs_aliasing.items():
         #     if should_alias:
         #         same[insn_op1].add(insn_op2)
         #         same[insn_op2].add(insn_op1)

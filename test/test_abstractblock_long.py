@@ -18,6 +18,16 @@ from devidisc.abstractblock import AbstractBlock, AbstractionConfig
 def ctx():
     return iwho.get_context("x86")
 
+
+def havoc_alias_part(absblock):
+    # this sets the aliasing part of the abstract block to top by clearing
+    # the respective dict (non-present entries in non-bottom abstract blocks
+    # are considered top.
+    absblock._abs_aliasing = dict()
+    absblock.is_bot = False
+    return absblock
+
+
 def test_join_everything(ctx):
     # see what happens if we join an instance of every insnscheme together
 
@@ -25,8 +35,8 @@ def test_join_everything(ctx):
 
     instor = DefaultInstantiator(ctx)
 
-    ab = AbstractBlock(acfg)
-    ab_pre = AbstractBlock(acfg)
+    ab = havoc_alias_part(AbstractBlock(acfg))
+    ab_pre = havoc_alias_part(AbstractBlock(acfg))
 
     for scheme in ctx.insn_schemes:
         # create a BB with only an instruction instance of this scheme
@@ -44,7 +54,7 @@ def test_join_everything(ctx):
 
         # sample a block an check that it is subsumed
         new_bb = ab.sample(ctx)
-        new_ab = AbstractBlock(acfg, new_bb)
+        new_ab = havoc_alias_part(AbstractBlock(acfg, new_bb))
         assert ab.subsumes(new_ab)
 
 
@@ -60,7 +70,7 @@ def test_join_every_pair(ctx):
     reduced_schemes = ctx.insn_schemes[::50]
 
     for scheme1, scheme2 in itertools.combinations(reduced_schemes, 2):
-        ab = AbstractBlock(acfg)
+        ab = havoc_alias_part(AbstractBlock(acfg))
         bb1 = iwho.BasicBlock(ctx, [instor(scheme1)])
         bb2 = iwho.BasicBlock(ctx, [instor(scheme2)])
         ab.join(bb1)
@@ -68,13 +78,13 @@ def test_join_every_pair(ctx):
 
         assert ab.subsumes(ab)
 
-        ab1 = AbstractBlock(acfg, bb1)
-        ab2 = AbstractBlock(acfg, bb2)
+        ab1 = havoc_alias_part(AbstractBlock(acfg, bb1))
+        ab2 = havoc_alias_part(AbstractBlock(acfg, bb2))
 
         assert ab.subsumes(ab1)
         assert ab.subsumes(ab2)
 
         new_bb = ab.sample(ctx)
-        new_ab = AbstractBlock(acfg, new_bb)
+        new_ab = havoc_alias_part(AbstractBlock(acfg, new_bb))
         assert ab.subsumes(new_ab)
 
