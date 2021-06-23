@@ -180,11 +180,31 @@ class AbstractBlock:
         self.maxlen = acfg.max_block_len
         self.abs_insns = [ AbstractInsn(self.acfg) for i in range(self.maxlen) ]
 
-        # operand j of instruction i aliases with operand y of instruction x
-        self.abs_deps = defaultdict(SingletonAbstractFeature)
+        # TODO describe semantics - operand j of instruction i aliases with operand y of instruction x
+        self.abs_deps = dict()
+
+        # the semantics of entries not present in the above map changes over
+        # the lifetime of the AbstractBlock, through the value of the following
+        # flag. In the beginning, before any concrete Block is joined in,
+        # nothing will be present, which should be interpreted as a BOTTOM
+        # value for everything. When joining the first concrete Block in, the
+        # map gets entries for all the observed relationships, and any
+        # non-present relationship that might be encountered later should be
+        # considered TOP.
+        self.abs_deps_init_bot = True
 
         if bb is not None:
             self.join(bb)
+
+    def _get_abs_deps(self, idx1, idx2):
+        """ TODO document
+        """
+        key = tuple(sorted((idx1, idx2)))
+        res = self.abs_deps.get(key, None)
+        if res is None and self.abs_deps_init_bot:
+            res = SingletonAbstractFeature()
+            self.abs_deps[key] = res
+        return res
 
     def __str__(self) -> str:
         def format_insn(x):
@@ -253,43 +273,28 @@ class AbstractBlock:
             scheme = None if b is None else b.scheme
             a.join(scheme)
 
-        aliasing_partition = []
-        idx2partition = dict()
-
-        running_id = 0
-
-        # collect the dependencies of bb
+        all_indices = []
         for insn_idx, ii in enumerate(bb_insns):
             if ii is None:
                 continue
             for operand, (op_idx, opscheme, key) in ii.indexable_operands():
                 idx = (insn_idx, op_idx)
-                for ks, vs, n in aliasing_partition:
-                    if any(map(lambda x: self.acfg.must_alias(operand, x), ks)):
-                        ks.add(operand)
-                        vs.add(idx)
-                        idx2partition[idx] = n
-                        break
-                else:
-                    aliasing_partition.append(({operand}, {idx}, running_id))
-                    idx2partition[idx] = running_id
-                    running_id += 1
+                all_indices.append((idx, operand))
 
-        for ks, vs, n in aliasing_partition:
-            for idx1, idx2 in itertools.combinations(vs, 2): # are combinations enough here?
-                self.abs_deps[(idx1, idx2)].join(True)
+        for (idx1, op1), (idx2, op2) in itertools.combinations(all_indices, 2):
+            ad = self._get_abs_deps(idx1, idx2)
+            if ad is None or ad.is_top:
+                continue
+            if self.acfg.must_alias(op1, op2):
+                ad.join(True)
+            elif not self.acfg.may_alias(op1, op2):
+                ad.join(False)
+            else:
+                ad.set_to_top()
 
-        # TODO use may-alias or must-not-alias info?
-
-        # for (idx1, idx2), val in self.abs_deps.items():
-        #     pid1 = idx2partition.get(idx1, None)
-        #     pid2 = idx2partition.get(idx2, None)
-        #     if pid1 is None or pid2 is None:
-        #         val.set_to_top() # TODO we could also just remove it
-        #     if pid1 == pid2:
-        #         val.join(True)
-        #     else:
-        #         val.join(False)
+        # if this was the first join, this switches the interpretation of
+        # non-present entries in the abs_deps dict.
+        self.abs_deps_init_bot = True
 
 
     def sample(self, ctx: iwho.Context) -> iwho.BasicBlock:
@@ -346,12 +351,19 @@ class AbstractionConfig:
         # all uses)
         return self.ctx.must_alias(op1, op2)
 
+    def may_alias(self, op1: iwho.OperandInstance, op2: iwho.OperandInstance):
+        # TODO this could use additional information about the instantiation
+        # (in contrast to the iwho.Context method, which should be correct for
+        # all uses)
+        # TODO actually implement this!
+        return True
+
     def init_abstract_features(self):
         res = dict()
         res['exact_scheme'] = SingletonAbstractFeature()
         res['present'] = SingletonAbstractFeature()
         res['mnemonic'] = SingletonAbstractFeature()
-        res['skl_uops'] = PowerSetAbstractFeature()
+        res['skl_uops'] = PowerSetAbstractFeature()  # TODO this should probably be a superset domain, where a set of uops means that all of them must at least be used (and havocing it means removing items)
         return res
 
     def extract_features(self, ischeme: Union[iwho.InsnScheme, None]):
