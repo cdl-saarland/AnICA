@@ -478,8 +478,8 @@ def test_aliasing_simple(ctx):
     assert ab.subsumes(ab)
 
     str_repr = str(ab)
-    assert "0:0 - 1:1 : must alias" in str_repr or "1:1 - 0:0 : must alias" in str_repr
-    assert "0:0 - 1:0 : must not alias" in str_repr
+    assert "0:(E, 'reg0') - 1:(E, 'reg1') : must alias" in str_repr or "1:(E, 'reg1') - 0:(E, 'reg0') : must alias" in str_repr
+    assert "0:(E, 'reg0') - 1:(E, 'reg0') : must not alias" in str_repr
 
 
 def test_aliasing_simple_sample(ctx):
@@ -494,8 +494,8 @@ def test_aliasing_simple_sample(ctx):
     assert ab.subsumes(ab)
 
     str_repr = str(ab)
-    assert "0:0 - 1:1 : must alias" in str_repr or "1:1 - 0:0 : must alias" in str_repr
-    assert "0:0 - 1:0 : must not alias" in str_repr
+    assert "0:(E, 'reg0') - 1:(E, 'reg1') : must alias" in str_repr or "1:(E, 'reg1') - 0:(E, 'reg0') : must alias" in str_repr
+    assert "0:(E, 'reg0') - 1:(E, 'reg0') : must not alias" in str_repr
 
     new_bb = ab.sample(ctx)
     print(new_bb)

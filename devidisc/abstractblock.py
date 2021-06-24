@@ -291,8 +291,8 @@ class AbstractBlock:
         for insn_idx, ii in enumerate(bb_insns):
             if ii is None:
                 continue
-            for operand, (op_idx, opscheme, key) in ii.indexable_operands():
-                idx = (insn_idx, op_idx)
+            for operand, (op_key, op_scheme) in ii.get_operands():
+                idx = (insn_idx, op_key)
                 all_indices.append((idx, operand))
 
         for (idx1, op1), (idx2, op2) in itertools.combinations(all_indices, 2):
@@ -319,27 +319,80 @@ class AbstractBlock:
             insn_scheme = ai.sample(ctx) # may be None
             insn_schemes.append(insn_scheme)
 
-        # for (insn_op1, insn_op2), should_alias in self.abs_aliasing.items():
-        #     if should_alias:
-        #         same[insn_op1].add(insn_op2)
-        #         same[insn_op2].add(insn_op1)
-        #     else:
-        #         not_same[insn_op1].add(insn_op2)
-        #         not_same[insn_op2].add(insn_op1)
-        #
-        # chosen_operands = dict()
+        # aliasing/operands
+        if self.is_bot:
+            return None
 
-        # TODO dependencies
+        same = defaultdict(set)
+        not_same = defaultdict(set)
+
+        for (insn_op1, insn_op2), should_alias in self._abs_aliasing.items():
+            if should_alias.val is True:
+                same[insn_op1].add(insn_op2)
+                same[insn_op2].add(insn_op1)
+            elif should_alias.val is False:
+                not_same[insn_op1].add(insn_op2)
+                not_same[insn_op2].add(insn_op1)
+
+        chosen_operands = dict()
+
         # go through all insn_schemes and pin each fixed operand
-        # go through all operands for all insns and check if one from its "same" set has a chosen operand.
-        #   if yes: take the same (with adjusted width). if it is also chosen in the not_same set, fail
-        #   if no: choose one that is not chosen in its not_same set
-        from iwho.x86 import DefaultInstantiator
-        instor = DefaultInstantiator(ctx)
+        for iidx, ischeme in enumerate(insn_schemes):
+            if ischeme is None:
+                continue
+            for op_key, op_scheme in ischeme.operand_keys:
+                idx = (iidx, op_key)
+                if op_scheme.is_fixed():
+                    fixed_op = op_scheme.fixed_operand
+                    prev_choice = chosen_operands.get(idx, None)
+                    if prev_choice is not None and prev_choice != fixed_op:
+                        return None
+                    chosen_operands[idx] = fixed_op
+                    for k in same[idx]:
+                        prev_choice = chosen_operands.get(k, None)
+                        # TODO adjust width!
+                        if prev_choice is not None and prev_choice != fixed_op:
+                            return None
+                        chosen_operands[k] = fixed_op
 
+        # remaining unchosen operands are not determined by fixed operands
+        # in here, backtracking would be necessary
+        for iidx, ischeme in enumerate(insn_schemes):
+            if ischeme is None:
+                continue
+            for op_key, op_scheme in ischeme.operand_keys:
+                idx = (iidx, op_key)
+                if chosen_operands.get(idx, None) is not None:
+                    continue
+                # choose an operand that is not already taken in the not_same
+                # set
+                allowed_operands = set(self.acfg.allowed_operands(op_scheme))
+                for k in not_same[idx]:
+                    disallowed = chosen_operands.get(k, None)
+                    if disallowed is not None:
+                        # TODO adjust width!
+                        try:
+                            allowed_operands.remove(disallowed)
+                        except KeyError as e:
+                            pass
+                chosen = random.choice(list(allowed_operands))
+                chosen_operands[idx] = chosen
+                for k in same[idx]:
+                    chosen_operands[k] = chosen
+
+        op_maps = defaultdict(dict)
+        for (iidx, op_key), chosen_operand in chosen_operands.items():
+            op_maps[iidx][op_key] = chosen_operand
+
+        # instantiate the schemes with the chosen operands
         bb = iwho.BasicBlock(ctx)
-        for scheme in insn_schemes:
-            instance = None if scheme is None else instor(scheme)
+        for iidx, scheme in enumerate(insn_schemes):
+            if ischeme is None:
+                bb.append(None)
+                continue
+            op_map = op_maps[iidx]
+            instance = ischeme.instantiate(op_map)
+
             bb.append(instance)
 
         return bb
@@ -370,6 +423,24 @@ class AbstractionConfig:
         # (in contrast to the iwho.Context method, which should be correct for
         # all uses)
         return self.ctx.may_alias(op1, op2)
+
+    def allowed_operands(self, op_scheme):
+        if op_scheme.is_fixed():
+            return {op_scheme.fixed_operand}
+        constraint = op_scheme.operand_constraint
+        if isinstance(constraint, iwho.SetConstraint):
+            # TODO remove reserved operands?
+            return set(constraint.acceptable_operands)
+        elif isinstance(constraint, iwho.x86.MemConstraint):
+            base_reg = iwho.x86.all_registers["rbx"]
+            displacement = 64
+            # TODO allow more, deduplicate?
+            return {iwho.x86.MemoryOperand(width=constraint.width, base=base_reg, displacement=displacement)}
+        elif isinstance(constraint, iwho.x86.ImmConstraint):
+            return {iwho.x86.ImmediateOperand(width=constraint.width, value=42)}
+        else:
+            # SymbolConstraints
+            assert False, "Symbol Operands are not supported"
 
     def init_abstract_features(self):
         res = dict()
