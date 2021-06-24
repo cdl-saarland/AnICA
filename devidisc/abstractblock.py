@@ -329,6 +329,16 @@ class AbstractBlock:
         not_same = defaultdict(set)
 
         for (insn_op1, insn_op2), should_alias in self._abs_aliasing.items():
+            iidx1, op_key1 = insn_op1
+            iidx2, op_key2 = insn_op2
+            # Do not enter information for instructions and operands that are
+            # not present.
+            if insn_schemes[iidx1] is None or insn_schemes[iidx2] is None:
+                continue
+            if (insn_schemes[iidx1].get_operand_scheme(op_key1) is None or
+                    insn_schemes[iidx2].get_operand_scheme(op_key2) is None):
+                continue
+
             if should_alias.val is True:
                 same[insn_op1].add(insn_op2)
                 same[insn_op2].add(insn_op1)
@@ -350,16 +360,18 @@ class AbstractBlock:
                     fixed_op = op_scheme.fixed_operand
                     prev_choice = chosen_operands.get(idx, None)
                     if prev_choice is not None and prev_choice != fixed_op:
+                        print(f"InsnScheme {ischeme} requires different operands for {op_key} from aliasing with fixed operands: {prev_choice} and {fixed_op}")
                         assert False, "instantiation error" # TODO
                         return None
                     chosen_operands[idx] = fixed_op
                     for k in same[idx]:
                         prev_choice = chosen_operands.get(k, None)
-                        # TODO adjust width!
-                        if prev_choice is not None and prev_choice != fixed_op:
+                        adjusted_fixed_op = self.acfg.adjust_operand_width(fixed_op, insn_schemes[k[0]].get_operand_scheme(k[1]))
+                        if prev_choice is not None and prev_choice != adjusted_fixed_op:
+                            print(f"InsnScheme {insn_schemes[k[0]]} requires different operands for {k[1]} from aliasing with fixed operands: {prev_choice} and {adjusted_fixed_op}")
                             assert False, "instantiation error" # TODO
                             return None
-                        chosen_operands[k] = fixed_op
+                        chosen_operands[k] = adjusted_fixed_op
 
         # remaining unchosen operands are not determined by fixed operands
         # in here, backtracking would be necessary
@@ -377,7 +389,7 @@ class AbstractBlock:
                     for k in not_same[idx]:
                         disallowed = chosen_operands.get(k, None)
                         if disallowed is not None:
-                            # TODO adjust width!
+                            disallowed = self.acfg.adjust_operand_width(disallowed, op_scheme)
                             try:
                                 allowed_operands.remove(disallowed)
                             except KeyError as e:
@@ -455,6 +467,37 @@ class AbstractionConfig:
                 return True
         return False
 
+    def adjust_operand_width(self, operand, op_scheme):
+        acceptable = None
+        if op_scheme.is_fixed():
+            width = op_scheme.fixed_operand.width
+            acceptable = {op_scheme.fixed_operand}
+        else:
+            constraint = op_scheme.operand_constraint
+            if isinstance(constraint, iwho.SetConstraint):
+                acceptable = constraint.acceptable_operands
+                width = acceptable[0].width
+                acceptable = set(acceptable)
+            else:
+                width = constraint.width
+
+        if operand.width == width:
+            res = operand
+        elif isinstance(operand, iwho.x86.RegisterOperand):
+            fitting_regs = set(self.ctx.get_registers_where(alias_class=operand.alias_class, width=width))
+            assert len(fitting_regs) >= 1
+            if acceptable is not None:
+                fitting_regs.intersection_update(acceptable)
+            assert len(fitting_regs) >= 1
+            res = next(iter(fitting_regs))
+        elif isinstance(operand, iwho.x86.MemoryOperand):
+            res = iwho.x86.MemoryOperand(width=operand.width, segment=operand.segment, base=operand.base, index=operand.index, scale=operand.scale, displacement=operand.displacement)
+        elif isinstance(operand, iwho.x86.MemoryOperand):
+            res = iwho.x86.ImmediateOperand(width=operand.width, value=operand.value)
+        else:
+            res = operand
+
+        return res
 
     def allowed_operands(self, op_scheme):
         if op_scheme.is_fixed():
@@ -471,8 +514,8 @@ class AbstractionConfig:
         elif isinstance(constraint, iwho.x86.ImmConstraint):
             return {iwho.x86.ImmediateOperand(width=constraint.width, value=42)}
         else:
-            # SymbolConstraints
-            assert False, "Symbol Operands are not supported"
+            assert isinstance(constraint, iwho.x86.SymbolConstraint)
+            return {iwho.x86.SymbolOperand()}
 
     def init_abstract_features(self):
         res = dict()

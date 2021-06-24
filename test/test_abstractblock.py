@@ -3,6 +3,7 @@
 import pytest
 
 import os
+import random as rand
 import sys
 
 import iwho
@@ -12,6 +13,10 @@ sys.path.append(import_path)
 
 from devidisc.abstractblock import AbstractBlock, AbstractionConfig
 
+
+@pytest.fixture
+def random():
+    rand.seed(0)
 
 @pytest.fixture(scope="module")
 def ctx():
@@ -25,7 +30,7 @@ def havoc_alias_part(absblock):
     absblock.is_bot = False
     return absblock
 
-def test_concrete_ab_single_insn(ctx):
+def test_concrete_ab_single_insn(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb = iwho.BasicBlock(ctx)
@@ -37,7 +42,7 @@ def test_concrete_ab_single_insn(ctx):
     assert ab.subsumes(ab)
 
 
-def test_concrete_ab_single_insn_sample(ctx):
+def test_concrete_ab_single_insn_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb = iwho.BasicBlock(ctx)
@@ -61,7 +66,7 @@ def test_concrete_ab_single_insn_sample(ctx):
     assert new_ab.subsumes(ab)
 
 
-def test_concrete_ab_single_insn_mem(ctx):
+def test_concrete_ab_single_insn_mem(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb = iwho.BasicBlock(ctx)
@@ -73,7 +78,7 @@ def test_concrete_ab_single_insn_mem(ctx):
     assert ab.subsumes(ab)
 
 
-def test_concrete_ab_single_insn_mem_sample(ctx):
+def test_concrete_ab_single_insn_mem_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb = iwho.BasicBlock(ctx)
@@ -97,7 +102,7 @@ def test_concrete_ab_single_insn_mem_sample(ctx):
     assert new_ab.subsumes(ab)
 
 
-def test_concrete_ab_multiple_insns(ctx):
+def test_concrete_ab_multiple_insns(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb = iwho.BasicBlock(ctx)
@@ -110,7 +115,7 @@ def test_concrete_ab_multiple_insns(ctx):
     assert ab.subsumes(ab)
 
 
-def test_concrete_ab_multiple_insns_sample(ctx):
+def test_concrete_ab_multiple_insns_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb = iwho.BasicBlock(ctx)
@@ -135,7 +140,7 @@ def test_concrete_ab_multiple_insns_sample(ctx):
     assert new_ab.subsumes(ab)
 
 
-def test_sparse_sample(ctx):
+def test_sparse_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -162,7 +167,7 @@ def test_sparse_sample(ctx):
     assert one_was_none, "Careful, this might randomly fail!"
 
 
-def test_join_equal(ctx):
+def test_join_equal(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb = iwho.BasicBlock(ctx)
@@ -180,7 +185,7 @@ def test_join_equal(ctx):
     assert ab.subsumes(new_ab)
 
 
-def test_join_equal_sample(ctx):
+def test_join_equal_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb = iwho.BasicBlock(ctx)
@@ -210,7 +215,7 @@ def test_join_equal_sample(ctx):
     assert new_ab.subsumes(ab)
 
 
-def test_join_different_regs(ctx):
+def test_join_different_regs(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -229,7 +234,7 @@ def test_join_different_regs(ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
 
-def test_join_different_regs_sample(ctx):
+def test_join_different_regs_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -259,7 +264,7 @@ def test_join_different_regs_sample(ctx):
     assert ab.subsumes(new_ab)
 
 
-def test_join_different_deps(ctx):
+def test_join_different_deps(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -278,7 +283,7 @@ def test_join_different_deps(ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
 
-def test_join_different_deps_sample(ctx):
+def test_join_different_deps_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -306,7 +311,7 @@ def test_join_different_deps_sample(ctx):
     assert ab.subsumes(new_ab)
 
 
-def test_join_equal_len(ctx):
+def test_join_equal_len(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -327,7 +332,7 @@ def test_join_equal_len(ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
 
-def test_join_equal_len_sample(ctx):
+def test_join_equal_len_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -356,7 +361,7 @@ def test_join_equal_len_sample(ctx):
     assert ab.subsumes(new_ab)
 
 
-def test_join_shorter(ctx):
+def test_join_shorter(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -374,7 +379,7 @@ def test_join_shorter(ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
 
-def test_join_shorter_sample(ctx):
+def test_join_shorter_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -402,7 +407,7 @@ def test_join_shorter_sample(ctx):
     assert ab.subsumes(new_ab)
 
 
-def test_join_same_mnemonic(ctx):
+def test_join_same_mnemonic(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -420,7 +425,7 @@ def test_join_same_mnemonic(ctx):
     assert ctx.extract_mnemonic(new_bb.insns[0]) == "add"
 
 
-def test_join_longer(ctx):
+def test_join_longer(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -438,7 +443,7 @@ def test_join_longer(ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
 
-def test_join_longer_sample(ctx):
+def test_join_longer_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -466,7 +471,7 @@ def test_join_longer_sample(ctx):
     assert ab.subsumes(new_ab)
 
 
-def test_aliasing_simple(ctx):
+def test_aliasing_simple(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -482,7 +487,7 @@ def test_aliasing_simple(ctx):
     assert "0:(E, 'reg0') - 1:(E, 'reg0') : must not alias" in str_repr
 
 
-def test_aliasing_simple_sample(ctx):
+def test_aliasing_simple_sample(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
 
     bb1 = iwho.BasicBlock(ctx)
@@ -499,6 +504,58 @@ def test_aliasing_simple_sample(ctx):
 
     new_bb = ab.sample(ctx)
     print(new_bb)
+    new_ab = AbstractBlock(acfg, new_bb)
+    assert ab.subsumes(new_ab)
+    assert new_ab.subsumes(ab)
 
-    # TODO add more interesting tests
+
+def test_aliasing_insn_choice_sample(random, ctx):
+    acfg = AbstractionConfig(ctx, 4)
+
+    bb1 = iwho.BasicBlock(ctx)
+    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub rax, rbx"))
+
+    bb2 = iwho.BasicBlock(ctx)
+    bb2.append(ctx.parse_asm("add rax, 0x2a\nsub rax, 0x0"))
+
+    ab = AbstractBlock(acfg, bb1)
+    ab.join(bb2)
+
+    print(ab)
+    assert ab.subsumes(ab)
+
+    str_repr = str(ab)
+    assert "0:(E, 'reg0') - 1:(E, 'reg0') : must alias" in str_repr or "1:(E, 'reg0') - 0:(E, 'reg0') : must alias" in str_repr
+
+    new_bb = ab.sample(ctx)
+    print(new_bb)
+    new_ab = AbstractBlock(acfg, new_bb)
+    print(new_ab)
+    # assert ab.subsumes(new_ab)
+    # We cannot assert this, because by sampling an instruction with fewer
+    # operand schemes, some alias information is lost and therefore set to TOP.
+    # That is an indication that the natural thing to have for such a case
+    # would be BOTTOM instead of TOP.
+
+
+def test_aliasing_different_widths_01_sample(random, ctx):
+    acfg = AbstractionConfig(ctx, 4)
+
+    bb1 = iwho.BasicBlock(ctx)
+    bb1.append(ctx.parse_asm("add rax, 0x2a\nsub ebx, eax"))
+
+    ab = AbstractBlock(acfg, bb1)
+
+    print(ab)
+    assert ab.subsumes(ab)
+
+    str_repr = str(ab)
+    assert "0:(E, 'reg0') - 1:(E, 'reg1') : must alias" in str_repr or "1:(E, 'reg1') - 0:(E, 'reg0') : must alias" in str_repr
+    assert "0:(E, 'reg0') - 1:(E, 'reg0') : must not alias" in str_repr
+
+    new_bb = ab.sample(ctx)
+    print(new_bb)
+    new_ab = AbstractBlock(acfg, new_bb)
+    assert ab.subsumes(new_ab)
+
 
