@@ -292,6 +292,8 @@ class AbstractBlock:
             if ii is None:
                 continue
             for operand, (op_key, op_scheme) in ii.get_operands():
+                if self.acfg.skip_for_aliasing(op_scheme):
+                    continue
                 idx = (insn_idx, op_key)
                 all_indices.append((idx, operand))
 
@@ -341,17 +343,21 @@ class AbstractBlock:
             if ischeme is None:
                 continue
             for op_key, op_scheme in ischeme.operand_keys:
+                if self.acfg.skip_for_aliasing(op_scheme):
+                    continue
                 idx = (iidx, op_key)
                 if op_scheme.is_fixed():
                     fixed_op = op_scheme.fixed_operand
                     prev_choice = chosen_operands.get(idx, None)
                     if prev_choice is not None and prev_choice != fixed_op:
+                        assert False, "instantiation error" # TODO
                         return None
                     chosen_operands[idx] = fixed_op
                     for k in same[idx]:
                         prev_choice = chosen_operands.get(k, None)
                         # TODO adjust width!
                         if prev_choice is not None and prev_choice != fixed_op:
+                            assert False, "instantiation error" # TODO
                             return None
                         chosen_operands[k] = fixed_op
 
@@ -367,14 +373,15 @@ class AbstractBlock:
                 # choose an operand that is not already taken in the not_same
                 # set
                 allowed_operands = set(self.acfg.allowed_operands(op_scheme))
-                for k in not_same[idx]:
-                    disallowed = chosen_operands.get(k, None)
-                    if disallowed is not None:
-                        # TODO adjust width!
-                        try:
-                            allowed_operands.remove(disallowed)
-                        except KeyError as e:
-                            pass
+                if not self.acfg.skip_for_aliasing(op_scheme):
+                    for k in not_same[idx]:
+                        disallowed = chosen_operands.get(k, None)
+                        if disallowed is not None:
+                            # TODO adjust width!
+                            try:
+                                allowed_operands.remove(disallowed)
+                            except KeyError as e:
+                                pass
                 chosen = random.choice(list(allowed_operands))
                 chosen_operands[idx] = chosen
                 for k in same[idx]:
@@ -386,7 +393,7 @@ class AbstractBlock:
 
         # instantiate the schemes with the chosen operands
         bb = iwho.BasicBlock(ctx)
-        for iidx, scheme in enumerate(insn_schemes):
+        for iidx, ischeme in enumerate(insn_schemes):
             if ischeme is None:
                 bb.append(None)
                 continue
@@ -423,6 +430,31 @@ class AbstractionConfig:
         # (in contrast to the iwho.Context method, which should be correct for
         # all uses)
         return self.ctx.may_alias(op1, op2)
+
+    def skip_for_aliasing(self, op_scheme):
+        if op_scheme.is_fixed():
+            operand = op_scheme.fixed_operand
+            if isinstance(operand, iwho.x86.RegisterOperand):
+                if operand.category == iwho.x86.RegKind['FLAG']:
+                    # Skip flag operands. We might want to revisit this decision.
+                    return True
+            elif isinstance(operand, iwho.x86.ImmediateOperand):
+                return True
+            elif isinstance(operand, iwho.x86.SymbolOperand):
+                return True
+        else:
+            constraint = op_scheme.operand_constraint
+            if isinstance(constraint, iwho.SetConstraint):
+                operand = constraint.acceptable_operands[0]
+                if operand.category == iwho.x86.RegKind['FLAG']:
+                    # Skip flag operands. We might want to revisit this decision.
+                    return True
+            elif isinstance(constraint, iwho.x86.ImmConstraint):
+                return True
+            elif isinstance(constraint, iwho.x86.SymbolConstraint):
+                return True
+        return False
+
 
     def allowed_operands(self, op_scheme):
         if op_scheme.is_fixed():
