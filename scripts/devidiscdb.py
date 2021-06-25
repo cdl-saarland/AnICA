@@ -86,7 +86,7 @@ def add_measurement_dict(con, measdict):
     cur = con.cursor()
 
     # add a new series
-    cur.execute(f"INSERT INTO series VALUES (NULL, '{source_computer}', {timestamp})")
+    cur.execute("INSERT INTO series VALUES (NULL, ?, ?)", (source_computer, timestamp))
     series_id = cur.lastrowid
 
     predictor_ids = dict()
@@ -98,23 +98,17 @@ def add_measurement_dict(con, measdict):
 
         inp = m["input"]
         res = m.get("result", None)
-        if res is None:
-            res = "NULL"
         remark = m.get("remark", None)
-        if remark is None:
-            remark = "NULL"
-        else:
-            remark = f"'{remark}'"
 
         predictor_id = predictor_ids.get(predictor, None)
 
         if predictor_id is None:
             toolname = predictor[0]
             version = predictor[1]
-            cur.execute(f"SELECT predictor_id FROM predictors WHERE toolname='{toolname}' and version='{version}'")
+            cur.execute("SELECT predictor_id FROM predictors WHERE toolname=? and version=?", (toolname, version))
             result = cur.fetchone()
             if result is None:
-                cur.execute(f"INSERT INTO predictors VALUES (NULL, '{toolname}', '{version}')")
+                cur.execute("INSERT INTO predictors VALUES (NULL, ?, ?)", (toolname, version))
                 predictor_id = cur.lastrowid
             else:
                 predictor_id = result['predictor_id']
@@ -125,20 +119,31 @@ def add_measurement_dict(con, measdict):
         uarch_id = uarch_ids.get(uarch, None)
 
         if uarch_id is None:
-            cur.execute(f"SELECT uarch_id FROM uarchs WHERE uarch_name='{uarch}'")
+            cur.execute("SELECT uarch_id FROM uarchs WHERE uarch_name=?", (uarch,))
             result = cur.fetchone()
             if result is None:
-                cur.execute(f"INSERT INTO uarchs VALUES (NULL, '{uarch}')")
+                cur.execute("INSERT INTO uarchs VALUES (NULL, ?)", (uarch,))
                 uarch_id = cur.lastrowid
             else:
                 uarch_id = result['uarch_id']
 
             uarch_ids[uarch] = uarch_id
 
-        cur.execute(f"INSERT INTO measurements VALUES (NULL, {predictor_id}, {series_id}, {uarch_id}, '{inp}', {res}, {remark})")
+        cur.execute("INSERT INTO measurements VALUES (NULL, ?, ?, ?, ?, ?, ?)", (predictor_id, series_id, uarch_id, inp, res, remark))
     con.commit()
     return len(measdict["measurements"])
 
+
+def open_db(db_name):
+    con = sqlite3.connect(db_name)
+    con.row_factory = sqlite3.Row
+    return con
+
+def open_and_add(db_name, measdict):
+    con = open_db(db_name)
+    num_added = add_measurement_dict(con, meas_dict)
+    con.close()
+    return num_added
 
 def main():
     import argparse
@@ -160,7 +165,7 @@ def main():
         print("Error: Trying to create a database that already exists!", file=sys.stderr)
         sys.exit(1)
 
-    con = sqlite3.connect(db_name)
+    con = open_db(db_name)
 
     if args.create:
         create_tables(con)

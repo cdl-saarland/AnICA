@@ -5,13 +5,17 @@
 
 import argparse
 from collections import defaultdict
+from datetime import datetime
 from functools import partial
 import json
 import multiprocessing
 from multiprocessing import Pool
+import os
 import pathlib
 import random
+import socket
 from timeit import default_timer as timer
+
 
 import iwho
 from iwho.predictors import Predictor
@@ -49,9 +53,12 @@ class LightBBWrapper:
     def __init__(self, bb):
         self.asm_str = bb.get_asm()
         self.coder = bb.context.coder
+        self.hex = None
 
     def get_hex(self):
-        return self.coder.asm2hex(self.asm_str)
+        if self.hex is None:
+            self.hex = self.coder.asm2hex(self.asm_str)
+        return self.hex
 
     def get_asm(self):
         return self.asm_str
@@ -104,6 +111,8 @@ def main():
         config = json.load(config_file)
 
     # get a list of throughput predictors
+    predictor_info = dict()
+
     predictors = []
     for pkey in args.predictors:
         pred_entry = config[pkey]
@@ -112,52 +121,71 @@ def main():
         res['key'] = pkey
         res['pred'] = Predictor.get(pred_config)
         predictors.append(res)
+        predictor_info[pkey] = {
+                'predictor': (pred_entry['tool'], pred_entry['version']),
+                'uarch': pred_entry['uarch'],
+            }
 
     random.seed(args.seed)
     num_processes = args.jobs
 
     # TODO configurable?
-    num_experiments = 1000
+    num_batches = 10
+    # num_experiments = 100
     max_num_insns = 10
 
+    batch_size = 100
 
     # get an iwho context with appropriate schemes
     ctx = iwho.get_context("x86")
     schemes = ctx.insn_schemes
-    schemes = list(filter(lambda x: not x.affects_control_flow, schemes))
+    schemes = list(filter(lambda x: not x.affects_control_flow and
+        ctx.get_features(x) is not None and "SKL" in ctx.get_features(x)[0], schemes))
 
     instor = x86.RandomRegisterInstantiator(ctx)
 
-    # sample basic blocks and run them through the predictors
-    start = timer()
-    bbs = []
-    for x in range(num_experiments):
-        num_insns = random.randrange(2, max_num_insns + 1)
-        bb = ctx.make_bb()
-        for n in range(num_insns):
-            ischeme = random.choice(schemes)
-            bb.append(instor(ischeme))
-        bbs.append(bb)
-
     predman = PredictorManager(num_processes)
 
-    end = timer()
-    diff = end - start
-    print(f"generated {len(bbs)} blocks in {diff:.2f} seconds")
+    base_dir = pathlib.Path("./results/")
+    timestamp = datetime.now().replace(microsecond=0).isoformat()
+    curr_result_dir = base_dir / "results_{}".format(timestamp)
+    os.makedirs(curr_result_dir, exist_ok=True)
 
-    results = dict()
-    for p in predictors:
-        pred_name = p['key']
+    source_computer = socket.gethostname()
+    print(f"Running on source machine {source_computer}")
+
+    for batch_idx in range(num_batches):
+        print(f"batch no. {batch_idx}")
+
+        series_date = datetime.now().isoformat()
+
+        # sample basic blocks and run them through the predictors
         start = timer()
-        results[pred_name] = predman.do(p['pred'], bbs)
+        bbs = []
+        for x in range(batch_size):
+            num_insns = random.randrange(2, max_num_insns + 1)
+            bb = ctx.make_bb()
+            for n in range(num_insns):
+                ischeme = random.choice(schemes)
+                bb.append(instor(ischeme))
+            bbs.append(bb)
+
         end = timer()
         diff = end - start
-        print(f"started all {pred_name} jobs in {diff:.2f} seconds")
+        print(f"generated {len(bbs)} blocks in {diff:.2f} seconds")
 
-    with open("results.json", "w") as f:
+        results = dict()
+        for p in predictors:
+            pred_name = p['key']
+            start = timer()
+            results[pred_name] = predman.do(p['pred'], bbs)
+            end = timer()
+            diff = end - start
+            print(f"started all {pred_name} jobs in {diff:.2f} seconds")
+
         total_tool_time = defaultdict(lambda: 0.0)
-        print("[", file=f)
 
+        measurements = []
         start = timer()
 
         keys = results.keys()
@@ -168,18 +196,33 @@ def main():
                 predictions[k] = res
                 total_tool_time[k] += res['rt']
 
-            record = {
-                    "exp_idx": x,
-                    "bb": str(bb),
-                    "results": predictions
-                }
+                tp = res.get('TP', -1.0)
+                if tp < 0:
+                    tp = None
 
-            print(json.dumps(record) + ",", file=f)
+                remark = json.dumps(res)
+
+                record = {
+                        **predictor_info[k],
+                        "input": bb.get_hex(),
+                        "result": tp,
+                        "remark": remark
+                    }
+                measurements.append(record)
+
 
         end = timer()
         diff = end - start
 
-        print("]", file=f)
+        measdict = {
+                "series_date": series_date,
+                "source_computer": source_computer,
+                "measurements": measurements,
+                }
+
+        result_file_name = curr_result_dir / f"results_batch_{batch_idx}.json"
+        with open(result_file_name, "w") as f:
+            json.dump(measdict, f, indent=2)
 
         print(f"evaluation done in {diff:.2f} seconds")
         for k, v in total_tool_time.items():
