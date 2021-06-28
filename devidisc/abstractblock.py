@@ -117,40 +117,61 @@ class SingletonAbstractFeature(AbstractFeature):
         return
 
 
-class PowerSetAbstractFeature(AbstractFeature):
+class SubSetAbstractFeature(AbstractFeature):
+    """ Represents all sets of items that are a (non-strict) superset of
+    self.vals.
+    """
     def __init__(self):
-        self.vals = set()
+        self.is_bot = True
+        self.vals = None
 
     def __deepcopy__(self, memo):
-        new_one = PowerSetAbstractFeature()
+        new_one = SubSetAbstractFeature()
+        new_one.is_bot = self.is_bot
         new_one.vals = copy(self.vals) # no need to deepcopy
         return new_one
 
     def expand(self):
-        # TODO
-        pass
+        if self.is_bot:
+            self.vals = set()
+            self.is_bot = False
+        else:
+            self.vals.remove(random.choice(tuple(self.vals)))
 
     def is_expandable(self):
-        # TODO
-        pass
+        return self.is_bot or len(self.vals) > 0
 
     def __str__(self) -> str:
+        if self.is_bot:
+            return "BOT"
+        if len(self.vals) == 0:
+            return "TOP"
         return "{" + ", ".join(sorted(map(str, self.vals))) + "}"
 
     def is_bottom(self) -> bool:
-        return len(self.vals) == 0
+        return self.is_bot
 
     def subsumes(self, other: AbstractFeature) -> bool:
-        return self.vals.issuperset(other.vals)
+        if other.is_bot:
+            return True
+        if self.is_bot:
+            return False
+        return self.vals.issubset(other.vals)
 
     def subsumes_feature(self, feature) -> bool:
         if feature is None:
             return True
-        return feature in self.vals
+        if self.is_bot:
+            return False
+        return self.vals.issubset(set(feature))
 
     def join(self, feature):
         if feature is not None:
-            self.vals.add(feature)
+            if self.is_bot:
+                self.vals = set(feature)
+                self.is_bot = False
+            else:
+                self.vals.intersection_update(feature)
 
 
 class AbstractInsn:
@@ -290,7 +311,7 @@ class AbstractBlock:
             return None
 
         # choose an allowed expandable token, expand its AbstractFeature, and return the token
-        chosen_token = random.choice(list(tokens))
+        chosen_token = random.choice(tuple(tokens))
         expandable_components[chosen_token].expand()
         return chosen_token
 
@@ -622,7 +643,7 @@ class AbstractionConfig:
         res['exact_scheme'] = SingletonAbstractFeature()
         res['present'] = SingletonAbstractFeature()
         res['mnemonic'] = SingletonAbstractFeature()
-        res['skl_uops'] = PowerSetAbstractFeature()  # TODO this should probably be a superset domain, where a set of uops means that all of them must at least be used (and havocing it means removing items)
+        res['skl_uops'] = SubSetAbstractFeature()
         return res
 
     def extract_features(self, ischeme: Union[iwho.InsnScheme, None]):
@@ -635,7 +656,10 @@ class AbstractionConfig:
 
         from_scheme = self.ctx.get_features(ischeme)
         if from_scheme is not None:
-            res['skl_uops'] = from_scheme[0].get("SKL")
+            port_usage = from_scheme[0].get("SKL")
+            if port_usage is not None:
+                port_usage = port_usage.split('+')
+            res['skl_uops'] = port_usage
 
         return res
 
