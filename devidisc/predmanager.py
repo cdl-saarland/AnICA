@@ -15,6 +15,12 @@ def evaluate_bb(bb, pred):
         result = "an exception occured: " + str(e)
     return result
 
+def evaluate_multiple(bb, preds):
+    res = dict()
+    for pred in preds:
+        res[pred.key] = evaluate(bb, pred)
+    return res
+
 
 class LightBBWrapper:
     """ Light-weight wrapper of all things necessary to get the hex
@@ -51,6 +57,8 @@ class PredictorManager:
             num_threads = multiprocessing.cpu_count()
         self.pool = Pool(num_threads)
 
+        self.predictors = []
+
     def do(self, pred, bbs, lazy=True):
         """ Use the given predictor to predict inverse throughputs for all
         basic blocks in the given list.
@@ -64,4 +72,13 @@ class PredictorManager:
         results = self.pool.imap(partial(evaluate_bb, pred=pred), tasks)
         if not lazy:
             results = list(results)
-        return results
+        return results # also use zip(bbs, results) here?
+
+    def eval_with_all(self, bbs):
+        """TODO document"""
+        tasks = map(lambda x: LightBBWrapper(x), bbs)
+        results = self.pool.imap(partial(evaluate_multiple, preds=self.predictors), tasks)
+        return zip(bbs, results)
+
+
+

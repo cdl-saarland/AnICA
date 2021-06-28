@@ -2,11 +2,12 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Union, Sequence
 
 import iwho
 
 from .abstractblock import *
+from .predmanager import PredictorManager
 
 # TODO this should be an ABC with subclasses for different testing campaigns
 class AbstractionConfig:
@@ -16,12 +17,47 @@ class AbstractionConfig:
     instructions to use for abstraction and how they are abstracted.
     """
 
-    def __init__(self, ctx: iwho.Context, max_block_len):
+    def __init__(self, ctx: iwho.Context, max_block_len, predmanager=None):
         self.ctx = ctx
 
         self.feature_keys = ['exact_scheme', 'present', 'mnemonic', 'skl_uops']
 
         self.max_block_len = max_block_len
+
+        self.generalization_batch_size = 100
+        self.discovery_batch_size = 100
+
+        self.min_interesting_error = 0.1
+        self.mostly_interesting_ratio = 0.9
+
+        self.predmanager = predmanager
+
+    def is_interesting(self, eval_res) -> bool:
+        values = [v for k, v in eval_res.items()]
+        rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
+        # TODO think about this metric?
+        return rel_error >= self.min_interesting_error
+
+    def filter_interesting(self, bbs: Sequence[iwho.BasicBlock]) -> Sequence[iwho.BasicBlock]:
+        """ Given a list of concrete BasicBlocks, evaluate their
+        interestingness and return the list of interesting ones.
+        """
+        eval_it = self.predmanager.eval_with_all(bbs)
+
+        interesting_bbs = []
+
+        for bb, eval_res in eval_it:
+            if self.is_interesting(eval_res):
+                interesting_bbs.append(bb)
+                # TODO do something with the benchmark, give witnesses for interestingness
+
+        return interesting_bbs
+
+    def is_mostly_interesting(self, bbs: Sequence[iwho.BasicBlock]) -> bool:
+        interesting_bbs = self.filter_interesting(bbs)
+        ratio = len(interesting_bbs) / len(bbs)
+        return ratio >= self.mostly_interesting_ratio
+
 
     def must_alias(self, op1: iwho.OperandInstance, op2: iwho.OperandInstance):
         # TODO this could use additional information about the instantiation
@@ -60,6 +96,7 @@ class AbstractionConfig:
         return False
 
     def adjust_operand_width(self, operand, op_scheme):
+        # TODO this probably belongs to the iwho.Context
         acceptable = None
         if op_scheme.is_fixed():
             width = op_scheme.fixed_operand.width
@@ -83,8 +120,10 @@ class AbstractionConfig:
             assert len(fitting_regs) >= 1
             res = next(iter(fitting_regs))
         elif isinstance(operand, iwho.x86.MemoryOperand):
+            # TODO deduplicate
             res = iwho.x86.MemoryOperand(width=operand.width, segment=operand.segment, base=operand.base, index=operand.index, scale=operand.scale, displacement=operand.displacement)
         elif isinstance(operand, iwho.x86.MemoryOperand):
+            # TODO deduplicate
             res = iwho.x86.ImmediateOperand(width=operand.width, value=operand.value)
         else:
             res = operand
