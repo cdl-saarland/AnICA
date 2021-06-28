@@ -1,4 +1,9 @@
-""" TODO document this
+""" This file provides classes to represent abstractions of basic blocks, i.e.
+representations of sets of 'conrete' basic blocks.
+
+Those abstractions have methods to sample from the represented concrete blocks,
+as well as ways to systematically extend the set of represented concrete
+blocks.
 """
 
 from abc import ABC, abstractmethod
@@ -110,7 +115,7 @@ class PowerSetAbstractFeature(AbstractFeature):
 
 
 class AbstractInsn:
-    """ An instance of this class represents a set of (concrete) InsnInstances
+    """ An instance of this class represents a set of (concrete) InsnSchemes
     that share certain features.
     """
 
@@ -132,7 +137,7 @@ class AbstractInsn:
 
         return True
 
-    def join(self, insn_scheme: Union[iwho.InsnInstance, None]):
+    def join(self, insn_scheme: Union[iwho.InsnScheme, None]):
         """ Update self so that it additionally represents all instances of
         insn_scheme (and possibly, due to over-approximation, even more
         insn instances).
@@ -146,8 +151,9 @@ class AbstractInsn:
         for k, v in insn_features.items():
             self.features[k].join(v)
 
-    def sample(self, ctx: iwho.Context) -> iwho.InsnInstance:
-        """ TODO document
+    def sample(self, ctx: iwho.Context) -> iwho.InsnScheme:
+        """ Randomly choose one from the set of concrete instruction schemes
+        represented by this abstract instruction.
         """
 
         if self.features['present'].val == False:
