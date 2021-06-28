@@ -12,7 +12,8 @@ import iwho
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractblock import AbstractBlock, AbstractionConfig
+from devidisc.abstractblock import AbstractBlock
+from devidisc.abstractionconfig import AbstractionConfig
 
 
 @pytest.fixture
