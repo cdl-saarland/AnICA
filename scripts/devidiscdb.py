@@ -4,6 +4,7 @@
 discovery.
 """
 
+from pathlib import Path
 import os
 import sqlite3
 import sys
@@ -171,13 +172,24 @@ def main():
         create_tables(con)
         add_uarchs(con)
     elif args.measurements is not None:
-        if not os.path.isfile(args.measurements):
+        meas_path = Path(args.measurements)
+        if os.path.isdir(meas_path):
+            file_list = [ meas_path / f for f in os.listdir(meas_path) if f.endswith('.json')]
+        elif os.path.isfile(meas_path):
+            file_list = [ meas_path ]
+        else:
             print("Error: Measurement file does not exist!", file=sys.stderr)
             sys.exit(1)
-        with open(args.measurements, 'r') as meas_file:
-            meas_dict = json.load(meas_file)
-        num_added = add_measurement_dict(con, meas_dict)
-        print(f"Successfully added {num_added} measurements in a new series.")
+
+        print(f"Importing data from {len(file_list)} measurement file(s)")
+        total_num_added = 0
+        for idx, path in enumerate(file_list):
+            with open(path, 'r') as meas_file:
+                meas_dict = json.load(meas_file)
+            num_added = add_measurement_dict(con, meas_dict)
+            total_num_added += num_added
+            print(f" {idx}: Successfully added {num_added} measurements in a new series.")
+        print(f"Successfully added {total_num_added} measurements.")
     else:
         pass
 
