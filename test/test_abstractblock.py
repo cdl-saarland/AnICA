@@ -53,7 +53,7 @@ def test_concrete_ab_single_insn_sample(random, ctx):
     print(ab)
     assert ab.subsumes(ab)
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
 
     assert len(new_bb) == len(bb)
@@ -89,7 +89,7 @@ def test_concrete_ab_single_insn_mem_sample(random, ctx):
     print(ab)
     assert ab.subsumes(ab)
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
 
     assert len(new_bb) == len(bb)
@@ -127,7 +127,7 @@ def test_concrete_ab_multiple_insns_sample(random, ctx):
     print(ab)
     assert ab.subsumes(ab)
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
 
     assert len(new_bb) == len(bb)
@@ -158,7 +158,7 @@ def test_sparse_sample(random, ctx):
     for k in range(10):
         # it should be quite likely that at least one sample has a None insn
         # first
-        new_bb = ab.sample(ctx)
+        new_bb = ab.sample()
         one_was_none = one_was_none or new_bb.insns[0] is None
         new_ab = AbstractBlock(acfg, new_bb)
         havoc_alias_part(new_ab)
@@ -202,7 +202,7 @@ def test_join_equal_sample(random, ctx):
     havoc_alias_part(new_ab)
     assert ab.subsumes(new_ab)
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
 
     assert len(new_bb) == len(bb)
@@ -252,7 +252,7 @@ def test_join_different_regs_sample(random, ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb1)))
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
 
     assert len(new_bb) == len(bb1)
@@ -300,7 +300,7 @@ def test_join_different_deps_sample(random, ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb1)))
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
 
     assert len(new_bb) == len(bb1)
@@ -352,7 +352,7 @@ def test_join_equal_len_sample(random, ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb1)))
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
 
     assert len(new_bb) == len(bb1)
@@ -396,7 +396,7 @@ def test_join_shorter_sample(random, ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb1)))
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
 
     assert len(bb1) >= len(new_bb) >= len(bb2)
@@ -419,7 +419,7 @@ def test_join_same_mnemonic(random, ctx):
     ab = havoc_alias_part(AbstractBlock(acfg, bb1))
     ab.join(bb2)
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
 
     print(ab)
     assert ctx.extract_mnemonic(new_bb.insns[0]) == "add"
@@ -460,7 +460,7 @@ def test_join_longer_sample(random, ctx):
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb1)))
     assert ab.subsumes(havoc_alias_part(AbstractBlock(acfg, bb2)))
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
 
     assert len(bb1) <= len(new_bb) <= len(bb2)
@@ -502,7 +502,7 @@ def test_aliasing_simple_sample(random, ctx):
     assert "0:(E, 'reg0') - 1:(E, 'reg1') : must alias" in str_repr or "1:(E, 'reg1') - 0:(E, 'reg0') : must alias" in str_repr
     assert "0:(E, 'reg0') - 1:(E, 'reg0') : must not alias" in str_repr
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
     new_ab = AbstractBlock(acfg, new_bb)
     assert ab.subsumes(new_ab)
@@ -527,7 +527,7 @@ def test_aliasing_insn_choice_sample(random, ctx):
     str_repr = str(ab)
     assert "0:(E, 'reg0') - 1:(E, 'reg0') : must alias" in str_repr or "1:(E, 'reg0') - 0:(E, 'reg0') : must alias" in str_repr
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
     new_ab = AbstractBlock(acfg, new_bb)
     print(new_ab)
@@ -553,7 +553,7 @@ def test_aliasing_different_widths_01_sample(random, ctx):
     assert "0:(E, 'reg0') - 1:(E, 'reg1') : must alias" in str_repr or "1:(E, 'reg1') - 0:(E, 'reg0') : must alias" in str_repr
     assert "0:(E, 'reg0') - 1:(E, 'reg0') : must not alias" in str_repr
 
-    new_bb = ab.sample(ctx)
+    new_bb = ab.sample()
     print(new_bb)
     new_ab = AbstractBlock(acfg, new_bb)
     assert ab.subsumes(new_ab)

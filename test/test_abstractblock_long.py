@@ -53,7 +53,7 @@ def test_join_everything(ctx):
         ab_pre.join(bb)
 
         # sample a block an check that it is subsumed
-        new_bb = ab.sample(ctx)
+        new_bb = ab.sample()
         new_ab = havoc_alias_part(AbstractBlock(acfg, new_bb))
         assert ab.subsumes(new_ab)
 
@@ -84,7 +84,7 @@ def test_join_every_pair(ctx):
         assert ab.subsumes(ab1)
         assert ab.subsumes(ab2)
 
-        new_bb = ab.sample(ctx)
+        new_bb = ab.sample()
         new_ab = havoc_alias_part(AbstractBlock(acfg, new_bb))
         assert ab.subsumes(new_ab)
 

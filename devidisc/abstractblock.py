@@ -173,10 +173,11 @@ class AbstractInsn:
         for k, v in insn_features.items():
             self.features[k].join(v)
 
-    def sample(self, ctx: iwho.Context) -> iwho.InsnScheme:
+    def sample(self) -> iwho.InsnScheme:
         """ Randomly choose one from the set of concrete instruction schemes
         represented by this abstract instruction.
         """
+        ctx = self.acfg.ctx
 
         if self.features['present'].val == False:
             return None
@@ -349,12 +350,14 @@ class AbstractBlock:
         self.is_bot = False
 
 
-    def sample(self, ctx: iwho.Context) -> iwho.BasicBlock:
+    def sample(self) -> iwho.BasicBlock:
         """ Randomly sample a basic block that is represented by self.
         """
+        ctx = self.acfg.ctx
+
         insn_schemes = []
         for ai in self.abs_insns:
-            insn_scheme = ai.sample(ctx) # may be None
+            insn_scheme = ai.sample() # may be None
             insn_schemes.append(insn_scheme)
 
         # aliasing/operands
