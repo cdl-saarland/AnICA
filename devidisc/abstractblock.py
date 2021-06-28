@@ -8,6 +8,7 @@ blocks.
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from copy import deepcopy, copy
 import itertools
 import random
 import textwrap
@@ -20,6 +21,10 @@ logger = logging.getLogger(__name__)
 
 
 class AbstractFeature(ABC):
+    @abstractmethod
+    def __deepcopy__(self, memo):
+        pass
+
     @abstractmethod
     def is_bottom(self) -> bool:
         pass
@@ -42,6 +47,13 @@ class SingletonAbstractFeature(AbstractFeature):
         self.is_top = False
         self.is_bot = True
         self.val = None
+
+    def __deepcopy__(self, memo):
+        new_one = SingletonAbstractFeature()
+        new_one.is_top = self.is_top
+        new_one.is_bot = self.is_bot
+        new_one.val = self.val # no need to copy at all
+        return new_one
 
     def __str__(self) -> str:
         if self.is_top:
@@ -95,6 +107,11 @@ class PowerSetAbstractFeature(AbstractFeature):
     def __init__(self):
         self.vals = set()
 
+    def __deepcopy__(self, memo):
+        new_one = PowerSetAbstractFeature()
+        new_one.vals = copy(self.vals) # no need to deepcopy
+        return new_one
+
     def __str__(self) -> str:
         return "{" + ", ".join(sorted(map(str, self.vals))) + "}"
 
@@ -122,6 +139,11 @@ class AbstractInsn:
     def __init__(self, acfg: "AbstractionConfig"):
         self.acfg = acfg
         self.features = self.acfg.init_abstract_features()
+
+    def __deepcopy__(self, memo):
+        new_one = AbstractInsn(self.acfg)
+        new_one.features = deepcopy(self.features, memo)
+        return new_one
 
     def __str__(self) -> str:
         return self.acfg.stringify_abstract_features(self.features)
@@ -201,6 +223,14 @@ class AbstractBlock:
 
         if bb is not None:
             self.join(bb)
+
+    def __deepcopy__(self, memo):
+        new_one = AbstractBlock(self.acfg)
+        new_one.maxlen = self.maxlen
+        new_one.abs_insns = deepcopy(self.abs_insns, memo)
+        new_one._abs_aliasing = { k: deepcopy(v, memo) for k, v in self._abs_aliasing.items() } # no need to duplicate the keys here
+        new_one.is_bot = self.is_bot
+        return new_one
 
     def get_abs_aliasing(self, idx1, idx2):
         """ TODO document
