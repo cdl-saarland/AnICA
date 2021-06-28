@@ -3,7 +3,7 @@ TODO write this
 ## TODO
 
 ### Key Functionality
-  - [ ] implement mechanism for dropping constraints
+  - [X] implement mechanism for dropping constraints
   - [ ] implement the core generalization algorithm
 
 ### Functional Extensions

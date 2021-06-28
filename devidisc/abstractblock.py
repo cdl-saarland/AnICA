@@ -26,6 +26,14 @@ class AbstractFeature(ABC):
         pass
 
     @abstractmethod
+    def expand(self):
+        pass
+
+    @abstractmethod
+    def is_expandable(self) -> bool:
+        pass
+
+    @abstractmethod
     def is_bottom(self) -> bool:
         pass
 
@@ -61,6 +69,12 @@ class SingletonAbstractFeature(AbstractFeature):
         if self.is_bot:
             return "BOT"
         return str(self.val)
+
+    def expand(self):
+        self.set_to_top()
+
+    def is_expandable(self) -> bool:
+        return not self.is_top
 
     def is_bottom(self) -> bool:
         return self.is_bot
@@ -112,6 +126,14 @@ class PowerSetAbstractFeature(AbstractFeature):
         new_one.vals = copy(self.vals) # no need to deepcopy
         return new_one
 
+    def expand(self):
+        # TODO
+        pass
+
+    def is_expandable(self):
+        # TODO
+        pass
+
     def __str__(self) -> str:
         return "{" + ", ".join(sorted(map(str, self.vals))) + "}"
 
@@ -147,6 +169,13 @@ class AbstractInsn:
 
     def __str__(self) -> str:
         return self.acfg.stringify_abstract_features(self.features)
+
+    def get_expandable_components(self):
+        res = []
+        for k, v in self.features.items():
+            if v.is_expandable():
+                res.append( (k, v) )
+        return res
 
     def subsumes(self, other: "AbstractInsn") -> bool:
         """ Check if all concrete instruction instances represented by other
@@ -232,6 +261,38 @@ class AbstractBlock:
         new_one._abs_aliasing = { k: deepcopy(v, memo) for k, v in self._abs_aliasing.items() } # no need to duplicate the keys here
         new_one.is_bot = self.is_bot
         return new_one
+
+    def expand(self, limit_tokens):
+        """ Choose an expandable AbstractFeature with a token not in
+        `limit_tokens` and expand it.
+
+        Returns the token of the expanded component or None if none of the
+        AbstractFeatures not in limit_tokens can be expanded.
+        """
+
+        expandable_components = dict()
+
+        # collect all expandable AbstractFeatures of the instruction part
+        for ai_idx, ai in enumerate(self.abs_insns):
+            for k, v in ai.get_expandable_components():
+                expandable_components[(0, ai_idx, k)] = v
+
+        # collect all expandable AbstractFeatures of the aliasing part
+        for k, v in self._abs_aliasing.items():
+            expandable_components[(1, k)] = v
+
+        # take the tokens of the collected AbstractFeatures and remove the forbidden ones
+        tokens = set(expandable_components.keys())
+        tokens.difference_update(limit_tokens)
+
+        if len(tokens) == 0:
+            # nothing to expand remains
+            return None
+
+        # choose an allowed expandable token, expand its AbstractFeature, and return the token
+        chosen_token = random.choice(list(tokens))
+        expandable_components[chosen_token].expand()
+        return chosen_token
 
     def get_abs_aliasing(self, idx1, idx2):
         """ TODO document

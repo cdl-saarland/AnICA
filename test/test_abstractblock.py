@@ -2,6 +2,7 @@
 
 import pytest
 
+import copy
 import os
 import random as rand
 import sys
@@ -557,5 +558,57 @@ def test_aliasing_different_widths_01_sample(random, ctx):
     print(new_bb)
     new_ab = AbstractBlock(acfg, new_bb)
     assert ab.subsumes(new_ab)
+
+
+def test_deepcopy(random, ctx):
+    acfg = AbstractionConfig(ctx, 4)
+    bb = iwho.BasicBlock(ctx, ctx.parse_asm("add rax, 0x2a\nsub ebx, eax"))
+    ab = AbstractBlock(acfg, bb)
+
+    new_ab = copy.deepcopy(ab)
+
+    assert new_ab.subsumes(ab)
+    assert ab.subsumes(new_ab)
+
+
+def test_expand_subsumes(random, ctx):
+    acfg = AbstractionConfig(ctx, 4)
+    bb = iwho.BasicBlock(ctx, ctx.parse_asm("add rax, 0x2a\nsub ebx, eax"))
+    ab = AbstractBlock(acfg, bb)
+
+    new_ab = copy.deepcopy(ab)
+
+    assert new_ab.subsumes(ab) and ab.subsumes(new_ab)
+
+    tokens = []
+    new_token = new_ab.expand(tokens)
+
+    assert new_ab.subsumes(ab)
+    assert not ab.subsumes(new_ab)
+
+
+def test_expand_terminates(random, ctx):
+    acfg = AbstractionConfig(ctx, 4)
+    bb = iwho.BasicBlock(ctx, ctx.parse_asm("add rax, 0x2a\nsub ebx, eax"))
+    ab = AbstractBlock(acfg, bb)
+
+    limit_tokens = set()
+
+    for i in range(100): # an arbitrary, but hopefully large enough bound
+        print(f"iteration {i}")
+        prev_ab = copy.deepcopy(ab)
+        new_token = ab.expand(limit_tokens)
+
+        if new_token is None:
+            break
+
+        print(f"expanding {new_token}")
+
+        assert ab.subsumes(prev_ab) and not prev_ab.subsumes(ab)
+        limit_tokens.add(new_token)
+    else:
+        # we probably hit an endless loop here (or the range is not large
+        # enough)
+        assert False
 
 
