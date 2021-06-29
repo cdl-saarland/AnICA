@@ -4,24 +4,18 @@
 """
 
 import argparse
-from collections import defaultdict
-from datetime import datetime
 import json
 import multiprocessing
-import os
 import pathlib
 import random
-import socket
-from timeit import default_timer as timer
-
+import sys
 
 import iwho
 from iwho.predictors import Predictor
 from iwho.utils import parse_args_with_logging
-import iwho.x86 as x86
 
 from predmanager import PredictorManager
-
+from random_exploration import explore
 
 import logging
 logger = logging.getLogger(__name__)
@@ -44,130 +38,51 @@ def main():
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
             help='seed for the rng')
 
+    argparser.add_argument('--explore', action='store_true', help='just randomly explore basic blocks')
+
     argparser.add_argument('predictors', nargs=2, metavar="PREDICTOR_ID", help='two identifiers of predictors specified in the config')
 
     args = parse_args_with_logging(argparser, "info")
 
+    random.seed(args.seed)
+
     with open(args.config, 'r') as config_file:
         config = json.load(config_file)
 
-    # get a list of throughput predictors
-    predictor_info = dict()
+    # The predman keeps track of all the predictors and interacts with them
+    num_processes = args.jobs
+    predman = PredictorManager(num_processes)
 
-    predictors = []
     for pkey in args.predictors:
         pred_entry = config[pkey]
         pred_config = pred_entry['config']
-        res = dict(**pred_entry)
-        res['key'] = pkey
-        res['pred'] = Predictor.get(pred_config)
-        predictors.append(res)
-        predictor_info[pkey] = {
-                'predictor': (pred_entry['tool'], pred_entry['version']),
-                'uarch': pred_entry['uarch'],
-            }
 
-    random.seed(args.seed)
-    num_processes = args.jobs
+        predman.register_predictor(key=pkey,
+                predictor = Predictor.get(pred_config),
+                toolname = pred_entry['tool'],
+                version = pred_entry['version'],
+                uarch = pred_entry['uarch']
+            )
 
-    # TODO configurable?
-    num_batches = 10
-    # num_experiments = 100
-    max_num_insns = 10
+    if args.explore:
+        # get an iwho context with appropriate schemes
+        ctx = iwho.get_context("x86")
+        schemes = ctx.insn_schemes
+        schemes = list(filter(lambda x: not x.affects_control_flow and
+            ctx.get_features(x) is not None and "SKL" in ctx.get_features(x)[0], schemes))
 
-    batch_size = 100
+        result_base_path = pathlib.Path("./results/")
 
-    # get an iwho context with appropriate schemes
-    ctx = iwho.get_context("x86")
-    schemes = ctx.insn_schemes
-    schemes = list(filter(lambda x: not x.affects_control_flow and
-        ctx.get_features(x) is not None and "SKL" in ctx.get_features(x)[0], schemes))
+        # TODO configurable?
+        num_batches = 10
+        max_num_insns = 10
+        batch_size = 10
 
-    instor = x86.RandomRegisterInstantiator(ctx)
-
-    predman = PredictorManager(num_processes)
-
-    base_dir = pathlib.Path("./results/")
-    timestamp = datetime.now().replace(microsecond=0).isoformat()
-    curr_result_dir = base_dir / "results_{}".format(timestamp)
-    os.makedirs(curr_result_dir, exist_ok=True)
-
-    source_computer = socket.gethostname()
-    print(f"Running on source machine {source_computer}")
-
-    for batch_idx in range(num_batches):
-        print(f"batch no. {batch_idx}")
-
-        series_date = datetime.now().isoformat()
-
-        # sample basic blocks and run them through the predictors
-        start = timer()
-        bbs = []
-        for x in range(batch_size):
-            num_insns = random.randrange(2, max_num_insns + 1)
-            bb = ctx.make_bb()
-            for n in range(num_insns):
-                ischeme = random.choice(schemes)
-                bb.append(instor(ischeme))
-            bbs.append(bb)
-
-        end = timer()
-        diff = end - start
-        print(f"generated {len(bbs)} blocks in {diff:.2f} seconds")
-
-        results = dict()
-        for p in predictors:
-            pred_name = p['key']
-            start = timer()
-            results[pred_name] = predman.do(p['pred'], bbs)
-            end = timer()
-            diff = end - start
-            print(f"started all {pred_name} jobs in {diff:.2f} seconds")
-
-        total_tool_time = defaultdict(lambda: 0.0)
-
-        measurements = []
-        start = timer()
-
-        keys = results.keys()
-        for x, (rs, bb) in enumerate(zip(zip( *(results[k] for k in keys )), bbs)):
-            predictions = dict()
-            for y, k in enumerate(keys):
-                res = rs[y]
-                predictions[k] = res
-                total_tool_time[k] += res['rt']
-
-                tp = res.get('TP', -1.0)
-                if tp < 0:
-                    tp = None
-
-                remark = json.dumps(res)
-
-                record = {
-                        **predictor_info[k],
-                        "input": bb.get_hex(),
-                        "result": tp,
-                        "remark": remark
-                    }
-                measurements.append(record)
-
-
-        end = timer()
-        diff = end - start
-
-        measdict = {
-                "series_date": series_date,
-                "source_computer": source_computer,
-                "measurements": measurements,
-                }
-
-        result_file_name = curr_result_dir / f"results_batch_{batch_idx}.json"
-        with open(result_file_name, "w") as f:
-            json.dump(measdict, f, indent=2)
-
-        print(f"evaluation done in {diff:.2f} seconds")
-        for k, v in total_tool_time.items():
-            print(f"total time spent in {k}: {v:.2f} seconds")
+        explore(ctx, schemes, predman, result_base_path,
+                max_num_insns=max_num_insns,
+                num_batches=num_batches,
+                batch_size=batch_size)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
