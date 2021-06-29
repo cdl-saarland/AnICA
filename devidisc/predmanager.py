@@ -12,13 +12,13 @@ def evaluate_bb(bb, pred):
     try:
         result = pred.evaluate(bb, disable_logging=True)
     except Exception as e:
-        result = "an exception occured: " + str(e)
+        result = { 'TP': None, 'error': "an exception occured: " + str(e) }
     return result
 
 def evaluate_multiple(bb, preds):
     res = dict()
     for pkey, pred in preds:
-        res[pkey] = evaluate(bb, pred)
+        res[pkey] = evaluate_bb(bb, pred)
     return res
 
 
@@ -52,12 +52,40 @@ class LightBBWrapper:
 
 
 class PredictorManager:
+    """ A helper class to work with a number of iwho.Predictors, to
+    conveniently support multiprocessing.
+
+    Make sure to call `close()` when done using it or use it as a context
+    manager:
+    ```
+    with PredictorManager() as predman:
+        predman.register_predictor(...)
+        ...
+    ```
+
+    Typical usage would register several Predictors in the manager and then use
+    the PredictorManager methods to run (some of) them on a batch of basic
+    blocks.
+    """
     def __init__(self, num_threads=None):
         if num_threads is None:
             num_threads = multiprocessing.cpu_count()
         self.pool = Pool(num_threads)
 
         self.predictor_map = dict()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, trace):
+        self.close()
+        self.pool = None
+
+    def close(self):
+        """ This method should be called at the end of the lifetime of the
+        PredictorManager.
+        """
+        self.pool.close()
 
     def register_predictor(self, key, predictor, toolname, version, uarch):
         assert key not in self.predictor_map

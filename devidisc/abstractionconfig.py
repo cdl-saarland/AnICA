@@ -33,7 +33,10 @@ class AbstractionConfig:
         self.predmanager = predmanager
 
     def is_interesting(self, eval_res) -> bool:
-        values = [v for k, v in eval_res.items()]
+        if any((v.get('TP', None) is None for k, v in eval_res.items())):
+            # errors are always interesting
+            return True
+        values = [v['TP'] for k, v in eval_res.items()]
         rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
         # TODO think about this metric?
         return rel_error >= self.min_interesting_error

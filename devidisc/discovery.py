@@ -2,6 +2,9 @@
 from copy import deepcopy
 import textwrap
 
+from devidisc.abstractblock import AbstractBlock
+from devidisc.abstractionconfig import AbstractionConfig
+
 import logging
 logger = logging.getLogger(__name__)
 
