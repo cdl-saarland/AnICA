@@ -17,8 +17,8 @@ def evaluate_bb(bb, pred):
 
 def evaluate_multiple(bb, preds):
     res = dict()
-    for pred in preds:
-        res[pred.key] = evaluate(bb, pred)
+    for pkey, pred in preds:
+        res[pkey] = evaluate(bb, pred)
     return res
 
 
@@ -57,7 +57,20 @@ class PredictorManager:
             num_threads = multiprocessing.cpu_count()
         self.pool = Pool(num_threads)
 
-        self.predictors = []
+        self.predictor_map = dict()
+
+    def register_predictor(self, key, predictor, toolname, version, uarch):
+        assert key not in self.predictor_map
+        self.predictor_map[key] = {
+                "predictor": predictor,
+                "toolname": toolname,
+                "version": version,
+                "uarch": uarch,
+            }
+
+    @property
+    def predictors(self):
+        return [ (k, v['predictor']) for k, v in self.predictor_map.items() ]
 
     def do(self, pred, bbs, lazy=True):
         """ Use the given predictor to predict inverse throughputs for all
