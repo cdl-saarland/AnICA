@@ -48,6 +48,10 @@ class AbstractFeature(ABC):
         pass
 
     @abstractmethod
+    def is_top(self) -> bool:
+        pass
+
+    @abstractmethod
     def is_bottom(self) -> bool:
         pass
 
@@ -91,6 +95,12 @@ class SingletonAbstractFeature(AbstractFeature):
 
     def is_bottom(self) -> bool:
         return self.val == AbstractFeature.BOTTOM
+
+    def get_val(self):
+        if isinstance(self.val, AbstractFeature.SpecialValues):
+            return None
+        else:
+            return self.val
 
     def set_to_top(self):
         self.val = AbstractFeature.TOP
@@ -146,14 +156,17 @@ class SubSetAbstractFeature(AbstractFeature):
         self.val = expansion
 
     def is_expandable(self):
-        return self.is_bottom() or len(self.val) > 0
+        return not self.is_top()
 
     def __str__(self) -> str:
         if self.is_bottom():
             return "BOTTOM"
-        if len(self.val) == 0:
+        if self.is_top():
             return "TOP"
         return "{" + ", ".join(sorted(map(str, self.val))) + "}"
+
+    def is_top(self) -> bool:
+        return (not self.is_bottom()) and len(self.val) == 0
 
     def is_bottom(self) -> bool:
         return self.val == AbstractFeature.BOTTOM
@@ -244,13 +257,35 @@ class AbstractInsn:
                 # TODO one might want to adjust the probabilities here...
                 return None
 
-        # Collect all insn schemes that match the AbstractInsn. If necessary,
-        # this should probably be sped up using indices.
-        feasible_schemes = []
-        for ischeme in ctx.insn_schemes:
-            ischeme_features = self.acfg.extract_features(ischeme)
-            if all([v.subsumes_feature(ischeme_features.get(k)) for k, v in self.features.items()]):
-                feasible_schemes.append(ischeme)
+        # Collect all insn schemes that match the AbstractInsn.
+        scheme = self.features['exact_scheme'].get_val()
+        if scheme is not None:
+            # we could validate that the other features don't exclude this
+            # scheme, but that cannot be an issue as long as we only go up in
+            # the lattice
+            return scheme
+
+        feasible_schemes = None
+
+        order = self.acfg.index_order
+        for k in order:
+            v = self.features[k]
+            if v.is_top():
+                continue
+            if v.is_bottom():
+                return None
+            feasible_schemes_for_feature = self.acfg.scheme_index(k, v)
+            if feasible_schemes is None:
+                feasible_schemes = set(feasible_schemes_for_feature)
+            else:
+                feasible_schemes.intersection_update(feasible_schemes_for_feature)
+
+        if feasible_schemes is None:
+            # all features are TOP, no restriction
+            feasible_schemes = ctx.insn_schemes
+        else:
+            feasible_schemes = tuple(feasible_schemes)
+
         if len(feasible_schemes) == 0:
             return None
         return random.choice(feasible_schemes)

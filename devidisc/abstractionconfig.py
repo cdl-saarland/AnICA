@@ -2,6 +2,7 @@
 """
 
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from typing import Union, Sequence
 
 import iwho
@@ -31,6 +32,8 @@ class AbstractionConfig:
         self.mostly_interesting_ratio = 0.9
 
         self.predmanager = predmanager
+
+        self.build_index()
 
     def is_interesting(self, eval_res) -> bool:
         if any((v.get('TP', None) is None for k, v in eval_res.items())):
@@ -158,6 +161,39 @@ class AbstractionConfig:
         res['mnemonic'] = SingletonAbstractFeature()
         res['skl_uops'] = SubSetAbstractFeature()
         return res
+
+    @property
+    def index_order(self):
+        return ['mnemonic', 'skl_uops']
+
+    def scheme_index(self, feature_key, value):
+        if feature_key == 'mnemonic':
+            mnemonic = value.val
+            return self.ctx.mnemonic_to_insn_schemes[mnemonic]
+
+        index = self.feature_indices[feature_key]
+
+        if isinstance(value, SubSetAbstractFeature):
+            res = set()
+            for x in value.val:
+                cached_val = index.get(x, None)
+                assert cached_val is not None
+                res.update(cached_val)
+            return res
+        elif isinstance(value, SingletonAbstractFeature):
+            cached_val = index.get(x, None)
+            assert cached_val is not None
+            return cached_val
+
+    def build_index(self):
+        self.feature_indices = dict()
+        uop_index = defaultdict(list)
+        self.feature_indices['skl_uops'] = uop_index
+        for ischeme in self.ctx.insn_schemes:
+            features = self.extract_features(ischeme)
+            if features['skl_uops'] is not None:
+                for u in features['skl_uops']:
+                    uop_index[u].append(ischeme)
 
     def extract_features(self, ischeme: Union[iwho.InsnScheme, None]):
         if ischeme is None:
