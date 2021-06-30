@@ -51,6 +51,7 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
 
     if not interesting:
         logger.info("  samples from the BB are not uniformly interesting!")
+        return abstract_bb
 
     # a set of tokens representing subcomponents of the abstract basic block
     # that we tried to expand but did not yield interesing results

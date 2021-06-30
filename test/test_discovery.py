@@ -2,6 +2,7 @@
 
 import pytest
 
+import logging
 import os
 import random as rand
 import sys
@@ -17,6 +18,10 @@ from devidisc.abstractionconfig import AbstractionConfig
 from devidisc.discovery import discover, generalize
 from devidisc.predmanager import PredictorManager
 
+
+def extract_mnemonic(insn_str):
+    ctx = iwho.get_context("x86")
+    return ctx.extract_mnemonic(insn_str)
 
 def add_to_predman(predman, pred):
     predname = pred.predictor_name
@@ -52,7 +57,7 @@ class AddBadPredictor(Predictor):
         lines = s.split('\n')
         res = 0.0
         for l in lines:
-            if "add" in l:
+            if extract_mnemonic(l) == 'add':
                 res += 2.0
             else:
                 res += 1.0
@@ -77,6 +82,11 @@ def ctx():
 def acfg(ctx):
     predman = PredictorManager(2)
     acfg = AbstractionConfig(ctx, max_block_len=4, predmanager=predman)
+
+    acfg.generalization_batch_size = 10
+    acfg.discovery_batch_size = 10
+    acfg.mostly_interesting_ratio = 1.0
+
     yield acfg
     predman.close()
 
@@ -117,15 +127,41 @@ def test_interestingness_02(random, acfg):
 
     assert not acfg.is_mostly_interesting(bbs)
 
-# def test_generalize_01(random, ctx):
-#     acfg = make_acfg(ctx, [CountPredictor(), AddBadPredictor()])
-#
-#     bb = iwho.BasicBlock(ctx)
-#     bb.append(ctx.parse_asm("add rax, 0x2a"))
-#
-#     abb = AbstractBlock(acfg, bb)
-#
-#     gen_abb = generalize(acfg, abb)
-#
-#     assert gen_abb.subsumes(abb)
+def test_interestingness_03(random, acfg):
+    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
+
+    bbs = []
+    bbs.append(make_bb(acfg, "add rbx, rax\nsub rax, 0x2a"))
+
+    assert acfg.is_mostly_interesting(bbs)
+
+def test_generalize_01(random, acfg, caplog):
+    caplog.set_level(logging.INFO)
+    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
+
+    bb = make_bb(acfg, "add rax, 0x2a")
+
+    abb = AbstractBlock(acfg, bb)
+
+    gen_abb = generalize(acfg, abb)
+
+    assert gen_abb.subsumes(abb)
+
+    mnemonic_feature = gen_abb.abs_insns[0].features['mnemonic']
+    assert mnemonic_feature.val == "add"
+
+def test_generalize_02(random, acfg):
+    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
+
+    # this one is not interesting in the first place, so it should not change
+    bb = make_bb(acfg, "sub rax, 0x2a")
+
+    abb = AbstractBlock(acfg, bb)
+
+    gen_abb = generalize(acfg, abb)
+
+    assert gen_abb.subsumes(abb)
+    assert abb.subsumes(gen_abb)
+
+    assert abb.abs_insns[0].features['exact_scheme'] == gen_abb.abs_insns[0].features['exact_scheme']
 
