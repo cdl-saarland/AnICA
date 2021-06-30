@@ -582,7 +582,7 @@ def test_expand_subsumes(random, ctx):
     assert new_ab.subsumes(ab) and ab.subsumes(new_ab)
 
     tokens = []
-    new_token = new_ab.expand(tokens)
+    new_token, new_action = new_ab.expand(tokens)
 
     assert new_ab.subsumes(ab)
     assert not ab.subsumes(new_ab)
@@ -598,7 +598,7 @@ def test_expand_terminates(random, ctx):
     for i in range(100): # an arbitrary, but hopefully large enough bound
         print(f"iteration {i}")
         prev_ab = copy.deepcopy(ab)
-        new_token = ab.expand(limit_tokens)
+        new_token, new_action = ab.expand(limit_tokens)
 
         if new_token is None:
             break

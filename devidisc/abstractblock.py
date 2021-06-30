@@ -9,6 +9,7 @@ blocks.
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import deepcopy, copy
+from enum import Enum
 import itertools
 import random
 import textwrap
@@ -19,14 +20,27 @@ import iwho
 import logging
 logger = logging.getLogger(__name__)
 
-
 class AbstractFeature(ABC):
+    class SpecialValues(Enum):
+        BOTTOM=0
+        TOP=1
+
+        def __str__(self):
+            return str(self.name)
+
+    BOTTOM = SpecialValues.BOTTOM
+    TOP = SpecialValues.TOP
+
     @abstractmethod
     def __deepcopy__(self, memo):
         pass
 
     @abstractmethod
     def expand(self):
+        pass
+
+    @abstractmethod
+    def apply_expansion(self, expansion):
         pass
 
     @abstractmethod
@@ -52,126 +66,119 @@ class AbstractFeature(ABC):
 
 class SingletonAbstractFeature(AbstractFeature):
     def __init__(self):
-        self.is_top = False
-        self.is_bot = True
-        self.val = None
+        self.val = AbstractFeature.BOTTOM
 
     def __deepcopy__(self, memo):
         new_one = SingletonAbstractFeature()
-        new_one.is_top = self.is_top
-        new_one.is_bot = self.is_bot
         new_one.val = self.val # no need to copy at all
         return new_one
 
     def __str__(self) -> str:
-        if self.is_top:
-            return "TOP"
-        if self.is_bot:
-            return "BOT"
         return str(self.val)
 
     def expand(self):
         self.set_to_top()
+        return self.val
+
+    def apply_expansion(self, expansion):
+        self.val = expansion
 
     def is_expandable(self) -> bool:
-        return not self.is_top
+        return not self.is_top()
+
+    def is_top(self) -> bool:
+        return self.val == AbstractFeature.TOP
 
     def is_bottom(self) -> bool:
-        return self.is_bot
+        return self.val == AbstractFeature.BOTTOM
 
     def set_to_top(self):
-        self.is_top = True
-        self.is_bot = False
-        self.val = None
+        self.val = AbstractFeature.TOP
 
     def subsumes(self, other: AbstractFeature) -> bool:
         assert isinstance(other, SingletonAbstractFeature)
-        if self.is_top or other.is_bot:
-            return True
-        if self.is_bot or other.is_top:
-            return False
-        return self.val == other.val
+        return (self.val == other.val or
+                other.val == AbstractFeature.BOTTOM or
+                self.val == AbstractFeature.TOP)
 
     def subsumes_feature(self, feature) -> bool:
         if feature is None:
             return True
-        if self.is_top:
+        if self.is_top():
             return True
-        if self.is_bot:
+        if self.is_bottom():
             return False
         return self.val == feature
 
     def join(self, feature):
         if feature is None:
             return
-        if self.is_top:
+        if self.is_top():
             return
-        if self.is_bot:
-            self.is_bot = False
+        if self.is_bottom():
             self.val = feature
             return
         if self.val != feature:
-            self.val = None
-            self.is_top = True
-            return
+            self.set_to_top()
         return
 
 
 class SubSetAbstractFeature(AbstractFeature):
     """ Represents all sets of items that are a (non-strict) superset of
-    self.vals.
+    self.val.
     """
     def __init__(self):
-        self.is_bot = True
-        self.vals = None
+        self.val = AbstractFeature.BOTTOM
 
     def __deepcopy__(self, memo):
         new_one = SubSetAbstractFeature()
-        new_one.is_bot = self.is_bot
-        new_one.vals = copy(self.vals) # no need to deepcopy
+        new_one.val = copy(self.val) # no need to deepcopy
         return new_one
 
     def expand(self):
-        if self.is_bot:
-            self.vals = set()
-            self.is_bot = False
+        if self.is_bottom():
+            self.val = set()
         else:
-            self.vals.remove(random.choice(tuple(self.vals)))
+            self.val.remove(random.choice(tuple(self.val)))
+        return self.val
+
+    def apply_expansion(self, expansion):
+        self.val = expansion
 
     def is_expandable(self):
-        return self.is_bot or len(self.vals) > 0
+        return self.is_bottom() or len(self.val) > 0
 
     def __str__(self) -> str:
-        if self.is_bot:
-            return "BOT"
-        if len(self.vals) == 0:
+        if self.is_bottom():
+            return "BOTTOM"
+        if len(self.val) == 0:
             return "TOP"
-        return "{" + ", ".join(sorted(map(str, self.vals))) + "}"
+        return "{" + ", ".join(sorted(map(str, self.val))) + "}"
 
     def is_bottom(self) -> bool:
-        return self.is_bot
+        return self.val == AbstractFeature.BOTTOM
 
     def subsumes(self, other: AbstractFeature) -> bool:
-        if other.is_bot:
+        assert isinstance(other, SubSetAbstractFeature)
+        if other.is_bottom():
             return True
-        if self.is_bot:
+        if self.is_bottom():
             return False
-        return self.vals.issubset(other.vals)
+        return self.val.issubset(other.val)
 
     def subsumes_feature(self, feature) -> bool:
         if feature is None:
             return True
-        if self.is_bot:
+        if self.is_bottom():
             return False
-        return self.vals.issubset(set(feature))
+        return self.val.issubset(set(feature))
 
     def join(self, feature):
         if feature is not None:
-            if self.is_bot:
-                self.vals = set(feature)
-                self.is_bot = False
+            if self.is_bottom():
+                self.val = set(feature)
             else:
-                self.vals.intersection_update(feature)
+                self.val.intersection_update(feature)
 
 
 class AbstractInsn:
@@ -232,7 +239,7 @@ class AbstractInsn:
         if self.features['present'].val == False:
             return None
 
-        if self.features['present'].is_top:
+        if self.features['present'].is_top():
             if random.choice([True, False]):
                 # TODO one might want to adjust the probabilities here...
                 return None
@@ -283,14 +290,9 @@ class AbstractBlock:
         new_one.is_bot = self.is_bot
         return new_one
 
-    def expand(self, limit_tokens):
-        """ Choose an expandable AbstractFeature with a token not in
-        `limit_tokens` and expand it.
-
-        Returns the token of the expanded component or None if none of the
-        AbstractFeatures not in limit_tokens can be expanded.
-        """
-
+    @property
+    def expandable_components(self):
+        """TODO document"""
         expandable_components = dict()
 
         # collect all expandable AbstractFeatures of the instruction part
@@ -302,18 +304,34 @@ class AbstractBlock:
         for k, v in self._abs_aliasing.items():
             expandable_components[(1, k)] = v
 
+        return expandable_components
+
+    def expand(self, limit_tokens):
+        """ Choose an expandable AbstractFeature with a token not in
+        `limit_tokens` and expand it.
+
+        Returns the token of the expanded component or None if none of the
+        AbstractFeatures not in limit_tokens can be expanded.
+        """
+
+        expandable_components = self.expandable_components
+
         # take the tokens of the collected AbstractFeatures and remove the forbidden ones
         tokens = set(expandable_components.keys())
         tokens.difference_update(limit_tokens)
 
         if len(tokens) == 0:
             # nothing to expand remains
-            return None
+            return None, None
 
         # choose an allowed expandable token, expand its AbstractFeature, and return the token
         chosen_token = random.choice(tuple(tokens))
-        expandable_components[chosen_token].expand()
-        return chosen_token
+        chosen_expansion = expandable_components[chosen_token].expand()
+        return (chosen_token, chosen_expansion)
+
+    def apply_expansion(self, token, expansion):
+        expandable_components = self.expandable_components
+        expandable_components[token].apply_expansion(expansion)
 
     def get_abs_aliasing(self, idx1, idx2):
         """ TODO document
@@ -337,9 +355,9 @@ class AbstractBlock:
         # dependency part
         entries = []
         for ((iidx1, oidx1), (iidx2,oidx2)), absval in self._abs_aliasing.items():
-            if absval.is_top:
+            if absval.is_top():
                 continue
-            elif absval.is_bot:
+            elif absval.is_bottom():
                 valtxt = "BOTTOM"
             elif absval.val is False:
                 valtxt = "must not alias"
@@ -379,7 +397,7 @@ class AbstractBlock:
 
         # all items not present are considered TOP and subsume everything
         for k, sv in self._abs_aliasing.items():
-            if sv.is_top:
+            if sv.is_top():
                 continue
             ov = other._abs_aliasing.get(k, None)
             if ov is None or not sv.subsumes(ov):
@@ -418,7 +436,7 @@ class AbstractBlock:
 
         for (idx1, op1), (idx2, op2) in itertools.combinations(all_indices, 2):
             ad = self.get_abs_aliasing(idx1, idx2)
-            if ad is None or ad.is_top:
+            if ad is None or ad.is_top():
                 continue
             if self.acfg.must_alias(op1, op2):
                 ad.join(True)

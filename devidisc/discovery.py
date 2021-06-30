@@ -1,5 +1,6 @@
 
 from copy import deepcopy
+import json
 import textwrap
 
 from devidisc.abstractblock import AbstractBlock
@@ -7,6 +8,88 @@ from devidisc.abstractionconfig import AbstractionConfig
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+class WitnessTrace:
+    class Witness:
+        def __init__(self, component_token, expansion, taken, terminate, measurements):
+            self.component_token = component_token
+            self.expansion = expansion
+            self.taken = taken
+            self.terminate = terminate
+            self.measurements = measurements
+
+        def to_json_dict(self):
+            return {k: repr(v) for k, v in vars(self).items()}
+
+    def __init__(self, abs_block):
+        self.start = deepcopy(abs_block)
+        self.trace = []
+
+    def __len__(self):
+        return len(self.trace)
+
+    def add_taken_expansion(self, component_token, expansion, measurements):
+        witness = WitnessTrace.Witness(component_token=component_token,
+                expansion=expansion,
+                taken=True,
+                terminate=False,
+                measurements=measurements)
+        self.trace.append(witness)
+
+    def add_nontaken_expansion(self, component_token, expansion, measurements):
+        witness = WitnessTrace.Witness(component_token=component_token,
+                expansion=expansion,
+                taken=False,
+                terminate=False,
+                measurements=measurements)
+        self.trace.append(witness)
+
+    def add_termination(self, measurements):
+        witness = WitnessTrace.Witness(component_token=None,
+                expansion=None,
+                taken=False,
+                terminate=True,
+                measurements=measurements)
+        self.trace.append(witness)
+
+    def replay(self, index=None, validate=False):
+        if index is None:
+            trace = self.trace
+        else:
+            trace = self.trace[:index]
+
+        res = deepcopy(self.start)
+        for witness in trace:
+            if witness.terminate:
+                break
+            if not witness.taken:
+                continue
+            if validate:
+                check_tmp = deepcopy(res)
+            res.apply_expansion(witness.component_token, witness.expansion)
+            if validate:
+                assert res.subsumes(check_tmp)
+                check_tmp = None
+
+        return res
+
+    def __str__(self):
+        return json.dumps(self.to_json_dict(), indent=2, separators=(',', ':'))
+
+    def to_json_dict(self):
+        res = dict()
+        res['start'] = str(self.start)
+        trace = []
+        for v in self.trace:
+            trace.append(v.to_json_dict())
+        res['trace'] = trace
+        return res
+
+    def to_dot(self):
+        # TODO
+        pass
+
 
 def discover(acfg: AbstractionConfig, start_point: AbstractBlock):
     ctx = acfg.ctx
@@ -34,15 +117,17 @@ def discover(acfg: AbstractionConfig, start_point: AbstractBlock):
                     logger.info("  existing discovery already subsumes the block:" + textwrap.indent(str(d), 4*' '))
                     # TODO continue outer
 
-            generalize(acfg, abstracted_bb)
+            generalized_bb, trace = generalize(acfg, abstracted_bb)
 
-            logger.info("  adding new discovery:" + textwrap.indent(str(abstracted_bb), 4*' '))
-            discoveries.append(abstracted_bb)
-            dump_discovery(abstracted_bb) # TODO we should keep track of witnesses for interestingness here
+            logger.info("  adding new discovery:" + textwrap.indent(str(generalized_bb), 4*' '))
+            discoveries.append(generalalized_bb)
+            dump_discovery(generalized_bb, trace)
 
 
 def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
     logger.info("  generalizing BB:" + textwrap.indent(str(abstract_bb), 4*' ') )
+
+    trace = WitnessTrace(abstract_bb)
 
     # check if sampling from abstract_bb leads to mostly interesting blocks
     concrete_bbs = [ abstract_bb.sample() for x in range(acfg.generalization_batch_size) ]
@@ -51,7 +136,8 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
 
     if not interesting:
         logger.info("  samples from the BB are not uniformly interesting!")
-        return abstract_bb
+        trace.add_termination(concrete_bbs) # TODO add measurements to the witnesses
+        return abstract_bb, trace
 
     # a set of tokens representing subcomponents of the abstract basic block
     # that we tried to expand but did not yield interesing results
@@ -62,7 +148,7 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
         working_copy = deepcopy(abstract_bb)
 
         # expand some component
-        new_token = working_copy.expand(expansion_limit_tokens)
+        new_token, new_action = working_copy.expand(expansion_limit_tokens)
         if new_token is None:
             # we have hit top
             logger.info("  no more component left for expansion")
@@ -79,13 +165,15 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
 
         if interesting:
             logger.info(f"  samples for expanding {new_token} are interesting, adjusting BB")
+            trace.add_taken_expansion(new_token, new_action, concrete_bbs) # TODO add measurements to the witnesses
             abstract_bb = working_copy
         else:
             logger.info(f"  samples for expanding {new_token} are not interesting, discarding")
+            trace.add_nontaken_expansion(new_token, new_action, concrete_bbs) # TODO add measurements to the witnesses
             # make sure that we don't try that token again
             expansion_limit_tokens.add(new_token)
 
     logger.info("  generalization done.")
-    return abstract_bb
+    return abstract_bb, trace
 
 
