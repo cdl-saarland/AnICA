@@ -20,6 +20,15 @@ import iwho
 import logging
 logger = logging.getLogger(__name__)
 
+
+class SamplingError(Exception):
+    """ Something went wrong with sampling
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
 class AbstractFeature(ABC):
     class SpecialValues(Enum):
         BOTTOM=0
@@ -273,7 +282,7 @@ class AbstractInsn:
             if v.is_top():
                 continue
             if v.is_bottom():
-                return None
+                raise SamplingError(f"Sampling an AbstractInsn with a BOTTOM feature: {k} in {self}")
             feasible_schemes_for_feature = self.acfg.scheme_index(k, v)
             if feasible_schemes is None:
                 feasible_schemes = set(feasible_schemes_for_feature)
@@ -287,7 +296,7 @@ class AbstractInsn:
             feasible_schemes = tuple(feasible_schemes)
 
         if len(feasible_schemes) == 0:
-            return None
+            raise SamplingError(f"No InsnScheme is feasible for AbstractInsn {self}")
         return random.choice(feasible_schemes)
 
 
@@ -534,17 +543,13 @@ class AbstractBlock:
                     fixed_op = op_scheme.fixed_operand
                     prev_choice = chosen_operands.get(idx, None)
                     if prev_choice is not None and prev_choice != fixed_op:
-                        print(f"InsnScheme {ischeme} requires different operands for {op_key} from aliasing with fixed operands: {prev_choice} and {fixed_op}")
-                        assert False, "instantiation error" # TODO
-                        return None
+                        raise SamplingError(f"InsnScheme {ischeme} requires different operands for {op_key} from aliasing with fixed operands: {prev_choice} and {fixed_op}")
                     chosen_operands[idx] = fixed_op
                     for k in same[idx]:
                         prev_choice = chosen_operands.get(k, None)
                         adjusted_fixed_op = self.acfg.adjust_operand_width(fixed_op, insn_schemes[k[0]].get_operand_scheme(k[1]))
                         if prev_choice is not None and prev_choice != adjusted_fixed_op:
-                            print(f"InsnScheme {insn_schemes[k[0]]} requires different operands for {k[1]} from aliasing with fixed operands: {prev_choice} and {adjusted_fixed_op}")
-                            assert False, "instantiation error" # TODO
-                            return None
+                            raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires different operands for {k[1]} from aliasing with fixed operands: {prev_choice} and {adjusted_fixed_op}")
                         chosen_operands[k] = adjusted_fixed_op
 
         # remaining unchosen operands are not determined by fixed operands
@@ -584,7 +589,13 @@ class AbstractBlock:
                 bb.append(None)
                 continue
             op_map = op_maps[iidx]
-            instance = ischeme.instantiate(op_map)
+            try:
+                instance = ischeme.instantiate(op_map)
+            except iwho.InstantiationError as e:
+                msg = "Failed to sample abstract block:\n" + textwrap.indent(str(self), '  ')
+                msg += "\n"
+                msg += "chosen InsnSchemes:\n" + "\n".join(map(str, insn_schemes))
+                raise SamplingError(msg) from e
 
             bb.append(instance)
 
