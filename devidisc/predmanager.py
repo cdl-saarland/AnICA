@@ -63,14 +63,20 @@ class PredictorManager:
         ...
     ```
 
+    If num_processes is 0 (the default) all available processes are used.
+    If num_processes is None, no multiprocessing is used (faster for very small
+    batch sizes, mainly for testing).
+
     Typical usage would register several Predictors in the manager and then use
     the PredictorManager methods to run (some of) them on a batch of basic
     blocks.
     """
-    def __init__(self, num_threads=None):
-        if num_threads is None:
-            num_threads = multiprocessing.cpu_count()
-        self.pool = Pool(num_threads)
+    def __init__(self, num_processes=0):
+        self.pool = None
+        if num_processes is not None:
+            if num_processes <= 0:
+                num_processes = multiprocessing.cpu_count()
+            self.pool = Pool(num_processes)
 
         self.predictor_map = dict()
 
@@ -85,7 +91,8 @@ class PredictorManager:
         """ This method should be called at the end of the lifetime of the
         PredictorManager.
         """
-        self.pool.close()
+        if self.pool is not None:
+            self.pool.close()
 
     def register_predictor(self, key, predictor, toolname, version, uarch):
         assert key not in self.predictor_map
@@ -110,7 +117,10 @@ class PredictorManager:
         results).
         """
         tasks = map(lambda x: LightBBWrapper(x), bbs)
-        results = self.pool.imap(partial(evaluate_bb, pred=pred), tasks)
+        if self.pool is None:
+            results = map(partial(evaluate_bb, pred=pred), tasks)
+        else:
+            results = self.pool.imap(partial(evaluate_bb, pred=pred), tasks)
         if not lazy:
             results = list(results)
         return results # also use zip(bbs, results) here?
@@ -118,7 +128,10 @@ class PredictorManager:
     def eval_with_all(self, bbs):
         """TODO document"""
         tasks = map(lambda x: LightBBWrapper(x), bbs)
-        results = self.pool.imap(partial(evaluate_multiple, preds=self.predictors), tasks)
+        if self.pool is None:
+            results = map(partial(evaluate_multiple, preds=self.predictors), tasks)
+        else:
+            results = self.pool.imap(partial(evaluate_multiple, preds=self.predictors), tasks)
         return zip(bbs, results)
 
 
