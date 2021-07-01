@@ -221,10 +221,21 @@ class AbstractInsn:
         return self.acfg.stringify_abstract_features(self.features)
 
     def get_expandable_components(self):
+        if self.features['present'].val == False:
+            # There is no point in expanding components of insns that are
+            # guaranteed to not be present anyway.
+            # If we expand such an instruction, we should expand every feature
+            # of it to top.
+
+            all_features = [ v for k, v in self.features.items()]
+            assert all(map(lambda x: x[0] == 'present' or x[1].is_bottom(), self.features.items()))
+
+            return [('present', all_features)]
+
         res = []
         for k, v in self.features.items():
             if v.is_expandable():
-                res.append( (k, v) )
+                res.append( (k, [v]) )
         return res
 
     def subsumes(self, other: "AbstractInsn") -> bool:
@@ -341,12 +352,12 @@ class AbstractBlock:
 
         # collect all expandable AbstractFeatures of the instruction part
         for ai_idx, ai in enumerate(self.abs_insns):
-            for k, v in ai.get_expandable_components():
-                expandable_components[(0, ai_idx, k)] = v
+            for k, vs in ai.get_expandable_components():
+                expandable_components[(0, ai_idx, k)] = vs
 
         # collect all expandable AbstractFeatures of the aliasing part
         for k, v in self._abs_aliasing.items():
-            expandable_components[(1, k)] = v
+            expandable_components[(1, k)] = [v]
 
         return expandable_components
 
@@ -370,12 +381,14 @@ class AbstractBlock:
 
         # choose an allowed expandable token, expand its AbstractFeature, and return the token
         chosen_token = random.choice(tuple(tokens))
-        chosen_expansion = expandable_components[chosen_token].expand()
+        chosen_expansion = [ v.expand() for v in expandable_components[chosen_token] ]
         return (chosen_token, chosen_expansion)
 
     def apply_expansion(self, token, expansion):
         expandable_components = self.expandable_components
-        expandable_components[token].apply_expansion(expansion)
+        assert len(v) == len(exp)
+        for v, exp in zip(expandable_components[token], expansion):
+            v.apply_expansion(exp)
 
     def get_abs_aliasing(self, idx1, idx2):
         """ TODO document
