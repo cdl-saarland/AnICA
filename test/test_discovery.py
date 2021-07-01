@@ -9,6 +9,7 @@ import sys
 
 import iwho
 from iwho.predictors import Predictor
+from iwho.utils import init_logging
 
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
@@ -80,7 +81,7 @@ def ctx():
 
 @pytest.fixture(scope="function")
 def acfg(ctx):
-    predman = PredictorManager(2)
+    predman = PredictorManager(None)
     acfg = AbstractionConfig(ctx, max_block_len=4, predmanager=predman)
 
     acfg.generalization_batch_size = 10
@@ -172,17 +173,38 @@ def test_generalize_02(random, acfg):
 
     trace.replay(validate=True)
 
+def test_generalize_03(random, acfg):
+    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
+
+    bb = make_bb(acfg, "add rax, 0x2a\nsub rbx, rax")
+
+    abb = AbstractBlock(acfg, bb)
+
+    gen_abb, trace = generalize(acfg, abb)
+
+    print(trace)
+
+    assert gen_abb.subsumes(abb)
+
+    mnemonic_feature = gen_abb.abs_insns[0].features['mnemonic']
+    assert mnemonic_feature.val == "add"
+
+    trace.replay(validate=True)
+
 
 if __name__ == "__main__":
     rand.seed(0)
-    predman = PredictorManager(2)
+    init_logging("info")
+    predman = PredictorManager(None)
     ctx = iwho.get_context("x86")
     acfg = AbstractionConfig(ctx, max_block_len=4, predmanager=predman)
 
-    acfg.generalization_batch_size = 2
-    acfg.discovery_batch_size = 2
+    acfg.generalization_batch_size = 10
+    acfg.discovery_batch_size = 10
     acfg.mostly_interesting_ratio = 1.0
 
-    import cProfile
-    cProfile.run('test_generalize_01(None, acfg)')
-    predman.close()
+    test_generalize_03(None, acfg)
+
+    # import cProfile
+    # cProfile.run('test_generalize_03(None, acfg)')
+    # predman.close()
