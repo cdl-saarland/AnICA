@@ -3,6 +3,7 @@
 import pytest
 
 import copy
+import json
 import os
 import random as rand
 import sys
@@ -611,5 +612,37 @@ def test_expand_terminates(random, ctx):
         # we probably hit an endless loop here (or the range is not large
         # enough)
         assert False
+
+possible_block_strs =[
+        ["add rax, 0x2a"],
+        ["add rax, 0x2a\nsub ebx, eax"],
+        ["add rax, 0x2a\nsub ebx, eax", "add rax, 0x2a"],
+        ["add rax, 0x2a\nsub ebx, eax", "add rax, 0x2a\nsub ebx, eax"],
+        ["add rax, 0x2a\nsub ebx, eax", "add rax, 0x2a\nsub eax, eax"],
+        ["add rax, 0x2a\nsub ebx, eax", "sub rax, 0x2a\nsub ebx, eax"],
+        ["add rax, 0x2a\nvsubpd xmm0, xmm1, xmm2", "add rax, 0x2a\nsub eax, eax"],
+    ]
+
+@pytest.mark.parametrize("block_strs", possible_block_strs)
+def test_json(ctx, block_strs):
+    acfg = AbstractionConfig(ctx, 4)
+
+    original_ab = AbstractBlock(acfg)
+
+    for block_str in block_strs:
+        bb = iwho.BasicBlock(ctx, ctx.parse_asm(block_str))
+        original_ab.join(bb)
+
+    json_dict = original_ab.to_json_dict()
+
+    direct_decoded_ab = AbstractBlock.from_json_dict(acfg, json_dict)
+
+    assert str(original_ab) == str(direct_decoded_ab)
+
+    json_str = json.dumps(json_dict)
+    decoded_json_dict = json.loads(json_str)
+
+    json_decoded_ab = AbstractBlock.from_json_dict(acfg, decoded_json_dict)
+    assert str(original_ab) == str(json_decoded_ab)
 
 

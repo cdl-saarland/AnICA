@@ -215,3 +215,17 @@ class AbstractionConfig:
     def stringify_abstract_features(self, afeatures):
         return "\n".join((f"{k}: {afeatures[k]}" for k in self.feature_keys))
 
+    def reconstruct_json_str(self, json_str):
+        insn_scheme_str = '$InsnScheme:'
+        opkind_str = '$OperandKind:'
+
+        if json_str.startswith(insn_scheme_str):
+            scheme_str = json_str[len(insn_scheme_str):]
+            return self.ctx.str_to_scheme[scheme_str]
+        if json_str.startswith(opkind_str):
+            opkind_val = int(json_str[len(opkind_str):])
+            for ev in iwho.InsnScheme.OperandKind:
+                if opkind_val == ev.value:
+                    return ev
+        assert False
+

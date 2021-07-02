@@ -45,6 +45,10 @@ class AbstractFeature(ABC):
         pass
 
     @abstractmethod
+    def to_json_dict(self):
+        pass
+
+    @abstractmethod
     def expand(self):
         pass
 
@@ -85,6 +89,31 @@ class SingletonAbstractFeature(AbstractFeature):
         new_one = SingletonAbstractFeature()
         new_one.val = self.val # no need to copy at all
         return new_one
+
+    def to_json_dict(self):
+        if self.is_top():
+            return "$TOP"
+        if self.is_bottom():
+            return "$BOTTOM"
+        v = self.val
+        if isinstance(v, iwho.InsnScheme):
+            return "$InsnScheme:{}".format(str(v))
+        else:
+            return v
+
+    @staticmethod
+    def from_json_dict(acfg, json_dict):
+        res = SingletonAbstractFeature()
+        if isinstance(json_dict, str) and len(json_dict) > 0 and json_dict[0] == '$':
+            if json_dict == "$TOP":
+                res.val = AbstractFeature.TOP
+            elif json_dict == "$BOTTOM":
+                res.val = AbstractFeature.BOTTOM
+            else:
+                res.val = acfg.reconstruct_json_str(json_dict)
+        else:
+            res.val = json_dict
+        return res
 
     def __str__(self) -> str:
         return str(self.val)
@@ -154,6 +183,22 @@ class SubSetAbstractFeature(AbstractFeature):
         new_one.val = copy(self.val) # no need to deepcopy
         return new_one
 
+    def to_json_dict(self):
+        if self.is_bottom():
+            return "$BOTTOM"
+        return tuple(self.val)
+
+    @staticmethod
+    def from_json_dict(acfg, json_dict):
+        res = SubSetAbstractFeature()
+        if isinstance(json_dict, str) and len(json_dict) > 0 and json_dict[0] == '$':
+            if json_dict == "$BOTTOM":
+                res.val = AbstractFeature.BOTTOM
+        else:
+            assert isinstance(json_dict, list) or isinstance(json_dict, tuple)
+            res.val = set(json_dict)
+        return res
+
     def expand(self):
         if self.is_bottom():
             self.val = set()
@@ -216,6 +261,24 @@ class AbstractInsn:
         new_one = AbstractInsn(self.acfg)
         new_one.features = deepcopy(self.features, memo)
         return new_one
+
+    def to_json_dict(self):
+        res = dict()
+        for k, v in self.features.items():
+            res[k] = v.to_json_dict()
+        return res
+
+    @staticmethod
+    def from_json_dict(acfg, json_dict):
+        res = AbstractInsn(acfg)
+        init_features = res.features
+        assert set(init_features.keys()) == set(json_dict.keys())
+        json_features = dict()
+        for k, v in json_dict.items():
+            cls = type(init_features[k])
+            json_features[k] = cls.from_json_dict(acfg, v)
+        res.features = json_features
+        return res
 
     def __str__(self) -> str:
         return self.acfg.stringify_abstract_features(self.features)
@@ -311,6 +374,23 @@ class AbstractInsn:
         return random.choice(feasible_schemes)
 
 
+
+def encode_op_keys(op_keys):
+    if isinstance(op_keys, list) or isinstance(op_keys, tuple):
+        return tuple(( encode_op_keys(k) for k in op_keys ))
+    elif isinstance(op_keys, iwho.InsnScheme.OperandKind):
+        return f"$OperandKind:{op_keys.value}"
+    else:
+        return op_keys
+
+def decode_op_keys(acfg, op_key_list):
+    if isinstance(op_key_list, list) or isinstance(op_key_list, tuple):
+        return tuple(( decode_op_keys(acfg, k) for k in op_key_list ))
+    elif isinstance(op_key_list, str) and op_key_list.startswith('$'):
+        return acfg.reconstruct_json_str(op_key_list)
+    return op_key_list
+
+
 class AbstractBlock:
     """ An instance of this class represents a set of (concrete) BasicBlocks
     (up to a fixed length maxlen).
@@ -323,6 +403,7 @@ class AbstractBlock:
 
         # TODO describe semantics - operand j of instruction i aliases with operand y of instruction x
         self._abs_aliasing = dict()
+        # TODO maybe adjust this to "if op1 and op2 allow for aliasing, then {they alias, they don't alias, anything goes}
 
         # the semantics of entries not present in the above map changes over
         # the lifetime of the AbstractBlock, through the value of the following
@@ -336,6 +417,27 @@ class AbstractBlock:
 
         if bb is not None:
             self.join(bb)
+
+    def to_json_dict(self):
+        res = dict()
+        res['abs_insns'] = [ ai.to_json_dict() for ai in self.abs_insns ]
+        res['abs_aliasing'] = [ (encode_op_keys(k), x.to_json_dict()) for k, x in self._abs_aliasing.items() ]
+        res['is_bot'] = self.is_bot
+        return res
+
+    @staticmethod
+    def from_json_dict(acfg, json_dict):
+        res = AbstractBlock(acfg)
+        res.abs_insns = []
+        for sub_dict in json_dict['abs_insns']:
+            res.abs_insns.append(AbstractInsn.from_json_dict(acfg, sub_dict))
+        aliasing = dict()
+        for k, v in json_dict['abs_aliasing']:
+            key = decode_op_keys(acfg, k)
+            aliasing[key] = SingletonAbstractFeature.from_json_dict(acfg, v)
+        res._abs_aliasing = aliasing
+        res.is_bot = json_dict['is_bot']
+        return res
 
     def __deepcopy__(self, memo):
         new_one = AbstractBlock(self.acfg)
