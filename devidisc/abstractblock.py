@@ -401,11 +401,13 @@ class AbstractBlock:
         self.maxlen = acfg.max_block_len
         self.abs_insns = [ AbstractInsn(self.acfg) for i in range(self.maxlen) ]
 
-        # TODO describe semantics - operand j of instruction i aliases with operand y of instruction x
         self._abs_aliasing = dict()
-        # TODO maybe adjust this to "if op1 and op2 allow for aliasing, then {they alias, they don't alias, anything goes}
-
-        # the semantics of entries not present in the above map changes over
+        # A mapping from pairs of (instruction index, operand index) pairs to a
+        # boolean SingletonAbstractFeature.
+        # An entry for (op1, op2) means "if op1 and op2 allow for aliasing,
+        # then {they alias, they don't alias, anything goes}.
+        #
+        # The semantics of entries not present in the above map changes over
         # the lifetime of the AbstractBlock, through the value of the following
         # flag. In the beginning, before any concrete Block is joined in,
         # nothing will be present, which should be interpreted as a BOTTOM
@@ -599,6 +601,13 @@ class AbstractBlock:
             ad = self.get_abs_aliasing(idx1, idx2)
             if ad is None or ad.is_top():
                 continue
+
+            # if operand schemes are not compatible, this entry is ignored
+            op_scheme1 = bb_insns[idx1[0]].scheme.get_operand_scheme(idx1[1])
+            op_scheme2 = bb_insns[idx2[0]].scheme.get_operand_scheme(idx2[1])
+            if not self.acfg.is_compatible(op_scheme1, op_scheme2):
+                continue
+
             if self.acfg.must_alias(op1, op2):
                 ad.join(True)
             elif not self.acfg.may_alias(op1, op2):
@@ -635,8 +644,13 @@ class AbstractBlock:
             # not present.
             if insn_schemes[iidx1] is None or insn_schemes[iidx2] is None:
                 continue
-            if (insn_schemes[iidx1].get_operand_scheme(op_key1) is None or
-                    insn_schemes[iidx2].get_operand_scheme(op_key2) is None):
+            op_scheme1 = insn_schemes[iidx1].get_operand_scheme(op_key1)
+            op_scheme2 = insn_schemes[iidx2].get_operand_scheme(op_key2)
+            if (op_scheme1 is None or op_scheme2 is None):
+                continue
+
+            # if operand schemes are not compatible, this entry is ignored
+            if not self.acfg.is_compatible(op_scheme1, op_scheme2):
                 continue
 
             if should_alias.val is True:

@@ -77,6 +77,28 @@ class AbstractionConfig:
         # all uses)
         return self.ctx.may_alias(op1, op2)
 
+    def is_compatible(self, op_scheme1, op_scheme2):
+        def extract_allowed_classes(op_scheme):
+            if op_scheme.is_fixed():
+                fixed_op = op_scheme.fixed_operand
+                if isinstance(fixed_op, iwho.x86.RegisterOperand):
+                    return {fixed_op.alias_class}
+                if isinstance(fixed_op, iwho.x86.MemoryOperand):
+                    return {"mem"}
+                return set()
+            op_constr = op_scheme.operand_constraint
+            if isinstance(op_constr, iwho.SetConstraint):
+                return { x.alias_class for x in op_constr.acceptable_operands }
+            if isinstance(op_constr, iwho.x86.MemConstraint):
+                return {"mem"}
+            return set()
+
+        allowed_classes1 = extract_allowed_classes(op_scheme1)
+
+        allowed_classes2 = extract_allowed_classes(op_scheme2)
+
+        return not allowed_classes1.isdisjoint(allowed_classes2)
+
     def skip_for_aliasing(self, op_scheme):
         if op_scheme.is_fixed():
             operand = op_scheme.fixed_operand

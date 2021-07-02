@@ -573,6 +573,26 @@ def test_aliasing_different_widths_02_sample(random, ctx):
     for i in range(10):
         ab.sample()
 
+def test_aliasing_different_types_01_sample(random, ctx):
+    acfg = AbstractionConfig(ctx, 4)
+
+    bb1 = iwho.BasicBlock(ctx, ctx.parse_asm("add rbx, rdx\nsub rbx, rcx"))
+    bb2 = iwho.BasicBlock(ctx, ctx.parse_asm("add rbx, rdx\nvsubpd xmm1, xmm2, xmm3"))
+
+    frankensteins_ab = AbstractBlock(acfg, bb1)
+    ab2 = AbstractBlock(acfg, bb2)
+
+    frankensteins_ab.abs_insns[1] = ab2.abs_insns[1]
+    # This construct is not possible to achieve in "nature", since we cannot be
+    # sure that the second insn is a vector insn and that its operand should
+    # alias with a GPR operand (hence the name).
+    # However, by expanding the insn component, we could sample a vetor
+    # instruction and get a similar case that would have to be resolved
+    # somehow.
+
+    for i in range(10):
+        frankensteins_ab.sample()
+
 def test_deepcopy(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
     bb = iwho.BasicBlock(ctx, ctx.parse_asm("add rax, 0x2a\nsub ebx, eax"))
