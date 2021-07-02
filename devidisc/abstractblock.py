@@ -489,8 +489,8 @@ class AbstractBlock:
 
     def apply_expansion(self, token, expansion):
         expandable_components = self.expandable_components
-        assert len(v) == len(exp)
         for v, exp in zip(expandable_components[token], expansion):
+            assert len(v) == len(exp)
             v.apply_expansion(exp)
 
     def get_abs_aliasing(self, idx1, idx2):
@@ -624,8 +624,8 @@ class AbstractBlock:
         if self.is_bot:
             return None
 
-        same = defaultdict(set)
-        not_same = defaultdict(set)
+        same = defaultdict(set) # a mapping from instruction operands to sets of instruction operands with which they should alias
+        not_same = defaultdict(set) # a mapping from instruction operands to sets of instruction operands with which they should not alias
 
         for (insn_op1, insn_op2), should_alias in self._abs_aliasing.items():
             iidx1, op_key1 = insn_op1
@@ -692,7 +692,7 @@ class AbstractBlock:
                 chosen = random.choice(list(allowed_operands))
                 chosen_operands[idx] = chosen
                 for k in same[idx]:
-                    chosen_operands[k] = chosen
+                    chosen_operands[k] = self.acfg.adjust_operand_width(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
 
         op_maps = defaultdict(dict)
         for (iidx, op_key), chosen_operand in chosen_operands.items():

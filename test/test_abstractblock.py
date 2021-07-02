@@ -561,6 +561,17 @@ def test_aliasing_different_widths_01_sample(random, ctx):
     new_ab = AbstractBlock(acfg, new_bb)
     assert ab.subsumes(new_ab)
 
+def test_aliasing_different_widths_02_sample(random, ctx):
+    acfg = AbstractionConfig(ctx, 4)
+
+    bb1 = iwho.BasicBlock(ctx, ctx.parse_asm("add ebx, edx\nsub rdx, rbx"))
+    bb2 = iwho.BasicBlock(ctx, ctx.parse_asm("add eax, edx\nsub rdx, rbx"))
+
+    ab = AbstractBlock(acfg, bb1)
+    ab.join(bb2)
+
+    for i in range(10):
+        ab.sample()
 
 def test_deepcopy(random, ctx):
     acfg = AbstractionConfig(ctx, 4)
