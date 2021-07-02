@@ -489,9 +489,10 @@ class AbstractBlock:
 
     def apply_expansion(self, token, expansion):
         expandable_components = self.expandable_components
-        for v, exp in zip(expandable_components[token], expansion):
-            assert len(v) == len(exp)
-            v.apply_expansion(exp)
+        features = expandable_components[token]
+        assert len(features) == len(expansion)
+        for feature, exp in zip(features, expansion):
+            feature.apply_expansion(exp)
 
     def get_abs_aliasing(self, idx1, idx2):
         """ TODO document
