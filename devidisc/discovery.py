@@ -20,11 +20,13 @@ class WitnessTrace:
             self.measurements = measurements
 
         def to_json_dict(self):
+            # TODO that's wrong!
             return {k: repr(v) for k, v in vars(self).items()}
 
         @staticmethod
-        def from_json_dict(self, json_dict):
-            return Witness(**json_dict)
+        def from_json_dict(json_dict):
+            # TODO that's wrong!
+            return WitnessTrace.Witness(**json_dict)
 
     def __init__(self, abs_block):
         self.start = deepcopy(abs_block)
@@ -91,11 +93,11 @@ class WitnessTrace:
         return res
 
     @staticmethod
-    def from_json_dict(self, acfg, json_dict):
+    def from_json_dict(acfg, json_dict):
         start_bb = AbstractBlock.from_json_dict(acfg, json_dict['start'])
         res = WitnessTrace(start_bb)
         for v in json_dict['trace']:
-            res.trace.append(WitnessTrace.from_json_dict(v))
+            res.trace.append(WitnessTrace.Witness.from_json_dict(v))
         return res
 
     def to_dot(self):
