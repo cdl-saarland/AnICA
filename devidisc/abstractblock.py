@@ -357,7 +357,8 @@ class AbstractBlock:
 
         # collect all expandable AbstractFeatures of the aliasing part
         for k, v in self._abs_aliasing.items():
-            expandable_components[(1, k)] = [v]
+            if v.is_expandable():
+                expandable_components[(1, k)] = [v]
 
         return expandable_components
 
