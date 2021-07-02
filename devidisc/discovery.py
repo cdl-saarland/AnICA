@@ -22,6 +22,10 @@ class WitnessTrace:
         def to_json_dict(self):
             return {k: repr(v) for k, v in vars(self).items()}
 
+        @staticmethod
+        def from_json_dict(self, json_dict):
+            return Witness(**json_dict)
+
     def __init__(self, abs_block):
         self.start = deepcopy(abs_block)
         self.trace = []
@@ -79,11 +83,19 @@ class WitnessTrace:
 
     def to_json_dict(self):
         res = dict()
-        res['start'] = str(self.start)
+        res['start'] = self.start.to_json_dict()
         trace = []
         for v in self.trace:
             trace.append(v.to_json_dict())
         res['trace'] = trace
+        return res
+
+    @staticmethod
+    def from_json_dict(self, acfg, json_dict):
+        start_bb = AbstractBlock.from_json_dict(acfg, json_dict['start'])
+        res = WitnessTrace(start_bb)
+        for v in json_dict['trace']:
+            res.trace.append(WitnessTrace.from_json_dict(v))
         return res
 
     def to_dot(self):
