@@ -670,8 +670,8 @@ def test_json(ctx, block_strs):
 
     assert str(original_ab) == str(direct_decoded_ab)
 
-    json_str = json.dumps(json_dict)
-    decoded_json_dict = json.loads(json_str)
+    json_str = json.dumps(acfg.introduce_json_references(json_dict))
+    decoded_json_dict = acfg.resolve_json_references(json.loads(json_str))
 
     json_decoded_ab = AbstractBlock.from_json_dict(acfg, decoded_json_dict)
     assert str(original_ab) == str(json_decoded_ab)
