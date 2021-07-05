@@ -2,6 +2,7 @@
 
 import pytest
 
+import json
 import logging
 import os
 import random as rand
@@ -18,6 +19,7 @@ from devidisc.abstractblock import AbstractBlock
 from devidisc.abstractionconfig import AbstractionConfig
 from devidisc.discovery import discover, generalize
 from devidisc.predmanager import PredictorManager
+from devidisc.witness import WitnessTrace
 
 
 def extract_mnemonic(insn_str):
@@ -136,6 +138,38 @@ def test_interestingness_03(random, acfg):
 
     assert acfg.is_mostly_interesting(bbs)
 
+def _check_trace_json(acfg, tr):
+    res_ab = tr.replay(validate=True)
+
+    json_dict = acfg.introduce_json_references(tr.to_json_dict())
+    print(json_dict)
+    json_str = json.dumps(json_dict)
+    print(json_str)
+    loaded_dict = acfg.resolve_json_references(json.loads(json_str))
+    loaded_trace = WitnessTrace.from_json_dict(acfg, loaded_dict)
+    loaded_ab = loaded_trace.replay(validate=True)
+    assert loaded_ab.subsumes(res_ab)
+    assert res_ab.subsumes(loaded_ab)
+
+def test_witness_trace_01(random, acfg):
+    bb = make_bb(acfg, "add rax, 0x2a\nsub rbx, rax")
+    abb = AbstractBlock(acfg, bb)
+
+    tr = WitnessTrace(abb)
+
+    for i in range(10):
+        token, action = abb.expand([])
+        assert token is not None
+        tr.add_taken_expansion(token, action, 42)
+
+    res_ab = tr.replay(validate=True)
+
+    assert abb.subsumes(res_ab)
+    assert res_ab.subsumes(abb)
+
+    _check_trace_json(acfg, tr)
+
+
 def test_generalize_01(random, acfg):
     add_preds(acfg, [CountPredictor(), AddBadPredictor()])
 
@@ -154,6 +188,8 @@ def test_generalize_01(random, acfg):
 
     trace.replay(validate=True)
 
+    _check_trace_json(acfg, trace)
+
 def test_generalize_02(random, acfg):
     add_preds(acfg, [CountPredictor(), AddBadPredictor()])
 
@@ -171,7 +207,9 @@ def test_generalize_02(random, acfg):
 
     assert abb.abs_insns[0].features['exact_scheme'] == gen_abb.abs_insns[0].features['exact_scheme']
 
-    trace.replay(validate=True)
+    res_ab = trace.replay(validate=True)
+
+    _check_trace_json(acfg, trace)
 
 def test_generalize_03(random, acfg):
     add_preds(acfg, [CountPredictor(), AddBadPredictor()])
@@ -189,7 +227,9 @@ def test_generalize_03(random, acfg):
     mnemonic_feature = gen_abb.abs_insns[0].features['mnemonic']
     assert mnemonic_feature.val == "add"
 
-    trace.replay(validate=True)
+    res_ab = trace.replay(validate=True)
+
+    _check_trace_json(acfg, trace)
 
 
 if __name__ == "__main__":

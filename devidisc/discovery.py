@@ -61,7 +61,7 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
 
     if not interesting:
         logger.info("  samples from the BB are not uniformly interesting!")
-        trace.add_termination([]) # TODO add measurements to the witnesses
+        trace.add_termination(comment="Samples from the starting block are not interesting!", measurements=42) # TODO add measurements to the witnesses
         return abstract_bb, trace
 
     # a set of tokens representing subcomponents of the abstract basic block
@@ -90,13 +90,15 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
 
         if interesting:
             logger.info(f"  samples for expanding {new_token} are interesting, adjusting BB")
-            trace.add_taken_expansion(new_token, new_action, []) # TODO add measurements to the witnesses
+            trace.add_taken_expansion(new_token, new_action, 42) # TODO add measurements to the witnesses
             abstract_bb = working_copy
         else:
             logger.info(f"  samples for expanding {new_token} are not interesting, discarding")
-            trace.add_nontaken_expansion(new_token, new_action, []) # TODO add measurements to the witnesses
+            trace.add_nontaken_expansion(new_token, new_action, 42) # TODO add measurements to the witnesses
             # make sure that we don't try that token again
             expansion_limit_tokens.add(new_token)
+
+    trace.add_termination(comment="No more expansions remain.", measurements=None)
 
     logger.info("  generalization done.")
     return abstract_bb, trace
