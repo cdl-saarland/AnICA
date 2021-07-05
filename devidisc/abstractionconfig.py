@@ -87,7 +87,7 @@ class AbstractionConfig:
                     return {"mem"}
                 return set()
             op_constr = op_scheme.operand_constraint
-            if isinstance(op_constr, iwho.SetConstraint):
+            if isinstance(op_constr, iwho.x86.RegisterConstraint):
                 return { x.alias_class for x in op_constr.acceptable_operands }
             if isinstance(op_constr, iwho.x86.MemConstraint):
                 return {"mem"}
@@ -112,7 +112,7 @@ class AbstractionConfig:
                 return True
         else:
             constraint = op_scheme.operand_constraint
-            if isinstance(constraint, iwho.SetConstraint):
+            if isinstance(constraint, iwho.x86.RegisterConstraint):
                 operand = constraint.acceptable_operands[0]
                 if operand.category == iwho.x86.RegKind['FLAG']:
                     # Skip flag operands. We might want to revisit this decision.
@@ -123,46 +123,11 @@ class AbstractionConfig:
                 return True
         return False
 
-    def adjust_operand_width(self, operand, op_scheme):
-        # TODO this probably belongs to the iwho.Context
-        acceptable = None
-        if op_scheme.is_fixed():
-            width = op_scheme.fixed_operand.width
-            acceptable = {op_scheme.fixed_operand}
-        else:
-            constraint = op_scheme.operand_constraint
-            if isinstance(constraint, iwho.SetConstraint):
-                acceptable = constraint.acceptable_operands
-                width = acceptable[0].width
-                acceptable = set(acceptable)
-            else:
-                width = constraint.width
-
-        if operand.width == width:
-            res = operand
-        elif isinstance(operand, iwho.x86.RegisterOperand):
-            fitting_regs = set(self.ctx.get_registers_where(alias_class=operand.alias_class, width=width))
-            assert len(fitting_regs) >= 1
-            if acceptable is not None:
-                fitting_regs.intersection_update(acceptable)
-            assert len(fitting_regs) >= 1
-            res = next(iter(fitting_regs))
-        elif isinstance(operand, iwho.x86.MemoryOperand):
-            # TODO deduplicate
-            res = iwho.x86.MemoryOperand(width=operand.width, segment=operand.segment, base=operand.base, index=operand.index, scale=operand.scale, displacement=operand.displacement)
-        elif isinstance(operand, iwho.x86.MemoryOperand):
-            # TODO deduplicate
-            res = iwho.x86.ImmediateOperand(width=operand.width, value=operand.value)
-        else:
-            res = operand
-
-        return res
-
     def allowed_operands(self, op_scheme):
         if op_scheme.is_fixed():
             return {op_scheme.fixed_operand}
         constraint = op_scheme.operand_constraint
-        if isinstance(constraint, iwho.SetConstraint):
+        if isinstance(constraint, iwho.x86.RegisterConstraint):
             # TODO remove reserved operands?
             return set(constraint.acceptable_operands)
         elif isinstance(constraint, iwho.x86.MemConstraint):

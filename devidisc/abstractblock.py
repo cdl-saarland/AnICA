@@ -678,7 +678,7 @@ class AbstractBlock:
                     chosen_operands[idx] = fixed_op
                     for k in same[idx]:
                         prev_choice = chosen_operands.get(k, None)
-                        adjusted_fixed_op = self.acfg.adjust_operand_width(fixed_op, insn_schemes[k[0]].get_operand_scheme(k[1]))
+                        adjusted_fixed_op = ctx.adjust_operand(fixed_op, insn_schemes[k[0]].get_operand_scheme(k[1]))
                         if prev_choice is not None and prev_choice != adjusted_fixed_op:
                             raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires different operands for {k[1]} from aliasing with fixed operands: {prev_choice} and {adjusted_fixed_op}")
                         chosen_operands[k] = adjusted_fixed_op
@@ -699,7 +699,7 @@ class AbstractBlock:
                     for k in not_same[idx]:
                         disallowed = chosen_operands.get(k, None)
                         if disallowed is not None:
-                            disallowed = self.acfg.adjust_operand_width(disallowed, op_scheme)
+                            disallowed = ctx.adjust_operand(disallowed, op_scheme)
                             try:
                                 allowed_operands.remove(disallowed)
                             except KeyError as e:
@@ -707,7 +707,7 @@ class AbstractBlock:
                 chosen = random.choice(list(allowed_operands))
                 chosen_operands[idx] = chosen
                 for k in same[idx]:
-                    chosen_operands[k] = self.acfg.adjust_operand_width(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
+                    chosen_operands[k] = ctx.adjust_operand(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
 
         op_maps = defaultdict(dict)
         for (iidx, op_key), chosen_operand in chosen_operands.items():
