@@ -28,17 +28,19 @@ class SamplingError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
+# TODO document json funcitonality, mention that acfg.introduce_json_references
+# and acfg.resolve_json_references should be used
 
 class AbstractFeature(ABC):
-    class SpecialValues(Enum):
+    class SpecialValue(Enum):
         BOTTOM=0
         TOP=1
 
         def __str__(self):
             return str(self.name)
 
-    BOTTOM = SpecialValues.BOTTOM
-    TOP = SpecialValues.TOP
+    BOTTOM = SpecialValue.BOTTOM
+    TOP = SpecialValue.TOP
 
     @abstractmethod
     def __deepcopy__(self, memo):
@@ -91,28 +93,12 @@ class SingletonAbstractFeature(AbstractFeature):
         return new_one
 
     def to_json_dict(self):
-        if self.is_top():
-            return "$TOP"
-        if self.is_bottom():
-            return "$BOTTOM"
-        v = self.val
-        if isinstance(v, iwho.InsnScheme):
-            return "$InsnScheme:{}".format(str(v))
-        else:
-            return v
+        return self.val
 
     @staticmethod
-    def from_json_dict(acfg, json_dict):
+    def from_json_dict(json_dict):
         res = SingletonAbstractFeature()
-        if isinstance(json_dict, str) and len(json_dict) > 0 and json_dict[0] == '$':
-            if json_dict == "$TOP":
-                res.val = AbstractFeature.TOP
-            elif json_dict == "$BOTTOM":
-                res.val = AbstractFeature.BOTTOM
-            else:
-                res.val = acfg.reconstruct_json_str(json_dict)
-        else:
-            res.val = json_dict
+        res.val = json_dict
         return res
 
     def __str__(self) -> str:
@@ -135,7 +121,7 @@ class SingletonAbstractFeature(AbstractFeature):
         return self.val == AbstractFeature.BOTTOM
 
     def get_val(self):
-        if isinstance(self.val, AbstractFeature.SpecialValues):
+        if isinstance(self.val, AbstractFeature.SpecialValue):
             return None
         else:
             return self.val
@@ -185,15 +171,14 @@ class SubSetAbstractFeature(AbstractFeature):
 
     def to_json_dict(self):
         if self.is_bottom():
-            return "$BOTTOM"
+            return self.val
         return tuple(self.val)
 
     @staticmethod
-    def from_json_dict(acfg, json_dict):
+    def from_json_dict(json_dict):
         res = SubSetAbstractFeature()
-        if isinstance(json_dict, str) and len(json_dict) > 0 and json_dict[0] == '$':
-            if json_dict == "$BOTTOM":
-                res.val = AbstractFeature.BOTTOM
+        if isinstance(json_dict, AbstractFeature.SpecialValue):
+            res.val = json_dict
         else:
             assert isinstance(json_dict, list) or isinstance(json_dict, tuple)
             res.val = set(json_dict)
@@ -276,12 +261,12 @@ class AbstractInsn:
         json_features = dict()
         for k, v in json_dict.items():
             cls = type(init_features[k])
-            json_features[k] = cls.from_json_dict(acfg, v)
+            json_features[k] = cls.from_json_dict(v)
         res.features = json_features
         return res
 
     def __str__(self) -> str:
-        return self.acfg.stringify_abstract_features(self.features)
+        return "\n".join((f"{k}: {v}" for k, v in self.features.items()))
 
     def get_expandable_components(self):
         if self.features['present'].val == False:
@@ -374,22 +359,10 @@ class AbstractInsn:
         return random.choice(feasible_schemes)
 
 
-
-def encode_op_keys(op_keys):
-    if isinstance(op_keys, list) or isinstance(op_keys, tuple):
-        return tuple(( encode_op_keys(k) for k in op_keys ))
-    elif isinstance(op_keys, iwho.InsnScheme.OperandKind):
-        return f"$OperandKind:{op_keys.value}"
-    else:
-        return op_keys
-
-def decode_op_keys(acfg, op_key_list):
-    if isinstance(op_key_list, list) or isinstance(op_key_list, tuple):
-        return tuple(( decode_op_keys(acfg, k) for k in op_key_list ))
-    elif isinstance(op_key_list, str) and op_key_list.startswith('$'):
-        return acfg.reconstruct_json_str(op_key_list)
-    return op_key_list
-
+def _lists2tuples(obj):
+    if isinstance(obj, list) or isinstance(obj, tuple):
+        return tuple(( _lists2tuples(x) for x in obj ))
+    return obj
 
 class AbstractBlock:
     """ An instance of this class represents a set of (concrete) BasicBlocks
@@ -423,7 +396,7 @@ class AbstractBlock:
     def to_json_dict(self):
         res = dict()
         res['abs_insns'] = [ ai.to_json_dict() for ai in self.abs_insns ]
-        res['abs_aliasing'] = [ (encode_op_keys(k), x.to_json_dict()) for k, x in self._abs_aliasing.items() ]
+        res['abs_aliasing'] = [ (k, x.to_json_dict()) for k, x in self._abs_aliasing.items() ]
         res['is_bot'] = self.is_bot
         return res
 
@@ -435,8 +408,8 @@ class AbstractBlock:
             res.abs_insns.append(AbstractInsn.from_json_dict(acfg, sub_dict))
         aliasing = dict()
         for k, v in json_dict['abs_aliasing']:
-            key = decode_op_keys(acfg, k)
-            aliasing[key] = SingletonAbstractFeature.from_json_dict(acfg, v)
+            key = _lists2tuples(k)
+            aliasing[key] = SingletonAbstractFeature.from_json_dict(v)
         res._abs_aliasing = aliasing
         res.is_bot = json_dict['is_bot']
         return res
