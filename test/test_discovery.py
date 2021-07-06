@@ -23,8 +23,7 @@ from devidisc.witness import WitnessTrace
 
 
 def extract_mnemonic(insn_str):
-    ctx = iwho.get_context("x86")
-    return ctx.extract_mnemonic(insn_str)
+    return iwho.x86.extract_mnemonic(insn_str)
 
 def add_to_predman(predman, pred):
     predname = pred.predictor_name
