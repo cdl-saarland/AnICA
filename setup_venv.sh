@@ -10,4 +10,6 @@ source $MY_ENV_PATH/bin/activate
 echo "Installing requirements..."
 pip install -r requirements.txt
 
+pip install ipython
+
 
