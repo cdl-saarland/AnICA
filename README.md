@@ -8,6 +8,11 @@ TODO write this
 
 ### Functional Extensions
   - [X] replace the powerset domain for uop combinations with a subset domain of uops
+  - [ ] make AbstractionConfig configurable
+  - [ ] make AbstractionConfig less of a god class
+  - [ ] AbstractBlock.sample needs some software engineering, probably extract the aliasing portion to its own class to make it more manageable
+  - [ ] add a way of restricting the insn schemes provided by iwho.Context
+  - [ ] make iwho.Context configurable
   - [ ] use "type signature" as an insn feature
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
   - [ ] check whether using an SMT solver for subsumption is necessary and reasonable
