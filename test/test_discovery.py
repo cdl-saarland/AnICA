@@ -110,7 +110,7 @@ def test_interestingness_error(random, acfg):
     bbs = []
     bbs.append(make_bb(acfg, "sub rax, 0x2a"))
 
-    assert acfg.is_mostly_interesting(bbs)
+    assert acfg.is_mostly_interesting(bbs)[0]
 
 
 def test_interestingness_01(random, acfg):
@@ -119,7 +119,7 @@ def test_interestingness_01(random, acfg):
     bbs = []
     bbs.append(make_bb(acfg, "add rax, 0x2a"))
 
-    assert acfg.is_mostly_interesting(bbs)
+    assert acfg.is_mostly_interesting(bbs)[0]
 
 def test_interestingness_02(random, acfg):
     add_preds(acfg, [CountPredictor(), AddBadPredictor()])
@@ -127,7 +127,7 @@ def test_interestingness_02(random, acfg):
     bbs = []
     bbs.append(make_bb(acfg, "sub rax, 0x2a"))
 
-    assert not acfg.is_mostly_interesting(bbs)
+    assert not acfg.is_mostly_interesting(bbs)[0]
 
 def test_interestingness_03(random, acfg):
     add_preds(acfg, [CountPredictor(), AddBadPredictor()])
@@ -135,7 +135,7 @@ def test_interestingness_03(random, acfg):
     bbs = []
     bbs.append(make_bb(acfg, "add rbx, rax\nsub rax, 0x2a"))
 
-    assert acfg.is_mostly_interesting(bbs)
+    assert acfg.is_mostly_interesting(bbs)[0]
 
 def _check_trace_json(acfg, tr):
     res_ab = tr.replay(validate=True)

@@ -23,7 +23,8 @@ def discover(acfg: AbstractionConfig, start_point: AbstractBlock):
         # sample a batch of blocks
         concrete_bbs = [ start_point.sample() for x in range(acfg.discovery_batch_size) ]
 
-        interesting_bbs = acfg.filter_interesting(concrete_bbs)
+        # TODO we might want to avoid generating the result_ref here, to allow more parallelism
+        interesting_bbs, result_ref = acfg.filter_interesting(concrete_bbs)
 
         logger.info(f"  {len(interesting_bbs)} out of {len(concrete_bbs)} ({100 * len(interesting_bbs) / len(concrete_bbs):.2f}%) are interesting")
 
@@ -57,11 +58,11 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
     # check if sampling from abstract_bb leads to mostly interesting blocks
     concrete_bbs = [ abstract_bb.sample() for x in range(acfg.generalization_batch_size) ]
 
-    interesting = acfg.is_mostly_interesting(concrete_bbs)
+    interesting, result_ref = acfg.is_mostly_interesting(concrete_bbs)
 
     if not interesting:
         logger.info("  samples from the BB are not uniformly interesting!")
-        trace.add_termination(comment="Samples from the starting block are not interesting!", measurements=42) # TODO add measurements to the witnesses
+        trace.add_termination(comment="Samples from the starting block are not interesting!", measurements=result_ref)
         return abstract_bb, trace
 
     # a set of tokens representing subcomponents of the abstract basic block
@@ -86,15 +87,15 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
 
         # if they are mostly interesting, use the copy as new abstract block
         # one could also join the concrete bbs in instead
-        interesting = acfg.is_mostly_interesting(concrete_bbs)
+        interesting, result_ref = acfg.is_mostly_interesting(concrete_bbs)
 
         if interesting:
             logger.info(f"  samples for expanding {new_token} are interesting, adjusting BB")
-            trace.add_taken_expansion(new_token, new_action, 42) # TODO add measurements to the witnesses
+            trace.add_taken_expansion(new_token, new_action, result_ref)
             abstract_bb = working_copy
         else:
             logger.info(f"  samples for expanding {new_token} are not interesting, discarding")
-            trace.add_nontaken_expansion(new_token, new_action, 42) # TODO add measurements to the witnesses
+            trace.add_nontaken_expansion(new_token, new_action, result_ref)
             # make sure that we don't try that token again
             expansion_limit_tokens.add(new_token)
 

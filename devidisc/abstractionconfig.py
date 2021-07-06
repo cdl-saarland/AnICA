@@ -48,22 +48,20 @@ class AbstractionConfig:
         """ Given a list of concrete BasicBlocks, evaluate their
         interestingness and return the list of interesting ones.
         """
-        eval_it = self.predmanager.eval_with_all(bbs)
+        eval_it, result_ref = self.predmanager.eval_with_all_and_report(bbs)
 
         interesting_bbs = []
 
         for bb, eval_res in eval_it:
             if self.is_interesting(eval_res):
                 interesting_bbs.append(bb)
-                # TODO do something with the benchmark, give witnesses for interestingness
 
-        return interesting_bbs
+        return interesting_bbs, result_ref
 
     def is_mostly_interesting(self, bbs: Sequence[iwho.BasicBlock]) -> bool:
-        interesting_bbs = self.filter_interesting(bbs)
+        interesting_bbs, result_ref = self.filter_interesting(bbs)
         ratio = len(interesting_bbs) / len(bbs)
-        return ratio >= self.mostly_interesting_ratio
-
+        return (ratio >= self.mostly_interesting_ratio), result_ref
 
     def must_alias(self, op1: iwho.OperandInstance, op2: iwho.OperandInstance):
         # TODO this could use additional information about the instantiation

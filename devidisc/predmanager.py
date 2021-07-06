@@ -1,8 +1,11 @@
 """ TODO document
 """
 
+from datetime import datetime
+import json
 import multiprocessing
 from multiprocessing import Pool
+import socket
 
 
 from functools import partial
@@ -80,6 +83,10 @@ class PredictorManager:
 
         self.predictor_map = dict()
 
+        self.source_computer = socket.gethostname()
+
+        self.next_result_ref = 0
+
     def __enter__(self):
         return self
 
@@ -134,5 +141,50 @@ class PredictorManager:
             results = self.pool.imap(partial(evaluate_multiple, preds=self.predictors), tasks)
         return zip(bbs, results)
 
+    def report_series(self, measdict):
+        # TODO use database?
+        result_ref = self.next_result_ref
+        self.next_result_ref += 1
 
+        report_file = "./measurements/report_series_{}.json".format(result_ref)
+
+        with open(report_file, 'w') as f:
+            json.dump(measdict, f, indent=2)
+
+        return result_ref
+
+    def eval_with_all_and_report(self, bbs):
+        series_date = datetime.now().isoformat()
+
+        eval_res = list(self.eval_with_all(bbs))
+
+        measurements = []
+        for bb, result in eval_res:
+            predictor_runs = []
+            for predkey, res in result.items():
+                predmap_entry = self.predictor_map[predkey]
+                tp = res.get('TP', -1.0)
+                if tp is not None and tp < 0:
+                    tp = None
+                remark = json.dumps(res)
+                predictor_runs.append({
+                        "predictor": (predmap_entry["toolname"], predmap_entry["version"]),
+                        "uarch": predmap_entry["uarch"],
+                        "result": tp,
+                        "remark": remark
+                    })
+            record = {
+                    "input": bb.get_hex(),
+                    "predictor_runs": predictor_runs,
+                }
+            measurements.append(record)
+
+        measdict = {
+                "series_date": series_date,
+                "source_computer": self.source_computer,
+                "measurements": measurements,
+                }
+        result_ref = self.report_series(measdict)
+
+        return eval_res, result_ref
 
