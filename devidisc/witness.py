@@ -4,8 +4,8 @@ from typing import Optional
 
 from graphviz import Digraph
 
-from devidisc.abstractionconfig import AbstractionConfig
-from devidisc.abstractblock import AbstractBlock
+from abstractionconfig import AbstractionConfig
+from abstractblock import AbstractBlock
 
 class WitnessTrace:
     class Witness:

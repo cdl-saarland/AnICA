@@ -2,10 +2,10 @@
 from copy import deepcopy
 import textwrap
 
-from devidisc.abstractblock import AbstractBlock
-from devidisc.abstractionconfig import AbstractionConfig
+from abstractblock import AbstractBlock
+from abstractionconfig import AbstractionConfig
 
-from devidisc.witness import WitnessTrace
+from witness import WitnessTrace
 
 import logging
 logger = logging.getLogger(__name__)

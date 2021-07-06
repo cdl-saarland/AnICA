@@ -7,8 +7,8 @@ from typing import Union, Sequence
 
 import iwho
 
-from .abstractblock import *
-from .predmanager import PredictorManager
+from abstractblock import *
+from predmanager import PredictorManager
 
 # TODO this should be an ABC with subclasses for different testing campaigns
 class AbstractionConfig:
