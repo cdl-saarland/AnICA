@@ -30,6 +30,8 @@ dot_output
 dot
 *distribution.json
 *.db
+traces/
+*.s
 
 # pyenv stuff
 .python-version
