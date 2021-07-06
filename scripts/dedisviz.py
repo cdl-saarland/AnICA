@@ -38,9 +38,13 @@ def main():
 
     tr = WitnessTrace.from_json_dict(acfg, acfg.resolve_json_references(json_dict))
 
-    g = tr.to_dot()
+    # g = tr.to_dot()
+    #
+    # g.render(view=True)
 
-    g.render(view=True)
+    g = tr.to_html_graph()
+
+    g.generate("./generated_html")
 
 
 if __name__ == "__main__":

@@ -32,6 +32,7 @@ dot
 *.db
 traces/
 measurements/
+generated_html/
 *.s
 
 # pyenv stuff
