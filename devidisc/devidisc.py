@@ -6,23 +6,30 @@
 import argparse
 import json
 import multiprocessing
-import pathlib
+from pathlib import Path
 import random
 import sys
+import textwrap
+
+from datetime import datetime
 
 import iwho
 from iwho.predictors import Predictor
 from iwho.utils import parse_args_with_logging
 
+from abstractionconfig import AbstractionConfig
+from abstractblock import AbstractBlock
+import discovery
 from predmanager import PredictorManager
 from random_exploration import explore
+
 
 import logging
 logger = logging.getLogger(__name__)
 
 
 def main():
-    HERE = pathlib.Path(__file__).parent
+    HERE = Path(__file__).parent
 
     default_config = HERE.parent / "config.json"
     default_jobs = multiprocessing.cpu_count()
@@ -39,6 +46,8 @@ def main():
             help='seed for the rng')
 
     argparser.add_argument('--explore', action='store_true', help='just randomly explore basic blocks')
+
+    argparser.add_argument('-g', '--generalize', metavar='asm file', default=None, help='path to a file containing the assembly of a basic block to generalize')
 
     argparser.add_argument('predictors', nargs=2, metavar="PREDICTOR_ID", help='two identifiers of predictors specified in the config')
 
@@ -64,14 +73,34 @@ def main():
                 uarch = pred_entry['uarch']
             )
 
+    ctx = iwho.get_context("x86")
+
+    if args.generalize is not None:
+        with open(args.generalize, 'r') as f:
+            asm_str = f.read()
+        bb = iwho.BasicBlock(ctx, ctx.parse_asm(asm_str))
+        max_block_len = len(bb)
+        # TODO things need to be configurable here, and this code should probably be somewhere else
+        acfg = AbstractionConfig(ctx, max_block_len, predmanager=predman)
+        abb = AbstractBlock(acfg, bb)
+        res_abb, trace = discovery.generalize(acfg, abb)
+        print("Generalization Result:\n" + textwrap.indent(str(res_abb), '  '))
+
+        timestamp = datetime.now().replace(microsecond=0).isoformat()
+        filename = f"traces/trace_{timestamp}.json"
+        with open(filename, 'w') as f:
+            json.dump(acfg.introduce_json_references(trace.to_json_dict()), f, indent=2)
+        print(f"witness trace written to: {filename}")
+
+        sys.exit(0)
+
     if args.explore:
-        # get an iwho context with appropriate schemes
-        ctx = iwho.get_context("x86")
+        # only use appropriate schemes
         schemes = ctx.insn_schemes
         schemes = list(filter(lambda x: not x.affects_control_flow and
             ctx.get_features(x) is not None and "SKL" in ctx.get_features(x)[0], schemes))
 
-        result_base_path = pathlib.Path("./results/")
+        result_base_path = Path("./results/")
 
         # TODO configurable?
         num_batches = 10
