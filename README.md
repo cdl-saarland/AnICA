@@ -4,7 +4,7 @@ TODO write this
 
 ### Key Functionality
   - [X] implement mechanism for dropping constraints
-  - [ ] implement the core generalization algorithm
+  - [X] implement the core generalization algorithm
 
 ### Functional Extensions
   - [X] replace the powerset domain for uop combinations with a subset domain of uops
