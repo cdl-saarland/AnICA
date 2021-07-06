@@ -75,6 +75,12 @@ def main():
 
     ctx = iwho.get_context("x86")
 
+    ctx.push_filter(iwho.Filters.no_control_flow)
+
+    skl_filter = lambda scheme, ctx: ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]
+    ctx.push_filter(skl_filter) # only use instructions that have SKL measurements TODO that's a bit specific
+
+
     if args.generalize is not None:
         with open(args.generalize, 'r') as f:
             asm_str = f.read()
@@ -96,9 +102,7 @@ def main():
 
     if args.explore:
         # only use appropriate schemes
-        schemes = ctx.insn_schemes
-        schemes = list(filter(lambda x: not x.affects_control_flow and
-            ctx.get_features(x) is not None and "SKL" in ctx.get_features(x)[0], schemes))
+        schemes = ctx.filtered_insn_schemes
 
         result_base_path = Path("./results/")
 

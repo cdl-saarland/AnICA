@@ -177,7 +177,7 @@ class AbstractionConfig:
         self.feature_indices = dict()
         uop_index = defaultdict(list)
         self.feature_indices['skl_uops'] = uop_index
-        for ischeme in self.ctx.insn_schemes:
+        for ischeme in self.ctx.filtered_insn_schemes:
             features = self.extract_features(ischeme)
             if features['skl_uops'] is not None:
                 for u in features['skl_uops']:

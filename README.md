@@ -11,7 +11,7 @@ TODO write this
   - [ ] make AbstractionConfig configurable
   - [ ] make AbstractionConfig less of a god class
   - [ ] AbstractBlock.sample needs some software engineering, probably extract the aliasing portion to its own class to make it more manageable
-  - [ ] add a way of restricting the insn schemes provided by iwho.Context
+  - [X] add a way of restricting the insn schemes provided by iwho.Context
   - [ ] make iwho.Context configurable
   - [ ] use "type signature" as an insn feature
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig

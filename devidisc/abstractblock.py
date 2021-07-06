@@ -413,7 +413,7 @@ class AbstractInsn:
 
         if feasible_schemes is None:
             # all features are TOP, no restriction
-            feasible_schemes = ctx.insn_schemes
+            feasible_schemes = ctx.filtered_insn_schemes
         else:
             feasible_schemes = tuple(feasible_schemes)
 
