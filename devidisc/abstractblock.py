@@ -304,6 +304,19 @@ class AbstractInsn:
 
             return [('present', self)]
 
+        if not self.features['exact_scheme'].is_top():
+            # The exact scheme is more specific than the other features (it
+            # implies all of them). It is therefore pointless and harmful to
+            # expand another feature first, as it will not affect the sampling
+            # at all, but might very well lead to a situation where expanding
+            # the scheme later on will no longer be allowed.
+            # An alternative, more general way of dealing with this (also for
+            # other co-dependent features) would be to join the original with
+            # the sampled experiments rather than using the expanded abstract
+            # block, or to make sure that blocks not covered by the original
+            # block are sampled.
+            return [('exact_scheme', self.features['exact_scheme'])]
+
         res = []
         for k, v in self.features.items():
             if v.is_expandable():
