@@ -8,6 +8,7 @@ import json
 import multiprocessing
 from pathlib import Path
 import random
+import os
 import sys
 import textwrap
 
@@ -17,11 +18,15 @@ import iwho
 from iwho.predictors import Predictor
 from iwho.utils import parse_args_with_logging
 
-from abstractionconfig import AbstractionConfig
-from abstractblock import AbstractBlock
-import discovery
-from predmanager import PredictorManager
-from random_exploration import explore
+
+import_path = os.path.join(os.path.dirname(__file__), "..")
+sys.path.append(import_path)
+
+from devidisc.abstractionconfig import AbstractionConfig
+from devidisc.abstractblock import AbstractBlock
+import devidisc.discovery as discovery
+from devidisc.predmanager import PredictorManager
+from devidisc.random_exploration import explore
 
 
 import logging

@@ -2,10 +2,9 @@
 from copy import deepcopy
 import textwrap
 
-from abstractblock import AbstractBlock
-from abstractionconfig import AbstractionConfig
-
-from witness import WitnessTrace
+from .abstractblock import AbstractBlock
+from .abstractionconfig import AbstractionConfig
+from .witness import WitnessTrace
 
 import logging
 logger = logging.getLogger(__name__)

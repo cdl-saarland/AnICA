@@ -5,12 +5,17 @@
 
 import argparse
 import json
+import os
+import sys
 
 import iwho
 from iwho.utils import parse_args_with_logging
 
-from abstractionconfig import AbstractionConfig
-from discovery import WitnessTrace
+import_path = os.path.join(os.path.dirname(__file__), "..")
+sys.path.append(import_path)
+
+from devidisc.abstractionconfig import AbstractionConfig
+from devidisc.discovery import WitnessTrace
 
 
 
