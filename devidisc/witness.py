@@ -148,7 +148,6 @@ class WitnessTrace:
                 abb_node(g, next_node, tmp_abb, color="#f00000", comment="Not Interesting (cf. exp series #{})".format(witness.measurements))
                 g.edge(parent, next_node)
 
-        g.render('out.gv', view=True)
         return g
 
 
