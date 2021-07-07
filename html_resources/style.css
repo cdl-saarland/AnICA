@@ -23,8 +23,8 @@ html, body {
 .witnesscolumn {
     flex: 3;
     min-width: 100px;
-    background-color: #DDD;
-    overflow: scroll;
+    /* background-color: #DDD; */
+    overflow: hidden;
 }
 
 .gridcontainer {
@@ -82,3 +82,53 @@ svg {
     width: 100%;
     z-index: -1;
 }
+
+.measurement {
+  margin: 30px;
+}
+
+.asmblock, .hexblock {
+  font-family: monospace;
+  white-space: pre-line;
+}
+
+table, th, td {
+  border: 1px solid gray;
+}
+
+th {
+  padding: 10px;
+  text-align: left;
+}
+
+td {
+  padding: 10px 20px;
+  text-align: left;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+#witnessiframe {
+  height: 100%;
+  width: 100%;
+  border: 0px;
+}
+
+.center {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.centerbox {
+  border: 2px solid gray;
+  border-radius: 5px;
+  padding: 20px;
+  text-align: center;
+  width: 200px;
+}
+

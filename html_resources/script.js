@@ -12,7 +12,7 @@ function clickHandler(ident, target_url) {
         // this is a bit of a hack to make the color transparent
         elem.style.backgroundColor = color_str.replace("rgb", "rgba").replace(")", ", 0.2)")
     }
-    document.getElementById("target").innerText = target_url;
+    document.getElementById("witnessiframe").src = target_url;
 }
 
 function drawConnector(src_id, dst_id) {

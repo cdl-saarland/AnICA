@@ -17,11 +17,17 @@ sys.path.append(import_path)
 from devidisc.abstractionconfig import AbstractionConfig
 from devidisc.discovery import WitnessTrace
 from devidisc.html_graph import trace_to_html_graph
+from devidisc.measurementdb import MeasurementDB
 
 
 
 def main():
+    default_db = "measurements.db"
+
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    argparser.add_argument('-d', '--database', metavar='database', default=default_db,
+            help='path to an sqlite3 measurement database that has been initialized via dedisdb.py -c, for storing measurements to')
 
     # TODO acfg config, ctx config
     # TODO mode of operation: dot, html, end result, ...
@@ -43,9 +49,10 @@ def main():
     #
     # g.render(view=True)
 
-    g = trace_to_html_graph(tr)
+    with MeasurementDB(args.database) as mdb:
+        g = trace_to_html_graph(tr, mdb)
 
-    g.generate("./generated_html")
+        g.generate("./generated_html")
 
 
 if __name__ == "__main__":

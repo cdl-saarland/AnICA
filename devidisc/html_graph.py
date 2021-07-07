@@ -7,25 +7,31 @@ import shutil
 
 from .witness import WitnessTrace
 
-def trace_to_html_graph(witness: WitnessTrace):
+def trace_to_html_graph(witness: WitnessTrace, measurement_db=None):
     g = HTMLGraph("vis")
 
     abb = deepcopy(witness.start)
 
-    parent = g.add_block(text=str(abb), link="foo-link", kind="start")
+    parent = g.add_block(text=str(abb), link="empty_witness.html", kind="start")
     g.new_row()
 
     for witness in witness.trace:
+        meas_id = witness.measurements
+        if meas_id is not None and measurement_db is not None:
+            measdict = measurement_db.get_series(meas_id)
+            link = g.add_measurement_site(meas_id, measdict)
+        else:
+            link = None
 
         if witness.terminate:
-            new_node = g.add_block(text="Terminated: " + witness.comment, link="foo-link", kind="end")
+            new_node = g.add_block(text="Terminated: " + witness.comment, link="empty_witness.html", kind="end")
             g.add_edge(parent, new_node)
             continue
 
         if witness.taken:
             abb.apply_expansion(witness.component_token, witness.expansion)
 
-            new_node = g.add_block(text=str(abb), link="foo-link-{}".format(witness.measurements), kind="interesting")
+            new_node = g.add_block(text=str(abb), link=link, kind="interesting")
             g.add_edge(parent, new_node)
 
             parent = new_node
@@ -34,11 +40,72 @@ def trace_to_html_graph(witness: WitnessTrace):
             tmp_abb = deepcopy(abb)
             tmp_abb.apply_expansion(witness.component_token, witness.expansion)
 
-            new_node = g.add_block(text=str(tmp_abb), link="foo-link-{}".format(witness.measurements), kind="notinteresting")
+            new_node = g.add_block(text=str(tmp_abb), link=link, kind="notinteresting")
             g.add_edge(parent, new_node)
     g.new_row()
 
     return g
+
+
+_measurement_frame = """
+    <div class="measurement">
+      <h3> Measurement #{meas_id} </h3>
+      <table class="meastable">
+        <tr> <th> assembly </th>
+          <td>
+            <div class="asmblock">{asmblock}</div>
+          </td>
+        </tr>
+        <tr> <th> hex </th>
+          <td>
+            <div class="hexblock">{hexblock}</div>
+          </td>
+        </tr>
+        {predictor_runs}
+      </table>
+    </div>
+"""
+
+_predictor_run_frame = """
+        <tr>
+          <th> {predictor} </th>
+          <td> {result} </td>
+        </tr>
+"""
+
+def _generate_measurement_site(frame_str, measdict):
+    series_id = measdict.get("series_id", "N")
+    series_date = measdict["series_date"]
+    source_computer = measdict["source_computer"]
+
+    measurement_texts = []
+
+    for m in measdict["measurements"]:
+        meas_id = m.get("measurement_id", "N")
+        asmblock = "TODO implement this" # TODO
+        hexblock = m["input"]
+        predictor_run_texts = []
+        for r in m["predictor_runs"]:
+            predictor_text = ", ".join(r["predictor"]) + ", " + r["uarch"]
+            results = []
+            if r["result"] is not None:
+                results.append(r["result"])
+            if r["remark"] is not None:
+                results.append(r["remark"])
+            result_text = ", ".join(map(str, results))
+            predictor_run_texts.append(_predictor_run_frame.format(predictor=predictor_text, result=result_text))
+        full_predictor_run_text = "\n".join(predictor_run_texts)
+        meas_text = _measurement_frame.format(meas_id=meas_id, asmblock=asmblock, hexblock=hexblock , predictor_runs=full_predictor_run_text)
+        measurement_texts.append(meas_text)
+        # TODO sort by interestingness
+
+    full_meas_text = "\n".join(measurement_texts)
+
+    return frame_str.format(
+            series_id=series_id,
+            series_date=series_date,
+            source_computer=source_computer,
+            measurement_text=full_meas_text)
 
 class HTMLGraph:
     class Block:
@@ -62,6 +129,8 @@ class HTMLGraph:
 
         self.html_resources_path = Path(__file__).parent.parent / "html_resources"
 
+        self.measurement_sites = []
+
     def new_row(self):
         self.rows.append(self.current_row)
         self.current_row = []
@@ -80,6 +149,11 @@ class HTMLGraph:
     def add_edge(self, src_ident, dst_ident):
         self.edges.append((src_ident, dst_ident))
 
+    def add_measurement_site(self, meas_id, measdict):
+        link = "measurements/series_{}.html".format(meas_id)
+        self.measurement_sites.append((link, measdict))
+        return link
+
     def generate(self, dest):
         dest_path = Path(dest)
 
@@ -87,15 +161,28 @@ class HTMLGraph:
         shutil.rmtree(dest_path, ignore_errors=True)
         os.makedirs(dest_path)
 
+        if len(self.measurement_sites) > 0:
+            meas_dir = dest_path / "measurements"
+            os.makedirs(meas_dir)
+            with open(self.html_resources_path / "meas_frame.html") as f:
+                meas_frame_str = f.read()
+
+            for link, measdict in self.measurement_sites:
+                site_str = _generate_measurement_site(meas_frame_str, measdict)
+                with open(dest_path / link, "w") as f:
+                    f.write(site_str)
+
         # copy style file
         shutil.copy(self.html_resources_path / "style.css", dest_path)
+        shutil.copy(self.html_resources_path / "empty_witness.html", dest_path)
 
         # compute the grid components
         grid_content = ""
         for row in self.rows:
             grid_content += textwrap.indent('<div class="gridsubcontainer">\n', 16*' ')
             for block in reversed(row):
-                grid_content += textwrap.indent(f'<div id="{block.ident}" class="griditem block_{block.kind}" onclick="clickHandler(\'{block.ident}\', \'{block.link}\')">\n', 18*' ')
+                link = 'null' if block.link is None else f"\'{block.link}\'"
+                grid_content += textwrap.indent(f'<div id="{block.ident}" class="griditem block_{block.kind}" onclick="clickHandler(\'{block.ident}\', {link})">\n', 18*' ')
                 grid_content += f'<div class="abstractbb">{block.text}</div>\n'
                 grid_content += textwrap.indent('</div>\n', 18*' ')
             grid_content += textwrap.indent('</div>\n', 16*' ')
