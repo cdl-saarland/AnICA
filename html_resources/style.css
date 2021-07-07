@@ -14,9 +14,6 @@ html, body {
 }
 
 .graphcolumn {
-    position: relative;
-    left: 0;
-    top: 0;
     resize: horizontal;
     width: 50%;
     min-width: 100px;
@@ -31,9 +28,11 @@ html, body {
 }
 
 .gridcontainer {
+    position: relative;
+    left: 0;
+    top: 0;
     display: grid;
     grid-auto-flow: row;
-    /* grid-auto-columns: auto; */
     grid-auto-rows: max-content;
 }
 
@@ -41,7 +40,6 @@ html, body {
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: max-content;
-    /* grid-auto-rows: content; */
 }
 
 
@@ -80,5 +78,7 @@ svg {
     position: absolute;
     left: 0;
     top: 0;
+    height: 100%;
+    width: 100%;
     z-index: -1;
 }
