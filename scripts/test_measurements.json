@@ -1,21 +1,2306 @@
-
 {
-    "series_date": "2021-06-14T23:34:30",
-    "source_computer": "skylake",
-    "measurements": [
+  "series_date": "2021-07-06T15:23:20.355253",
+  "source_computer": "maerlyn",
+  "measurements": [
+    {
+      "input": "668343402a4883e82a",
+      "predictor_runs": [
         {
-          "predictor": ["llvm-mca", "12.0"],
-          "uarch": "skl",
-          "input": "49ffabcdef",
-          "result": 42.17,
-          "remark": null
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
         },
         {
-          "predictor": ["iaca", "3.0"],
-          "uarch": "skl",
-          "input": "49ffabcdef",
-          "result": null,
-          "remark": "an error occured!"
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
         }
-    ]
+      ]
+    },
+    {
+      "input": "4531fe4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "6641ffc74883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "804b402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "2c004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "24004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "66450fa5f34883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "8343402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "4c39d64883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "664109e24883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "834b40004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "83d82a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "83ff004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "48ab4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4539c04883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4931cd4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "0c004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4983c22a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "4c0fad7b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "44215b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "806340004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "48837340004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "480fb7e94883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "6683c1004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "48836b40004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "83e02a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "66ffc14883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4883c52a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "c053402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "44017b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "83e82a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "834340004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "83c02a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "48837b402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "448573404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "488363402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "48ffc14883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "668b43404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "34004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4183c82a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4183e0004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4883f82a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "0fa46b40004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "440fb7f74883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "ab4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4883e82a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "c053402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "0fb7f34883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4c0faded4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "bc2a0000004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "48834b402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "664183e02a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "664121f44883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "66ff4b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "2363404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "83e82a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "6641d1d44883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "48836b40004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "836340004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "664109f84883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "83f22a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "66834b402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "660fa44340004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "834b402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4c0fa45340004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "0fa463402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "66837b402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "f763404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "488373402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "668363402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "66ff43404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "6683f12a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4831f54883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "66d1d64883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4501e04883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "480fa5c54883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "488343402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "f94883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4c0fa57b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "440fb16b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "668343402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "660fa573404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "48ffc54883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "66834b402a4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "440fa553404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "660fa57b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "804b40004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "0c004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "f65b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "d15b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "4c01fd4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 3.0,
+          "remark": "{\"TP\": 3.0}"
+        }
+      ]
+    },
+    {
+      "input": "66f75b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "fb4883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "f65b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "482b53404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "48d15b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "8cd94883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "440fa563404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "f76b404883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    },
+    {
+      "input": "806340004883e82a",
+      "predictor_runs": [
+        {
+          "predictor": [
+            "testpredictor",
+            "all_1"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        },
+        {
+          "predictor": [
+            "testpredictor",
+            "add_expensive"
+          ],
+          "uarch": "any",
+          "result": 2.0,
+          "remark": "{\"TP\": 2.0}"
+        }
+      ]
+    }
+  ]
 }

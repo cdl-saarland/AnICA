@@ -31,10 +31,16 @@ def create_tables(con):
     cur.execute("""
         CREATE TABLE IF NOT EXISTS measurements (
             measurement_id INTEGER NOT NULL PRIMARY KEY,
-            predictor_id INTEGER NOT NULL,
             series_id INTEGER NOT NULL,
+            input TEXT NOT NULL
+        )""")
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS predictor_runs (
+            predrun_id INTEGER NOT NULL PRIMARY KEY,
+            measurement_id INTEGER NOT NULL,
+            predictor_id INTEGER NOT NULL,
             uarch_id INTEGER NOT NULL,
-            input TEXT NOT NULL,
             result REAL,
             remark TEXT
         )""")
@@ -62,20 +68,23 @@ def create_tables(con):
 
 def add_uarchs(con):
     cur = con.cursor()
+    cur.execute("INSERT INTO uarchs VALUES (NULL, 'any')")
     cur.execute("INSERT INTO uarchs VALUES (NULL, 'SKL')")
     con.commit()
 
 
-def add_measurement_dict(con, measdict):
+def add_series(con, measdict):
     # {
     #   "series_date": $date,
     #   "source_computer": "skylake",
     #   "measurements": [{
-    #       "predictor": ["llvm-mca", "12.0"],
-    #       "uarch": "SKL",
     #       "input": "49ffabcdef",
-    #       "result": 42.17,
-    #       "remark": null
+    #       "predictor_runs": [{
+    #           "predictor": ["llvm-mca", "12.0"],
+    #           "uarch": "SKL",
+    #           "result": 42.17,
+    #           "remark": null
+    #       }]
     #   }]
     # }
 
@@ -94,45 +103,51 @@ def add_measurement_dict(con, measdict):
     uarch_ids = dict()
 
     for m in measdict["measurements"]:
-        predictor = tuple(m["predictor"])
-        uarch = m["uarch"]
-
         inp = m["input"]
-        res = m.get("result", None)
-        remark = m.get("remark", None)
 
-        predictor_id = predictor_ids.get(predictor, None)
+        cur.execute("INSERT INTO measurements VALUES (NULL, ?, ?)", (series_id, inp))
+        measurement_id = cur.lastrowid
 
-        if predictor_id is None:
-            toolname = predictor[0]
-            version = predictor[1]
-            cur.execute("SELECT predictor_id FROM predictors WHERE toolname=? and version=?", (toolname, version))
-            result = cur.fetchone()
-            if result is None:
-                cur.execute("INSERT INTO predictors VALUES (NULL, ?, ?)", (toolname, version))
-                predictor_id = cur.lastrowid
-            else:
-                predictor_id = result['predictor_id']
+        predictor_runs = m["predictor_runs"]
 
-            predictor_ids[predictor] = predictor_id
+        for r in predictor_runs:
+            predictor = tuple(r["predictor"])
+            uarch = r["uarch"]
 
-        # TODO this is code duplication!
-        uarch_id = uarch_ids.get(uarch, None)
+            res = r.get("result", None)
+            remark = r.get("remark", None)
 
-        if uarch_id is None:
-            cur.execute("SELECT uarch_id FROM uarchs WHERE uarch_name=?", (uarch,))
-            result = cur.fetchone()
-            if result is None:
-                cur.execute("INSERT INTO uarchs VALUES (NULL, ?)", (uarch,))
-                uarch_id = cur.lastrowid
-            else:
-                uarch_id = result['uarch_id']
+            predictor_id = predictor_ids.get(predictor, None)
+            if predictor_id is None:
+                toolname, version = predictor
+                cur.execute("SELECT predictor_id FROM predictors WHERE toolname=? and version=?", (toolname, version))
+                result = cur.fetchone()
+                if result is None:
+                    cur.execute("INSERT INTO predictors VALUES (NULL, ?, ?)", (toolname, version))
+                    predictor_id = cur.lastrowid
+                else:
+                    predictor_id = result['predictor_id']
 
-            uarch_ids[uarch] = uarch_id
+                predictor_ids[predictor] = predictor_id
 
-        cur.execute("INSERT INTO measurements VALUES (NULL, ?, ?, ?, ?, ?, ?)", (predictor_id, series_id, uarch_id, inp, res, remark))
+            # it would be nicer to deduplicate this with the predictor code
+            uarch_id = uarch_ids.get(uarch, None)
+            if uarch_id is None:
+                cur.execute("SELECT uarch_id FROM uarchs WHERE uarch_name=?", (uarch,))
+                result = cur.fetchone()
+                if result is None:
+                    cur.execute("INSERT INTO uarchs VALUES (NULL, ?)", (uarch,))
+                    uarch_id = cur.lastrowid
+                else:
+                    uarch_id = result['uarch_id']
+
+                uarch_ids[uarch] = uarch_id
+
+            cur.execute("INSERT INTO predictor_runs VALUES (NULL, ?, ?, ?, ?, ?)", (measurement_id, predictor_id, uarch_id, res, remark))
+
     con.commit()
-    return len(measdict["measurements"])
+
+    return series_id
 
 
 def open_db(db_name):
@@ -186,7 +201,8 @@ def main():
         for idx, path in enumerate(file_list):
             with open(path, 'r') as meas_file:
                 meas_dict = json.load(meas_file)
-            num_added = add_measurement_dict(con, meas_dict)
+            add_series(con, meas_dict)
+            num_added = len(meas_dict['measurements'])
             total_num_added += num_added
             print(f" {idx}: Successfully added {num_added} measurements in a new series.")
         print(f"Successfully added {total_num_added} measurements.")
