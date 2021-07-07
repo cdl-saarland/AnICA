@@ -74,7 +74,8 @@ class PredictorManager:
     the PredictorManager methods to run (some of) them on a batch of basic
     blocks.
     """
-    def __init__(self, num_processes=0):
+    def __init__(self, num_processes=0, measurement_db=None):
+        self.dbman = measurement_db
         self.pool = None
         if num_processes is not None:
             if num_processes <= 0:
@@ -141,22 +142,13 @@ class PredictorManager:
             results = self.pool.imap(partial(evaluate_multiple, preds=self.predictors), tasks)
         return zip(bbs, results)
 
-    def report_series(self, measdict):
-        # TODO use database?
-        result_ref = self.next_result_ref
-        self.next_result_ref += 1
-
-        report_file = "./measurements/report_series_{}.json".format(result_ref)
-
-        with open(report_file, 'w') as f:
-            json.dump(measdict, f, indent=2)
-
-        return result_ref
-
     def eval_with_all_and_report(self, bbs):
         series_date = datetime.now().isoformat()
 
         eval_res = list(self.eval_with_all(bbs))
+
+        if self.dbman is None:
+            return eval_res, None
 
         measurements = []
         for bb, result in eval_res:
@@ -184,7 +176,9 @@ class PredictorManager:
                 "source_computer": self.source_computer,
                 "measurements": measurements,
                 }
-        result_ref = self.report_series(measdict)
+
+        with self.dbman as dbman:
+            result_ref = dbman.add_series(measdict)
 
         return eval_res, result_ref
 

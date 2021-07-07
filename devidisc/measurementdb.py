@@ -2,9 +2,11 @@ from datetime import datetime
 import sqlite3
 
 class MeasurementDB:
+    """TODO document"""
     def __init__(self, db_name):
         self.db_name = db_name
         self.con = None
+        self.nesting_level = 0 # for making the ContextManager re-entrant
 
     def _init_con(self):
         self.con = sqlite3.connect(self.db_name)
@@ -15,11 +17,20 @@ class MeasurementDB:
         self.con = None
 
     def __enter__(self):
-        self._init_con()
+        if self.nesting_level == 0:
+            self._init_con()
+        self.nesting_level += 1
         return self
 
     def __exit__(self, exc_type, exc_value, trace):
-        self._deinit_con()
+        self.nesting_level -= 1
+        if self.nesting_level == 0:
+            self._deinit_con()
+
+    def get_series(self, series_id):
+        con = self.con
+        assert con is not None
+        # TODO
 
 
     def create_tables(self):

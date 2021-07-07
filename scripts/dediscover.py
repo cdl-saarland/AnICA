@@ -25,6 +25,7 @@ sys.path.append(import_path)
 from devidisc.abstractionconfig import AbstractionConfig
 from devidisc.abstractblock import AbstractBlock
 import devidisc.discovery as discovery
+from devidisc.measurementdb import MeasurementDB
 from devidisc.predmanager import PredictorManager
 from devidisc.random_exploration import explore
 
@@ -39,6 +40,7 @@ def main():
     default_config = HERE.parent / "config.json"
     default_jobs = multiprocessing.cpu_count()
     default_seed = 424242
+    default_db = "measurements.db"
 
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     argparser.add_argument('-c', '--config', default=default_config, metavar="CONFIG",
@@ -49,6 +51,10 @@ def main():
 
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
             help='seed for the rng')
+
+    argparser.add_argument('-d', '--database', metavar='database', default=default_db,
+            help='path to an sqlite3 measurement database that has been initialized via dedisdb.py -c, for storing measurements to')
+
 
     argparser.add_argument('--explore', action='store_true', help='just randomly explore basic blocks')
 
@@ -65,7 +71,16 @@ def main():
 
     # The predman keeps track of all the predictors and interacts with them
     num_processes = args.jobs
-    predman = PredictorManager(num_processes)
+
+    create_db = not os.path.isfile(args.database)
+
+    measurement_db = MeasurementDB(args.database)
+
+    if create_db:
+        with measurement_db as m:
+            m.create_tables()
+
+    predman = PredictorManager(num_processes=num_processes, measurement_db=measurement_db)
 
     for pkey in args.predictors:
         pred_entry = config[pkey]
