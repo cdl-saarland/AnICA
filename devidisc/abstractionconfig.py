@@ -3,6 +3,7 @@
 
 from abc import ABC, abstractmethod
 from collections import defaultdict
+import math
 from typing import Union, Sequence
 
 import iwho
@@ -35,14 +36,17 @@ class AbstractionConfig:
 
         self.build_index()
 
-    def is_interesting(self, eval_res) -> bool:
+    def compute_interestingness(self, eval_res):
         if any((v.get('TP', None) is None for k, v in eval_res.items())):
             # errors are always interesting
-            return True
+            return math.inf
         values = [v['TP'] for k, v in eval_res.items()]
         rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
         # TODO think about this metric?
-        return rel_error >= self.min_interesting_error
+        return rel_error
+
+    def is_interesting(self, eval_res) -> bool:
+        return self.compute_interestingness >= self.min_interesting_error
 
     def filter_interesting(self, bbs: Sequence[iwho.BasicBlock]) -> Sequence[iwho.BasicBlock]:
         """ Given a list of concrete BasicBlocks, evaluate their

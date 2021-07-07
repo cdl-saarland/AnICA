@@ -50,7 +50,7 @@ def main():
     # g.render(view=True)
 
     with MeasurementDB(args.database) as mdb:
-        g = trace_to_html_graph(tr, mdb)
+        g = trace_to_html_graph(tr, acfg=acfg, measurement_db=mdb)
 
         g.generate("./generated_html")
 

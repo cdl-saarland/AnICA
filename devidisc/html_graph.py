@@ -7,8 +7,8 @@ import shutil
 
 from .witness import WitnessTrace
 
-def trace_to_html_graph(witness: WitnessTrace, measurement_db=None):
-    g = HTMLGraph("vis")
+def trace_to_html_graph(witness: WitnessTrace, acfg=None, measurement_db=None):
+    g = HTMLGraph("DeviDisc Visualization", acfg=acfg)
 
     abb = deepcopy(witness.start)
 
@@ -73,17 +73,19 @@ _predictor_run_frame = """
         </tr>
 """
 
-def _generate_measurement_site(frame_str, measdict):
+def _generate_measurement_site(acfg, frame_str, measdict):
     series_id = measdict.get("series_id", "N")
     series_date = measdict["series_date"]
     source_computer = measdict["source_computer"]
 
     measurement_texts = []
 
+    ctx = acfg.ctx
+
     for m in measdict["measurements"]:
         meas_id = m.get("measurement_id", "N")
-        asmblock = "TODO implement this" # TODO
         hexblock = m["input"]
+        asmblock = "\n".join(map(str, ctx.decode_insns(hexblock)))
         predictor_run_texts = []
         for r in m["predictor_runs"]:
             predictor_text = ", ".join(r["predictor"]) + ", " + r["uarch"]
@@ -94,12 +96,18 @@ def _generate_measurement_site(frame_str, measdict):
                 results.append(r["remark"])
             result_text = ", ".join(map(str, results))
             predictor_run_texts.append(_predictor_run_frame.format(predictor=predictor_text, result=result_text))
+
+        # compute interestingness to sort by it
+        eval_res = {x: {"TP": r.get("result", None)} for x, r in enumerate(m["predictor_runs"])}
+        interestingness = acfg.compute_interestingness(eval_res)
+
         full_predictor_run_text = "\n".join(predictor_run_texts)
         meas_text = _measurement_frame.format(meas_id=meas_id, asmblock=asmblock, hexblock=hexblock , predictor_runs=full_predictor_run_text)
-        measurement_texts.append(meas_text)
-        # TODO sort by interestingness
+        measurement_texts.append((interestingness, meas_text))
 
-    full_meas_text = "\n".join(measurement_texts)
+    measurement_texts.sort(key=lambda x: x[0], reverse=True)
+
+    full_meas_text = "\n".join(map(lambda x: x[1], measurement_texts))
 
     return frame_str.format(
             series_id=series_id,
@@ -115,8 +123,10 @@ class HTMLGraph:
             self.link = link
             self.kind = kind
 
-    def __init__(self, title):
+    def __init__(self, title, acfg=None):
         self.title = title
+
+        self.acfg = acfg
 
         self.rows = []
         self.current_row = []
@@ -168,7 +178,7 @@ class HTMLGraph:
                 meas_frame_str = f.read()
 
             for link, measdict in self.measurement_sites:
-                site_str = _generate_measurement_site(meas_frame_str, measdict)
+                site_str = _generate_measurement_site(self.acfg, meas_frame_str, measdict)
                 with open(dest_path / link, "w") as f:
                     f.write(site_str)
 
