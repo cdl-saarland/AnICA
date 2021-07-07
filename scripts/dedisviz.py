@@ -16,6 +16,7 @@ sys.path.append(import_path)
 
 from devidisc.abstractionconfig import AbstractionConfig
 from devidisc.discovery import WitnessTrace
+from devidisc.html_graph import trace_to_html_graph
 
 
 
@@ -42,7 +43,7 @@ def main():
     #
     # g.render(view=True)
 
-    g = tr.to_html_graph()
+    g = trace_to_html_graph(tr)
 
     g.generate("./generated_html")
 

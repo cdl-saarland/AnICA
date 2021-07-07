@@ -1,8 +1,44 @@
 
+from copy import deepcopy
 from pathlib import Path
 import textwrap
 import os
 import shutil
+
+from .witness import WitnessTrace
+
+def trace_to_html_graph(witness: WitnessTrace):
+    g = HTMLGraph("vis")
+
+    abb = deepcopy(witness.start)
+
+    parent = g.add_block(text=str(abb), link="foo-link", kind="start")
+    g.new_row()
+
+    for witness in witness.trace:
+
+        if witness.terminate:
+            new_node = g.add_block(text="Terminated: " + witness.comment, link="foo-link", kind="end")
+            g.add_edge(parent, new_node)
+            continue
+
+        if witness.taken:
+            abb.apply_expansion(witness.component_token, witness.expansion)
+
+            new_node = g.add_block(text=str(abb), link="foo-link-{}".format(witness.measurements), kind="interesting")
+            g.add_edge(parent, new_node)
+
+            parent = new_node
+            g.new_row()
+        else:
+            tmp_abb = deepcopy(abb)
+            tmp_abb.apply_expansion(witness.component_token, witness.expansion)
+
+            new_node = g.add_block(text=str(tmp_abb), link="foo-link-{}".format(witness.measurements), kind="notinteresting")
+            g.add_edge(parent, new_node)
+    g.new_row()
+
+    return g
 
 class HTMLGraph:
     class Block:

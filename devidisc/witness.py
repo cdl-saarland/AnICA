@@ -6,7 +6,6 @@ from graphviz import Digraph
 
 from .abstractionconfig import AbstractionConfig
 from .abstractblock import AbstractBlock
-from .html_graph import HTMLGraph
 
 class WitnessTrace:
     class Witness:
@@ -101,39 +100,6 @@ class WitnessTrace:
         for v in json_dict['trace']:
             res.trace.append(WitnessTrace.Witness.from_json_dict(v))
         return res
-
-    def to_html_graph(self):
-        g = HTMLGraph("vis")
-
-        abb = deepcopy(self.start)
-
-        parent = g.add_block(text=str(abb), link="foo-link", kind="start")
-        g.new_row()
-
-        for witness in self.trace:
-
-            if witness.terminate:
-                new_node = g.add_block(text="Terminated: " + witness.comment, link="foo-link", kind="end")
-                g.add_edge(parent, new_node)
-                continue
-
-            if witness.taken:
-                abb.apply_expansion(witness.component_token, witness.expansion)
-
-                new_node = g.add_block(text=str(abb), link="foo-link-{}".format(witness.measurements), kind="interesting")
-                g.add_edge(parent, new_node)
-
-                parent = new_node
-                g.new_row()
-            else:
-                tmp_abb = deepcopy(abb)
-                tmp_abb.apply_expansion(witness.component_token, witness.expansion)
-
-                new_node = g.add_block(text=str(tmp_abb), link="foo-link-{}".format(witness.measurements), kind="notinteresting")
-                g.add_edge(parent, new_node)
-        g.new_row()
-
-        return g
 
 
     def to_dot(self):
