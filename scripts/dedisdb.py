@@ -11,155 +11,165 @@ import sys
 import json
 from datetime import datetime
 
-def create_tables(con):
-    cur = con.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS predictors (
-            predictor_id INTEGER NOT NULL PRIMARY KEY,
-            toolname TEXT NOT NULL,
-            version TEXT NOT NULL,
-            UNIQUE(toolname, version)
-        )""")
+class MeasurementDB:
+    def __init__(self, db_name):
+        self.db_name = db_name
+        self.con = None
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS series (
-            series_id INTEGER NOT NULL PRIMARY KEY,
-            source_computer TEXT NOT NULL,
-            timestamp INTEGER NOT NULL
-        )""")
+    def _init_con(self):
+        self.con = sqlite3.connect(self.db_name)
+        self.con.row_factory = sqlite3.Row
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS measurements (
-            measurement_id INTEGER NOT NULL PRIMARY KEY,
-            series_id INTEGER NOT NULL,
-            input TEXT NOT NULL
-        )""")
+    def _deinit_con(self):
+        self.con.close()
+        self.con = None
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS predictor_runs (
-            predrun_id INTEGER NOT NULL PRIMARY KEY,
-            measurement_id INTEGER NOT NULL,
-            predictor_id INTEGER NOT NULL,
-            uarch_id INTEGER NOT NULL,
-            result REAL,
-            remark TEXT
-        )""")
+    def __enter__(self):
+        self._init_con()
+        return self
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS uarchs (
-            uarch_id INTEGER NOT NULL PRIMARY KEY,
-            uarch_name TEXT UNIQUE NOT NULL
-        )""")
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS discoveries (
-            discovery_id INTEGER NOT NULL PRIMARY KEY,
-            remark TEXT
-        )""")
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS witnesses (
-            discovery_id INTEGER NOT NULL,
-            measurement_id INTEGER NOT NULL,
-            PRIMARY KEY (discovery_id, measurement_id)
-        )""")
-    con.commit()
+    def __exit__(self, exc_type, exc_value, trace):
+        self._deinit_con()
 
 
-def add_uarchs(con):
-    cur = con.cursor()
-    cur.execute("INSERT INTO uarchs VALUES (NULL, 'any')")
-    cur.execute("INSERT INTO uarchs VALUES (NULL, 'SKL')")
-    con.commit()
+    def create_tables(self):
+        con = self.con
+        assert con is not None
+
+        cur = con.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS predictors (
+                predictor_id INTEGER NOT NULL PRIMARY KEY,
+                toolname TEXT NOT NULL,
+                version TEXT NOT NULL,
+                UNIQUE(toolname, version)
+            )""")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS series (
+                series_id INTEGER NOT NULL PRIMARY KEY,
+                source_computer TEXT NOT NULL,
+                timestamp INTEGER NOT NULL
+            )""")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS measurements (
+                measurement_id INTEGER NOT NULL PRIMARY KEY,
+                series_id INTEGER NOT NULL,
+                input TEXT NOT NULL
+            )""")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS predictor_runs (
+                predrun_id INTEGER NOT NULL PRIMARY KEY,
+                measurement_id INTEGER NOT NULL,
+                predictor_id INTEGER NOT NULL,
+                uarch_id INTEGER NOT NULL,
+                result REAL,
+                remark TEXT
+            )""")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS uarchs (
+                uarch_id INTEGER NOT NULL PRIMARY KEY,
+                uarch_name TEXT UNIQUE NOT NULL
+            )""")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS discoveries (
+                discovery_id INTEGER NOT NULL PRIMARY KEY,
+                remark TEXT
+            )""")
+
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS witnesses (
+                discovery_id INTEGER NOT NULL,
+                measurement_id INTEGER NOT NULL,
+                PRIMARY KEY (discovery_id, measurement_id)
+            )""")
+        con.commit()
 
 
-def add_series(con, measdict):
-    # {
-    #   "series_date": $date,
-    #   "source_computer": "skylake",
-    #   "measurements": [{
-    #       "input": "49ffabcdef",
-    #       "predictor_runs": [{
-    #           "predictor": ["llvm-mca", "12.0"],
-    #           "uarch": "SKL",
-    #           "result": 42.17,
-    #           "remark": null
-    #       }]
-    #   }]
-    # }
+    def add_series(self, measdict):
+        # {
+        #   "series_date": $date,
+        #   "source_computer": "skylake",
+        #   "measurements": [{
+        #       "input": "49ffabcdef",
+        #       "predictor_runs": [{
+        #           "predictor": ["llvm-mca", "12.0"],
+        #           "uarch": "SKL",
+        #           "result": 42.17,
+        #           "remark": null
+        #       }]
+        #   }]
+        # }
 
-    series_date = measdict["series_date"]
-    timestamp = round(datetime.fromisoformat(series_date).timestamp())
+        con = self.con
+        assert con is not None
 
-    source_computer = measdict["source_computer"]
+        series_date = measdict["series_date"]
+        timestamp = round(datetime.fromisoformat(series_date).timestamp())
 
-    cur = con.cursor()
+        source_computer = measdict["source_computer"]
 
-    # add a new series
-    cur.execute("INSERT INTO series VALUES (NULL, ?, ?)", (source_computer, timestamp))
-    series_id = cur.lastrowid
+        cur = con.cursor()
 
-    predictor_ids = dict()
-    uarch_ids = dict()
+        # add a new series
+        cur.execute("INSERT INTO series VALUES (NULL, ?, ?)", (source_computer, timestamp))
+        series_id = cur.lastrowid
 
-    for m in measdict["measurements"]:
-        inp = m["input"]
+        predictor_ids = dict()
+        uarch_ids = dict()
 
-        cur.execute("INSERT INTO measurements VALUES (NULL, ?, ?)", (series_id, inp))
-        measurement_id = cur.lastrowid
+        for m in measdict["measurements"]:
+            inp = m["input"]
 
-        predictor_runs = m["predictor_runs"]
+            cur.execute("INSERT INTO measurements VALUES (NULL, ?, ?)", (series_id, inp))
+            measurement_id = cur.lastrowid
 
-        for r in predictor_runs:
-            predictor = tuple(r["predictor"])
-            uarch = r["uarch"]
+            predictor_runs = m["predictor_runs"]
 
-            res = r.get("result", None)
-            remark = r.get("remark", None)
+            for r in predictor_runs:
+                predictor = tuple(r["predictor"])
+                uarch = r["uarch"]
 
-            predictor_id = predictor_ids.get(predictor, None)
-            if predictor_id is None:
-                toolname, version = predictor
-                cur.execute("SELECT predictor_id FROM predictors WHERE toolname=? and version=?", (toolname, version))
-                result = cur.fetchone()
-                if result is None:
-                    cur.execute("INSERT INTO predictors VALUES (NULL, ?, ?)", (toolname, version))
-                    predictor_id = cur.lastrowid
-                else:
-                    predictor_id = result['predictor_id']
+                res = r.get("result", None)
+                remark = r.get("remark", None)
 
-                predictor_ids[predictor] = predictor_id
+                predictor_id = predictor_ids.get(predictor, None)
+                if predictor_id is None:
+                    toolname, version = predictor
+                    cur.execute("SELECT predictor_id FROM predictors WHERE toolname=? and version=?", (toolname, version))
+                    result = cur.fetchone()
+                    if result is None:
+                        cur.execute("INSERT INTO predictors VALUES (NULL, ?, ?)", (toolname, version))
+                        predictor_id = cur.lastrowid
+                    else:
+                        predictor_id = result['predictor_id']
 
-            # it would be nicer to deduplicate this with the predictor code
-            uarch_id = uarch_ids.get(uarch, None)
-            if uarch_id is None:
-                cur.execute("SELECT uarch_id FROM uarchs WHERE uarch_name=?", (uarch,))
-                result = cur.fetchone()
-                if result is None:
-                    cur.execute("INSERT INTO uarchs VALUES (NULL, ?)", (uarch,))
-                    uarch_id = cur.lastrowid
-                else:
-                    uarch_id = result['uarch_id']
+                    predictor_ids[predictor] = predictor_id
 
-                uarch_ids[uarch] = uarch_id
+                # it would be nicer to deduplicate this with the predictor code
+                uarch_id = uarch_ids.get(uarch, None)
+                if uarch_id is None:
+                    cur.execute("SELECT uarch_id FROM uarchs WHERE uarch_name=?", (uarch,))
+                    result = cur.fetchone()
+                    if result is None:
+                        cur.execute("INSERT INTO uarchs VALUES (NULL, ?)", (uarch,))
+                        uarch_id = cur.lastrowid
+                    else:
+                        uarch_id = result['uarch_id']
 
-            cur.execute("INSERT INTO predictor_runs VALUES (NULL, ?, ?, ?, ?, ?)", (measurement_id, predictor_id, uarch_id, res, remark))
+                    uarch_ids[uarch] = uarch_id
 
-    con.commit()
+                cur.execute("INSERT INTO predictor_runs VALUES (NULL, ?, ?, ?, ?, ?)", (measurement_id, predictor_id, uarch_id, res, remark))
 
-    return series_id
+        con.commit()
+
+        return series_id
 
 
-def open_db(db_name):
-    con = sqlite3.connect(db_name)
-    con.row_factory = sqlite3.Row
-    return con
-
-def open_and_add(db_name, measdict):
-    con = open_db(db_name)
-    num_added = add_measurement_dict(con, meas_dict)
-    con.close()
-    return num_added
 
 def main():
     import argparse
@@ -179,37 +189,37 @@ def main():
 
     if db_exists and args.create:
         print("Error: Trying to create a database that already exists!", file=sys.stderr)
-        sys.exit(1)
+        return 1
 
-    con = open_db(db_name)
 
-    if args.create:
-        create_tables(con)
-        add_uarchs(con)
-    elif args.measurements is not None:
-        meas_path = Path(args.measurements)
-        if os.path.isdir(meas_path):
-            file_list = [ meas_path / f for f in os.listdir(meas_path) if f.endswith('.json')]
-        elif os.path.isfile(meas_path):
-            file_list = [ meas_path ]
+    with MeasurementDB(db_name) as dbman:
+        if args.create:
+            dbman.create_tables()
+        elif args.measurements is not None:
+            meas_path = Path(args.measurements)
+            if os.path.isdir(meas_path):
+                file_list = [ meas_path / f for f in os.listdir(meas_path) if f.endswith('.json')]
+            elif os.path.isfile(meas_path):
+                file_list = [ meas_path ]
+            else:
+                print("Error: Measurement file does not exist!", file=sys.stderr)
+                return 1
+
+            print(f"Importing data from {len(file_list)} measurement file(s)")
+            total_num_added = 0
+            for idx, path in enumerate(file_list):
+                with open(path, 'r') as meas_file:
+                    meas_dict = json.load(meas_file)
+                dbman.add_series(meas_dict)
+                num_added = len(meas_dict['measurements'])
+                total_num_added += num_added
+                print(f" {idx}: Successfully added {num_added} measurements in a new series.")
+            print(f"Successfully added {total_num_added} measurements.")
         else:
-            print("Error: Measurement file does not exist!", file=sys.stderr)
-            sys.exit(1)
+            pass
 
-        print(f"Importing data from {len(file_list)} measurement file(s)")
-        total_num_added = 0
-        for idx, path in enumerate(file_list):
-            with open(path, 'r') as meas_file:
-                meas_dict = json.load(meas_file)
-            add_series(con, meas_dict)
-            num_added = len(meas_dict['measurements'])
-            total_num_added += num_added
-            print(f" {idx}: Successfully added {num_added} measurements in a new series.")
-        print(f"Successfully added {total_num_added} measurements.")
-    else:
-        pass
+    return 0
 
-    con.close()
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
