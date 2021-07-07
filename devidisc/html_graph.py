@@ -22,6 +22,8 @@ class HTMLGraph:
 
         self.ident2block = dict()
 
+        self.edges = []
+
         self.html_resources_path = Path(__file__).parent.parent / "html_resources"
 
     def new_row(self):
@@ -29,7 +31,7 @@ class HTMLGraph:
         self.current_row = []
 
     def add_block(self, text, link, kind):
-        ident = self.next_ident
+        ident = "block_{}".format(self.next_ident)
         self.next_ident += 1
 
         block = HTMLGraph.Block(ident, text, link, kind)
@@ -40,8 +42,7 @@ class HTMLGraph:
         return ident
 
     def add_edge(self, src_ident, dst_ident):
-        # TODO
-        pass
+        self.edges.append((src_ident, dst_ident))
 
     def generate(self, dest):
         dest_path = Path(dest)
@@ -50,21 +51,18 @@ class HTMLGraph:
         shutil.rmtree(dest_path, ignore_errors=True)
         os.makedirs(dest_path)
 
-        # copy style and script file
+        # copy style file
         shutil.copy(self.html_resources_path / "style.css", dest_path)
-        shutil.copy(self.html_resources_path / "script.js", dest_path)
 
         # compute the grid components
         grid_content = ""
         for row in self.rows:
-            grid_content += textwrap.indent('<div class="gridsubcontainer">', 16*' ')
+            grid_content += textwrap.indent('<div class="gridsubcontainer">\n', 16*' ')
             for block in reversed(row):
-                grid_content += textwrap.indent(f'<div id="{block.ident}" class="griditem block_{block.kind}" onclick="clickHandler(\'{block.ident}\', \'{block.link}\')">', 18*' ')
-                grid_content += f'<div class="abstractbb">{block.text}</div>'
-                grid_content += textwrap.indent('</div>', 18*' ')
-            grid_content += textwrap.indent('</div>', 16*' ')
-
-        # TODO arrows
+                grid_content += textwrap.indent(f'<div id="{block.ident}" class="griditem block_{block.kind}" onclick="clickHandler(\'{block.ident}\', \'{block.link}\')">\n', 18*' ')
+                grid_content += f'<div class="abstractbb">{block.text}</div>\n'
+                grid_content += textwrap.indent('</div>\n', 18*' ')
+            grid_content += textwrap.indent('</div>\n', 16*' ')
 
         # load the html frame
         with open(self.html_resources_path / "frame.html", 'r') as f:
@@ -74,4 +72,19 @@ class HTMLGraph:
 
         with open(dest_path / "index.html", "w") as f:
             f.write(html_text)
+
+        # arrows go to the script file
+        connectors = []
+        for src, dst in self.edges:
+            connectors.append(f'drawConnector("{src}", "{dst}")')
+        connector_str = "\n".join(connectors)
+        connector_str = textwrap.indent(connector_str, 4*' ')
+
+        with open(self.html_resources_path / "script.js", 'r') as f:
+            script_frame = f.read()
+
+        script = script_frame.replace('[[ARROWS]]', connector_str, 1)
+
+        with open(dest_path / "script.js", "w") as f:
+            f.write(script)
 

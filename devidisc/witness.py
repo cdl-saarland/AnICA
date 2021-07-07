@@ -131,6 +131,7 @@ class WitnessTrace:
 
                 new_node = g.add_block(text=str(tmp_abb), link="foo-link-{}".format(witness.measurements), kind="notinteresting")
                 g.add_edge(parent, new_node)
+        g.new_row()
 
         return g
 
