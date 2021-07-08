@@ -39,6 +39,7 @@ html, body {
 
 .gridsubcontainer {
     display: grid;
+    justify-content: center;
     grid-auto-flow: column;
     grid-auto-columns: max-content;
 }
@@ -52,6 +53,7 @@ html, body {
     margin: 20px;
     padding: 10px;
     border-radius: 5px;
+    height: fit-content;
 }
 
 .abstractbb {
