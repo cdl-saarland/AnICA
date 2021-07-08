@@ -42,7 +42,7 @@ class AbstractionConfig:
         self.build_index()
 
     def compute_interestingness(self, eval_res):
-        if any((v.get('TP', None) is None for k, v in eval_res.items())):
+        if any((v.get('TP', None) is None or v.get('TP', -1.0) < 0 for k, v in eval_res.items())):
             # errors are always interesting
             return math.inf
         values = [v['TP'] for k, v in eval_res.items()]
