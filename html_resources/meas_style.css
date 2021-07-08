@@ -1,0 +1,27 @@
+.measurement {
+  margin: 30px;
+}
+
+.asmblock, .hexblock {
+  font-family: monospace;
+  white-space: pre-line;
+}
+
+table, th, td {
+  border: 1px solid gray;
+}
+
+th {
+  padding: 10px;
+  text-align: left;
+}
+
+td {
+  padding: 10px 20px;
+  text-align: left;
+}
+
+table {
+  border-collapse: collapse;
+}
+

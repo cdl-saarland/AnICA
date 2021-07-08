@@ -7,12 +7,61 @@ import shutil
 
 from .witness import WitnessTrace
 
+def prettify_absinsn(absinsn):
+    if all(map(lambda x: (x[0] == 'present' and x[1].val == False) or x[1].is_bottom(), absinsn.features.items())):
+        return "not present"
+    if all(map(lambda x: x[1].is_top(), absinsn.features.items())):
+        return "TOP"
+    res = "\n".join((f"<li>{k}: {v}</li>" for k, v in absinsn.features.items()))
+    res = '<ul class="featurelist">' + res + "</ul>"
+    return res
+
+
+def prettify_absblock(absblock):
+    res = ""
+    res += "<b>Abstract Instructions:</b>\n"
+    res += "<table>\n"
+    for idx, ai in enumerate(absblock.abs_insns):
+        res += "<tr>"
+        res += f"<th>{idx}</th>\n"
+        res += f"<td>{prettify_absinsn(ai)}</td>\n"
+        res += "</tr>"
+
+    res += "</table>\n"
+
+    res += "<b>Abstract Aliasing:</b>"
+
+    entries = []
+    for ((iidx1, oidx1), (iidx2,oidx2)), absval in absblock._abs_aliasing.items():
+        if absval.is_top():
+            continue
+        elif absval.is_bottom():
+            valtxt = "BOTTOM"
+        elif absval.val is False:
+            valtxt = "must not alias"
+        elif absval.val is True:
+            valtxt = "must alias"
+        else:
+            assert False
+
+        entries.append(f"<tr><th>{iidx1}:{oidx1} - {iidx2}:{oidx2}</th> <td> {valtxt} </td></tr>\n")
+
+    if len(entries) > 0:
+        entries.sort()
+        res += "\n<table>"
+        res += "\n" + "\n".join(entries)
+        res += "</table>"
+    else:
+        res += " TOP"
+
+    return res
+
 def trace_to_html_graph(witness: WitnessTrace, acfg=None, measurement_db=None):
     g = HTMLGraph("DeviDisc Visualization", acfg=acfg)
 
     abb = deepcopy(witness.start)
 
-    parent = g.add_block(text=str(abb), link="empty_witness.html", kind="start")
+    parent = g.add_block(text=prettify_absblock(abb), link="empty_witness.html", kind="start")
     g.new_row()
 
     for witness in witness.trace:
@@ -31,7 +80,7 @@ def trace_to_html_graph(witness: WitnessTrace, acfg=None, measurement_db=None):
         if witness.taken:
             abb.apply_expansion(witness.component_token, witness.expansion)
 
-            new_node = g.add_block(text=str(abb), link=link, kind="interesting")
+            new_node = g.add_block(text=prettify_absblock(abb), link=link, kind="interesting")
             g.add_edge(parent, new_node)
 
             parent = new_node
@@ -40,7 +89,7 @@ def trace_to_html_graph(witness: WitnessTrace, acfg=None, measurement_db=None):
             tmp_abb = deepcopy(abb)
             tmp_abb.apply_expansion(witness.component_token, witness.expansion)
 
-            new_node = g.add_block(text=str(tmp_abb), link=link, kind="notinteresting")
+            new_node = g.add_block(text=prettify_absblock(tmp_abb), link=link, kind="notinteresting")
             g.add_edge(parent, new_node)
     g.new_row()
 
@@ -184,6 +233,7 @@ class HTMLGraph:
 
         # copy style file
         shutil.copy(self.html_resources_path / "style.css", dest_path)
+        shutil.copy(self.html_resources_path / "meas_style.css", dest_path)
         shutil.copy(self.html_resources_path / "empty_witness.html", dest_path)
 
         # compute the grid components

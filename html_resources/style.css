@@ -23,7 +23,6 @@ html, body {
 .witnesscolumn {
     flex: 3;
     min-width: 100px;
-    /* background-color: #DDD; */
     overflow: hidden;
 }
 
@@ -54,8 +53,6 @@ html, body {
 }
 
 .abstractbb {
-    font-family: monospace;
-    white-space: pre-wrap;
 }
 
 .block_start {
@@ -83,31 +80,16 @@ svg {
     z-index: -1;
 }
 
-.measurement {
-  margin: 30px;
-}
-
-.asmblock, .hexblock {
-  font-family: monospace;
-  white-space: pre-line;
-}
-
-table, th, td {
-  border: 1px solid gray;
-}
-
-th {
-  padding: 10px;
-  text-align: left;
+table {
+  border-collapse: collapse;
 }
 
 td {
-  padding: 10px 20px;
-  text-align: left;
+  padding-left: 5px;
 }
 
-table {
-  border-collapse: collapse;
+.featurelist {
+  margin: 5px;
 }
 
 #witnessiframe {
