@@ -154,12 +154,13 @@ class AbstractionConfig:
         res['present'] = SingletonAbstractFeature()
         res['mnemonic'] = SingletonAbstractFeature()
         res['skl_uops'] = SubSetAbstractFeature()
+        res['opschemes'] = SubSetAbstractFeature()
         return res
 
     # TODO it would probably make sense to extract the indexing into its own class
     @property
     def index_order(self):
-        return ['mnemonic', 'skl_uops']
+        return ['mnemonic', 'skl_uops', 'opschemes']
 
     def scheme_index(self, feature_key, value):
         if feature_key == 'mnemonic':
@@ -169,11 +170,17 @@ class AbstractionConfig:
         index = self.feature_indices[feature_key]
 
         if isinstance(value, SubSetAbstractFeature):
-            res = set()
+            assert len(value.val) > 0
+            res = None
             for x in value.val:
                 cached_val = index.get(x, None)
-                assert cached_val is not None
-                res.update(cached_val)
+                if cached_val is None:
+                    logger.info(f"Found no cached value for '{x}' in the index for {feature_key}, probably because its using InsnSchemes have been filtered.")
+                    cached_val = {}
+                if res is None:
+                    res = set(cached_val)
+                else:
+                    res.intersection_update(cached_val)
             return res
         elif isinstance(value, SingletonAbstractFeature):
             cached_val = index.get(x, None)
@@ -182,13 +189,14 @@ class AbstractionConfig:
 
     def build_index(self):
         self.feature_indices = dict()
-        uop_index = defaultdict(list)
-        self.feature_indices['skl_uops'] = uop_index
-        for ischeme in self.ctx.filtered_insn_schemes:
-            features = self.extract_features(ischeme)
-            if features['skl_uops'] is not None:
-                for u in features['skl_uops']:
-                    uop_index[u].append(ischeme)
+        for f in ['skl_uops', 'opschemes']:
+            curr_idx = defaultdict(list)
+            self.feature_indices[f] = curr_idx
+            for ischeme in self.ctx.filtered_insn_schemes:
+                features = self.extract_features(ischeme)
+                if features[f] is not None:
+                    for u in features[f]:
+                        curr_idx[u].append(ischeme)
 
     def extract_features(self, ischeme: Union[iwho.InsnScheme, None]):
         if ischeme is None:
@@ -204,6 +212,15 @@ class AbstractionConfig:
             if port_usage is not None:
                 port_usage = port_usage.split('+')
                 res['skl_uops'] = port_usage
+
+        opschemes = []
+        for k, opscheme in ischeme.explicit_operands.items():
+            opschemes.append(str(opscheme))
+
+        for opscheme in ischeme.implicit_operands:
+            opschemes.append(str(opscheme))
+
+        res['opschemes'] = opschemes
 
         return res
 
