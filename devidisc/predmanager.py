@@ -103,7 +103,9 @@ class PredictorManager:
             self.pool.close()
 
     def register_predictor(self, key, predictor, toolname, version, uarch):
-        assert key not in self.predictor_map
+        if key in self.predictor_map:
+            # using the same predictor twice should be okay
+            return
         self.predictor_map[key] = {
                 "predictor": predictor,
                 "toolname": toolname,
