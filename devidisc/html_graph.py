@@ -8,34 +8,57 @@ import shutil
 
 from .witness import WitnessTrace
 
-def prettify_absinsn(absinsn):
+def prettify_absinsn(absinsn, hl_feature=None):
     if all(map(lambda x: (x[0] == 'present' and x[1].val == False) or x[1].is_bottom(), absinsn.features.items())):
-        return "not present"
-    if all(map(lambda x: x[1].is_top(), absinsn.features.items())):
-        return "TOP"
-    res = "\n".join((f"<li>{k}: {v}</li>" for k, v in absinsn.features.items()))
-    res = '<ul class="featurelist">' + res + "</ul>"
+        res = "not present"
+        if hl_feature is not None:
+            res = '<div class="highlightedcomponent">' + res + '</div>'
+    elif all(map(lambda x: x[1].is_top(), absinsn.features.items())):
+        res = "TOP"
+        if hl_feature is not None:
+            res = '<div class="highlightedcomponent">' + res + '</div>'
+    else:
+        list_entries = []
+        for k, v in absinsn.features.items():
+            entry = f"{k}: {v}"
+            if hl_feature == k:
+                entry = '<div class="highlightedcomponent">' + entry + "</div>"
+            entry = "<li>" + entry + "</li>"
+            list_entries.append(entry)
+        res = "\n".join(list_entries)
+        res = '<ul class="featurelist">' + res + "</ul>"
     return res
 
-
-def prettify_absblock(absblock):
+def prettify_absblock(absblock, highlighted_component=None):
     res = ""
     res += "<b>Abstract Instructions:</b>\n"
     res += "<table>\n"
     for idx, ai in enumerate(absblock.abs_insns):
         res += "<tr>"
         res += f"<th>{idx}</th>\n"
-        res += f"<td>{prettify_absinsn(ai)}</td>\n"
+        hl_feature = None
+        if highlighted_component is not None and highlighted_component[0] == 0 and highlighted_component[1] == idx:
+            hl_feature = highlighted_component[2]
+        insn_str = prettify_absinsn(ai, hl_feature)
+        res += f"<td>{insn_str}</td>\n"
         res += "</tr>"
 
     res += "</table>\n"
 
     res += "<b>Abstract Aliasing:</b>"
 
+    highlight_key = None
+    if highlighted_component is not None and highlighted_component[0] == 1:
+        highlight_key = absblock.acfg.resolve_json_references(highlighted_component[1])
+
     entries = []
     for ((iidx1, oidx1), (iidx2,oidx2)), absval in absblock._abs_aliasing.items():
+        highlighted = highlight_key == ((iidx1, oidx1), (iidx2,oidx2))
         if absval.is_top():
-            continue
+            if highlighted:
+                valtxt = "TOP"
+            else:
+                continue
         elif absval.is_bottom():
             valtxt = "BOTTOM"
         elif absval.val is False:
@@ -45,12 +68,15 @@ def prettify_absblock(absblock):
         else:
             assert False
 
-        entries.append(f"<tr><th>{iidx1}:{oidx1} - {iidx2}:{oidx2}</th> <td> {valtxt} </td></tr>\n")
+        div = "", ""
+        if highlighted:
+            div = '<div class="highlightedcomponent">', "</div>"
+        entries.append((f"<tr><td>{div[0]}{iidx1}:{oidx1} - {iidx2}:{oidx2}{div[1]}</td> <td>{div[0]} {valtxt} {div[1]} </td></tr>\n", f"{iidx1}:{oidx1} - {iidx2}:{oidx2}"))
 
     if len(entries) > 0:
-        entries.sort()
+        entries.sort(key=lambda x: x[1])
         res += "\n<table>"
-        res += "\n" + "\n".join(entries)
+        res += "\n" + "\n".join(map(lambda x: x[0], entries))
         res += "</table>"
     else:
         res += " TOP"
@@ -81,7 +107,7 @@ def trace_to_html_graph(witness: WitnessTrace, acfg=None, measurement_db=None):
         if witness.taken:
             abb.apply_expansion(witness.component_token, witness.expansion)
 
-            new_node = g.add_block(text=prettify_absblock(abb), link=link, kind="interesting")
+            new_node = g.add_block(text=prettify_absblock(abb, witness.component_token), link=link, kind="interesting")
             g.add_edge(parent, new_node)
 
             parent = new_node
@@ -90,7 +116,7 @@ def trace_to_html_graph(witness: WitnessTrace, acfg=None, measurement_db=None):
             tmp_abb = deepcopy(abb)
             tmp_abb.apply_expansion(witness.component_token, witness.expansion)
 
-            new_node = g.add_block(text=prettify_absblock(tmp_abb), link=link, kind="notinteresting")
+            new_node = g.add_block(text=prettify_absblock(tmp_abb, witness.component_token), link=link, kind="notinteresting")
             g.add_edge(parent, new_node)
     g.new_row()
 
@@ -135,7 +161,8 @@ def _generate_measurement_site(acfg, frame_str, measdict):
     for m in measdict["measurements"]:
         meas_id = m.get("measurement_id", "N")
         hexblock = m["input"]
-        asmblock = "\n".join(map(str, ctx.decode_insns(hexblock)))
+        # asmblock = "\n".join(map(str, ctx.decode_insns(hexblock)))
+        asmblock = "foo"
         predictor_run_texts = []
         for r in m["predictor_runs"]:
             predictor_text = ", ".join(r["predictor"]) + ", " + r["uarch"]

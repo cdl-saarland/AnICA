@@ -114,3 +114,7 @@ td {
   width: 200px;
 }
 
+.highlightedcomponent {
+    font-weight: bold;
+    color: orangered;
+}
