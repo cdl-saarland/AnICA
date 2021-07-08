@@ -97,7 +97,7 @@ def main():
 
     ctx.push_filter(iwho.Filters.no_control_flow)
 
-    skl_filter = lambda scheme, ctx: ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]
+    skl_filter = lambda scheme, ctx: (ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]) or "fxrstor" in str(scheme)
     ctx.push_filter(skl_filter) # only use instructions that have SKL measurements TODO that's a bit specific
 
 
