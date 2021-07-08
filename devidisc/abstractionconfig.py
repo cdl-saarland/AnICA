@@ -196,14 +196,14 @@ class AbstractionConfig:
         res = {'present': True}
         res['exact_scheme'] = ischeme
         res['mnemonic'] = self.ctx.extract_mnemonic(ischeme)
-        res['skl_uops'] = None
+        res['skl_uops'] = [] # This will produce a TOP entry if the feature is not present
 
         from_scheme = self.ctx.get_features(ischeme)
         if from_scheme is not None:
             port_usage = from_scheme[0].get("SKL")
             if port_usage is not None:
                 port_usage = port_usage.split('+')
-            res['skl_uops'] = port_usage
+                res['skl_uops'] = port_usage
 
         return res
 
