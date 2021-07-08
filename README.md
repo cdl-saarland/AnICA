@@ -8,6 +8,7 @@ TODO write this
 
 ### Functional Extensions
   - [X] replace the powerset domain for uop combinations with a subset domain of uops
+  - [ ] test whether the aliasing component can find something
   - [ ] make AbstractionConfig configurable
   - [ ] make AbstractionConfig less of a god class
   - [ ] AbstractBlock.sample needs some software engineering, probably extract the aliasing portion to its own class to make it more manageable
