@@ -638,6 +638,11 @@ class AbstractBlock:
             op_scheme1 = bb_insns[idx1[0]].scheme.get_operand_scheme(idx1[1])
             op_scheme2 = bb_insns[idx2[0]].scheme.get_operand_scheme(idx2[1])
             if not self.acfg.is_compatible(op_scheme1, op_scheme2):
+                if ad.is_bottom():
+                    # This is to avoid bottom entries for incompatible operand
+                    # combinations when initializing. Those would not be
+                    # unsound, but they are pointless and cause work.
+                    ad.set_to_top()
                 continue
 
             if self.acfg.must_alias(op1, op2):
