@@ -1,5 +1,6 @@
 
 from copy import deepcopy
+import json
 from pathlib import Path
 import textwrap
 import os
@@ -142,7 +143,13 @@ def _generate_measurement_site(acfg, frame_str, measdict):
             if r["result"] is not None:
                 results.append(r["result"])
             if r["remark"] is not None:
-                results.append(r["remark"])
+                remark = r["remark"]
+                try:
+                    json_dict = json.loads(remark)
+                    if "error" in json_dict:
+                        results.append("\n<div class='code'>" + json_dict["error"] + "</div>")
+                except:
+                    results.append(remark)
             result_text = ", ".join(map(str, results))
             predictor_run_texts.append(_predictor_run_frame.format(predictor=predictor_text, result=result_text))
 
@@ -151,6 +158,9 @@ def _generate_measurement_site(acfg, frame_str, measdict):
         interestingness = acfg.compute_interestingness(eval_res)
 
         full_predictor_run_text = "\n".join(predictor_run_texts)
+
+        full_predictor_run_text = _predictor_run_frame.format(predictor="interestingness", result=f"{interestingness:.3f}") + full_predictor_run_text
+
         meas_text = _measurement_frame.format(meas_id=meas_id, asmblock=asmblock, hexblock=hexblock , predictor_runs=full_predictor_run_text)
         measurement_texts.append((interestingness, meas_text))
 
