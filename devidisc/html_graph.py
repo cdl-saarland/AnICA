@@ -1,6 +1,7 @@
 
 from copy import deepcopy
 import json
+from multiprocessing import Pool
 from pathlib import Path
 import textwrap
 import os
@@ -156,13 +157,10 @@ def _generate_measurement_site(acfg, frame_str, measdict):
 
     measurement_texts = []
 
-    ctx = acfg.ctx
-
     for m in measdict["measurements"]:
         meas_id = m.get("measurement_id", "N")
         hexblock = m["input"]
-        # asmblock = "\n".join(map(str, ctx.decode_insns(hexblock)))
-        asmblock = "foo"
+        asmblock = m["asm_str"]
         predictor_run_texts = []
         for r in m["predictor_runs"]:
             predictor_text = ", ".join(r["predictor"]) + ", " + r["uarch"]
@@ -200,6 +198,26 @@ def _generate_measurement_site(acfg, frame_str, measdict):
             series_date=series_date,
             source_computer=source_computer,
             measurement_text=full_meas_text)
+
+def _asm_decode_fun(task):
+    return (task[0], task[1], task[3].hex2asm(task[2]))
+
+def add_asm_to_measdicts(acfg, series_dicts):
+    ctx = acfg.ctx
+    coder = ctx.coder
+
+    # this takes some time, but is trivially parallelizable
+    tasks = []
+    for series_idx, series_dict in enumerate(series_dicts):
+        for meas_idx, meas_dict in enumerate(series_dict["measurements"]):
+            tasks.append((series_idx, meas_idx, meas_dict["input"], coder))
+
+    with Pool() as pool:
+        results = pool.imap(_asm_decode_fun, tasks)
+
+        for series_idx, meas_idx, asm_str in results:
+            series_dicts[series_idx]["measurements"][meas_idx]["asm_str"] = asm_str
+
 
 class HTMLGraph:
     class Block:
@@ -258,6 +276,8 @@ class HTMLGraph:
         os.makedirs(dest_path)
 
         if len(self.measurement_sites) > 0:
+            add_asm_to_measdicts(self.acfg, [measdict for link, measdict in self.measurement_sites])
+
             meas_dir = dest_path / "measurements"
             os.makedirs(meas_dir)
             with open(self.html_resources_path / "meas_frame.html") as f:
