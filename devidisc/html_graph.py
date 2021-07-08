@@ -70,10 +70,10 @@ def trace_to_html_graph(witness: WitnessTrace, acfg=None, measurement_db=None):
             measdict = measurement_db.get_series(meas_id)
             link = g.add_measurement_site(meas_id, measdict)
         else:
-            link = None
+            link = "empty_witness.html"
 
         if witness.terminate:
-            new_node = g.add_block(text="Terminated: " + witness.comment, link="empty_witness.html", kind="end")
+            new_node = g.add_block(text="Terminated: " + witness.comment, link=link, kind="end")
             g.add_edge(parent, new_node)
             continue
 
