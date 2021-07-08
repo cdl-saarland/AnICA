@@ -29,7 +29,12 @@ class AbstractionConfig:
         self.generalization_batch_size = 100
         self.discovery_batch_size = 100
 
-        self.min_interesting_error = 0.1
+        # the interestingness of an experiment must be at least that high to be
+        # considered interesting
+        self.min_interestingness = 0.1
+
+        # at least this ratio of a batch of experiments must be interesting for
+        # the batch to be considered mostly interesting.
         self.mostly_interesting_ratio = 0.9
 
         self.predmanager = predmanager
@@ -46,7 +51,7 @@ class AbstractionConfig:
         return rel_error
 
     def is_interesting(self, eval_res) -> bool:
-        return self.compute_interestingness(eval_res) >= self.min_interesting_error
+        return self.compute_interestingness(eval_res) >= self.min_interestingness
 
     def filter_interesting(self, bbs: Sequence[iwho.BasicBlock]) -> Sequence[iwho.BasicBlock]:
         """ Given a list of concrete BasicBlocks, evaluate their
