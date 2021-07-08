@@ -23,7 +23,7 @@ TODO write this
     - [ ] OSACA
     - [ ] CQA?
     - [ ] measurements
-  - [ ] a fancy witness exploration gui
+  - [X] a fancy witness exploration gui
 
 ### Meta Features
   - [ ] improve database scheme to make comparing measurements faster
