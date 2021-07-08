@@ -46,7 +46,7 @@ class AbstractionConfig:
         return rel_error
 
     def is_interesting(self, eval_res) -> bool:
-        return self.compute_interestingness >= self.min_interesting_error
+        return self.compute_interestingness(eval_res) >= self.min_interesting_error
 
     def filter_interesting(self, bbs: Sequence[iwho.BasicBlock]) -> Sequence[iwho.BasicBlock]:
         """ Given a list of concrete BasicBlocks, evaluate their
