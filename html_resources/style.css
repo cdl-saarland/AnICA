@@ -16,7 +16,7 @@ html, body {
 
 .graphcolumn {
     resize: horizontal;
-    width: 50%;
+    width: 60%;
     min-width: 100px;
     overflow: scroll;
 }
