@@ -200,7 +200,7 @@ def _generate_measurement_site(acfg, frame_str, measdict):
             measurement_text=full_meas_text)
 
 def _asm_decode_fun(task):
-    return (task[0], task[1], task[3].hex2asm(task[2]))
+    return (task[0], task[1], "\n".join(task[3].hex2asm(task[2])))
 
 def add_asm_to_measdicts(acfg, series_dicts):
     ctx = acfg.ctx
