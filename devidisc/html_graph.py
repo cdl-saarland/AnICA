@@ -157,6 +157,9 @@ def _generate_measurement_site(acfg, frame_str, measdict):
 
     measurement_texts = []
 
+    num_interesting = 0
+    num_measurements = len(measdict["measurements"])
+
     for m in measdict["measurements"]:
         meas_id = m.get("measurement_id", "N")
         hexblock = m["input"]
@@ -181,6 +184,8 @@ def _generate_measurement_site(acfg, frame_str, measdict):
         # compute interestingness to sort by it
         eval_res = {x: {"TP": r.get("result", None)} for x, r in enumerate(m["predictor_runs"])}
         interestingness = acfg.compute_interestingness(eval_res)
+        if acfg.is_interesting(eval_res):
+            num_interesting += 1
 
         full_predictor_run_text = "\n".join(predictor_run_texts)
 
@@ -193,9 +198,14 @@ def _generate_measurement_site(acfg, frame_str, measdict):
 
     full_meas_text = "\n".join(map(lambda x: x[1], measurement_texts))
 
+    interesting_percentage = (num_interesting / num_measurements) * 100
+
+    comment_str = f"{num_interesting} out of {num_measurements} measurements ({interesting_percentage:.1f}%) are interesting."
+
     return frame_str.format(
             series_id=series_id,
             series_date=series_date,
+            comment=comment_str,
             source_computer=source_computer,
             measurement_text=full_meas_text)
 
