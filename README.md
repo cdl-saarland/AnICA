@@ -14,7 +14,7 @@ TODO write this
   - [ ] AbstractBlock.sample needs some software engineering, probably extract the aliasing portion to its own class to make it more manageable
   - [X] add a way of restricting the insn schemes provided by iwho.Context
   - [ ] make iwho.Context configurable
-  - [ ] use "type signature" as an insn feature
+  - [X] use "type signature" as an insn feature
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
   - [ ] check whether using an SMT solver for subsumption is necessary and reasonable
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
@@ -27,7 +27,7 @@ TODO write this
   - [X] a fancy witness exploration gui
 
 ### Meta Features
-  - [ ] improve database scheme to make comparing measurements faster
+  - [X] improve database scheme to make comparing measurements faster
   - [ ] make sampling deterministic (for the same seed)
   - [ ] profile running times of the components and check for bottlenecks
   - [ ] write this README
