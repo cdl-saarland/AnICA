@@ -157,9 +157,11 @@ def test_witness_trace_01(random, acfg):
     tr = WitnessTrace(abb)
 
     for i in range(10):
-        token, action = abb.expand([])
-        assert token is not None
-        tr.add_taken_expansion(token, action, 42)
+        expansions = sorted(abb.get_possible_expansions())
+        assert len(expansions) > 0
+        chosen = expansions[0][0]
+        abb.apply_expansion(chosen)
+        tr.add_taken_expansion(chosen, 42)
 
     res_ab = tr.replay(validate=True)
 

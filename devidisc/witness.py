@@ -9,8 +9,7 @@ from .abstractblock import AbstractBlock
 
 class WitnessTrace:
     class Witness:
-        def __init__(self, component_token, expansion, taken: bool, terminate: bool, comment: Optional[str], measurements):
-            self.component_token = component_token
+        def __init__(self, expansion, taken: bool, terminate: bool, comment: Optional[str], measurements):
             self.expansion = expansion
             self.taken = taken
             self.terminate = terminate
@@ -31,8 +30,8 @@ class WitnessTrace:
     def __len__(self):
         return len(self.trace)
 
-    def add_taken_expansion(self, component_token, expansion, measurements):
-        witness = WitnessTrace.Witness(component_token=component_token,
+    def add_taken_expansion(self, expansion, measurements):
+        witness = WitnessTrace.Witness(
                 expansion=expansion,
                 taken=True,
                 terminate=False,
@@ -40,8 +39,8 @@ class WitnessTrace:
                 measurements=measurements)
         self.trace.append(witness)
 
-    def add_nontaken_expansion(self, component_token, expansion, measurements):
-        witness = WitnessTrace.Witness(component_token=component_token,
+    def add_nontaken_expansion(self, expansion, measurements):
+        witness = WitnessTrace.Witness(
                 expansion=expansion,
                 taken=False,
                 terminate=False,
@@ -50,7 +49,7 @@ class WitnessTrace:
         self.trace.append(witness)
 
     def add_termination(self, comment, measurements):
-        witness = WitnessTrace.Witness(component_token=None,
+        witness = WitnessTrace.Witness(
                 expansion=None,
                 taken=False,
                 terminate=True,
@@ -72,7 +71,7 @@ class WitnessTrace:
                 continue
             if validate:
                 check_tmp = deepcopy(res)
-            res.apply_expansion(witness.component_token, witness.expansion)
+            res.apply_expansion(witness.expansion)
             if validate:
                 assert res.subsumes(check_tmp)
                 check_tmp = None
@@ -138,14 +137,14 @@ class WitnessTrace:
                 continue
 
             if witness.taken:
-                abb.apply_expansion(witness.component_token, witness.expansion)
+                abb.apply_expansion(witness.expansion)
 
                 abb_node(g, next_node, abb, color="#07c400", comment="Interesting (cf. exp series #{})".format(witness.measurements))
                 g.edge(parent, next_node)
                 parent = next_node
             else:
                 tmp_abb = deepcopy(abb)
-                tmp_abb.apply_expansion(witness.component_token, witness.expansion)
+                tmp_abb.apply_expansion(witness.expansion)
                 abb_node(g, next_node, tmp_abb, color="#f00000", comment="Not Interesting (cf. exp series #{})".format(witness.measurements))
                 g.edge(parent, next_node)
 

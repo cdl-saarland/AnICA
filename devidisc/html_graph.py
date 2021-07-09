@@ -22,7 +22,7 @@ def prettify_absinsn(absinsn, hl_feature=None):
         list_entries = []
         for k, v in absinsn.features.items():
             entry = f"{k}: {v}"
-            if hl_feature == k:
+            if hl_feature is not None and hl_feature[0] == k:
                 entry = '<div class="highlightedcomponent">' + entry + "</div>"
             entry = "<li>" + entry + "</li>"
             list_entries.append(entry)
@@ -30,7 +30,7 @@ def prettify_absinsn(absinsn, hl_feature=None):
         res = '<ul class="featurelist">' + res + "</ul>"
     return res
 
-def prettify_absblock(absblock, highlighted_component=None):
+def prettify_absblock(absblock, hl_expansion=None):
     res = ""
     res += "<b>Abstract Instructions:</b>\n"
     res += "<table>\n"
@@ -38,8 +38,8 @@ def prettify_absblock(absblock, highlighted_component=None):
         res += "<tr>"
         res += f"<th>{idx}</th>\n"
         hl_feature = None
-        if highlighted_component is not None and highlighted_component[0] == 0 and highlighted_component[1] == idx:
-            hl_feature = highlighted_component[2]
+        if hl_expansion is not None and hl_expansion[0] == 0 and hl_expansion[1] == idx:
+            hl_feature = hl_expansion[2]
         insn_str = prettify_absinsn(ai, hl_feature)
         res += f"<td>{insn_str}</td>\n"
         res += "</tr>"
@@ -49,8 +49,8 @@ def prettify_absblock(absblock, highlighted_component=None):
     res += "<b>Abstract Aliasing:</b>"
 
     highlight_key = None
-    if highlighted_component is not None and highlighted_component[0] == 1:
-        highlight_key = absblock.acfg.resolve_json_references(highlighted_component[1])
+    if hl_expansion is not None and hl_expansion[0] == 1:
+        highlight_key = absblock.acfg.resolve_json_references(hl_expansion[1])
 
     entries = []
     for ((iidx1, oidx1), (iidx2,oidx2)), absval in absblock._abs_aliasing.items():
@@ -106,18 +106,18 @@ def trace_to_html_graph(witness: WitnessTrace, acfg=None, measurement_db=None):
             continue
 
         if witness.taken:
-            abb.apply_expansion(witness.component_token, witness.expansion)
+            abb.apply_expansion(witness.expansion)
 
-            new_node = g.add_block(text=prettify_absblock(abb, witness.component_token), link=link, kind="interesting")
+            new_node = g.add_block(text=prettify_absblock(abb, witness.expansion), link=link, kind="interesting")
             g.add_edge(parent, new_node)
 
             parent = new_node
             g.new_row()
         else:
             tmp_abb = deepcopy(abb)
-            tmp_abb.apply_expansion(witness.component_token, witness.expansion)
+            tmp_abb.apply_expansion(witness.expansion)
 
-            new_node = g.add_block(text=prettify_absblock(tmp_abb, witness.component_token), link=link, kind="notinteresting")
+            new_node = g.add_block(text=prettify_absblock(tmp_abb, witness.expansion), link=link, kind="notinteresting")
             g.add_edge(parent, new_node)
     g.new_row()
 

@@ -64,22 +64,32 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
         trace.add_termination(comment="Samples from the starting block are not interesting!", measurements=result_ref)
         return abstract_bb, trace
 
-    # a set of tokens representing subcomponents of the abstract basic block
-    # that we tried to expand but did not yield interesing results
-    expansion_limit_tokens = set()
+    # a set of expansions that we tried to apply but did not yield interesing
+    # results
+    do_not_expand = set()
 
     while True: # TODO add a termination condition, e.g. based on a budget adjusted by potential usefulness? At least a fixed upper bound should exist, so that a bug in the expansion cannot lead to endless loops
         # create a deepcopy to expand
         working_copy = deepcopy(abstract_bb)
 
         # expand some component
-        new_token, new_action = working_copy.expand(expansion_limit_tokens)
-        if new_token is None:
-            # we have hit top
+        expansions = working_copy.get_possible_expansions()
+
+        # don't use one that we already tried and failed
+        expansions = [ (exp, benefit) for (exp, benefit) in expansions if exp not in do_not_expand ]
+
+        if len(expansions) == 0:
+            # we have hit the most general point possible
             logger.info("  no more component left for expansion")
             break
 
-        logger.info(f"  evaluating samples for expanding {new_token}")
+        # choose the expansion that maximizes sampling freedom
+        expansions.sort(key=lambda x: x[1], reverse=True)
+
+        chosen_expansion, benefit = expansions[0]
+        working_copy.apply_expansion(chosen_expansion)
+
+        logger.info(f"  evaluating samples for expanding {chosen_expansion} (benefit: {benefit})")
 
         # sample a number of concrete blocks from it
         concrete_bbs = [ working_copy.sample() for x in range(acfg.generalization_batch_size) ]
@@ -89,14 +99,14 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
         interesting, result_ref = acfg.is_mostly_interesting(concrete_bbs)
 
         if interesting:
-            logger.info(f"  samples for expanding {new_token} are interesting, adjusting BB")
-            trace.add_taken_expansion(new_token, new_action, result_ref)
+            logger.info(f"  samples for expanding {chosen_expansion} are interesting, adjusting BB")
+            trace.add_taken_expansion(chosen_expansion, result_ref)
             abstract_bb = working_copy
         else:
-            logger.info(f"  samples for expanding {new_token} are not interesting, discarding")
-            trace.add_nontaken_expansion(new_token, new_action, result_ref)
-            # make sure that we don't try that token again
-            expansion_limit_tokens.add(new_token)
+            logger.info(f"  samples for expanding {chosen_expansion} are not interesting, discarding")
+            trace.add_nontaken_expansion(chosen_expansion, result_ref)
+            # make sure that we don't try that expansion again
+            do_not_expand.add(chosen_expansion)
 
     trace.add_termination(comment="No more expansions remain.", measurements=None)
 

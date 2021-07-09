@@ -609,15 +609,14 @@ def test_expand_subsumes(random, ctx):
     bb = iwho.BasicBlock(ctx, ctx.parse_asm("add rax, 0x2a\nsub ebx, eax"))
     ab = AbstractBlock(acfg, bb)
 
-    new_ab = copy.deepcopy(ab)
+    for ex, b in ab.get_possible_expansions():
+        new_ab = copy.deepcopy(ab)
+        assert new_ab.subsumes(ab) and ab.subsumes(new_ab)
 
-    assert new_ab.subsumes(ab) and ab.subsumes(new_ab)
+        new_ab.apply_expansion(ex)
 
-    tokens = []
-    new_token, new_action = new_ab.expand(tokens)
-
-    assert new_ab.subsumes(ab)
-    assert not ab.subsumes(new_ab)
+        assert new_ab.subsumes(ab)
+        assert not ab.subsumes(new_ab)
 
 
 def test_expand_terminates(random, ctx):
@@ -625,20 +624,18 @@ def test_expand_terminates(random, ctx):
     bb = iwho.BasicBlock(ctx, ctx.parse_asm("add rax, 0x2a\nsub ebx, eax"))
     ab = AbstractBlock(acfg, bb)
 
-    limit_tokens = set()
-
     for i in range(100): # an arbitrary, but hopefully large enough bound
         print(f"iteration {i}")
         prev_ab = copy.deepcopy(ab)
-        new_token, new_action = ab.expand(limit_tokens)
-
-        if new_token is None:
+        expansions = sorted(ab.get_possible_expansions())
+        if len(expansions) == 0:
             break
 
-        print(f"expanding {new_token}")
+        chosen_exp, b = expansions[0]
+
+        ab.apply_expansion(chosen_exp)
 
         assert ab.subsumes(prev_ab) and not prev_ab.subsumes(ab)
-        limit_tokens.add(new_token)
     else:
         # we probably hit an endless loop here (or the range is not large
         # enough)

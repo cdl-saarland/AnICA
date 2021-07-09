@@ -31,8 +31,25 @@ class SamplingError(Exception):
 # TODO document json funcitonality, mention that acfg.introduce_json_references
 # and acfg.resolve_json_references should be used
 
+class Expandable(ABC):
+    """TODO document"""
+    @abstractmethod
+    def get_possible_expansions(self):
+        """ Return a list of possible expansions for `apply_expansion()`.
 
-class AbstractFeature(ABC):
+        The list contains tuples of an expansion and a value that corresponds
+        to its estimated benefit in the amount of freedom that it would give
+        the sampling.
+        """
+
+        pass
+
+    @abstractmethod
+    def apply_expansion(self, expansion):
+        """ Apply an expansion from `get_possible_expansions()`. """
+        pass
+
+class AbstractFeature(Expandable, ABC):
     """ TODO document
     """
     class SpecialValue(Enum):
@@ -52,32 +69,6 @@ class AbstractFeature(ABC):
     @abstractmethod
     def to_json_dict(self):
         pass
-
-    @abstractmethod
-    def expand(self):
-        """ Randomly adjust the AbstractFeature to represent strictly more
-        feature values.
-
-        Returns a representant of the applied expansion that can be given to
-        apply_expansion() of any instance of the same concrete class to obtain
-        the same AbstractFeature as this one after the expansion.
-        This is useful for replaying a sequence of expansions.
-        The representant must be json-representable.
-        """
-        pass
-
-    @abstractmethod
-    def apply_expansion(self, expansion):
-        """ Apply a previously seen expansion as produced by the `expand()`
-        method.
-        """
-        pass
-
-    def is_expandable(self) -> bool:
-        """ Return true iff the AbstractFeature does not represent the maximal
-        possible set of feature values.
-        """
-        return not self.is_top()
 
     @abstractmethod
     def is_top(self) -> bool:
@@ -125,9 +116,10 @@ class SingletonAbstractFeature(AbstractFeature):
     def __str__(self) -> str:
         return str(self.val)
 
-    def expand(self):
-        self.set_to_top()
-        return self.val
+    def get_possible_expansions(self):
+        if self.is_top():
+            return []
+        return [(AbstractFeature.TOP, 1)]
 
     def apply_expansion(self, expansion):
         self.val = expansion
@@ -202,18 +194,21 @@ class SubSetAbstractFeature(AbstractFeature):
             res.val = set(json_dict)
         return res
 
-    def expand(self):
+    def get_possible_expansions(self):
+        if self.is_top():
+            return []
         if self.is_bottom():
-            self.val = set()
-        else:
-            self.val.remove(random.choice(tuple(self.val)))
-        return tuple(self.val)
+            return [(AbstractFeature.TOP, 1)]
+        res = []
+        for v in self.val:
+            res.append((v, 1))
+        return res
 
     def apply_expansion(self, expansion):
-        if isinstance(expansion, AbstractFeature.SpecialValue):
-            self.val = expansion
-        else:
-            self.val = set(expansion)
+        if expansion == AbstractFeature.TOP:
+            self.set_to_top()
+            return
+        self.val.remove(expansion)
 
     def __str__(self) -> str:
         if self.is_bottom():
@@ -254,7 +249,7 @@ class SubSetAbstractFeature(AbstractFeature):
                 self.val.intersection_update(feature)
 
 
-class AbstractInsn:
+class AbstractInsn(Expandable):
     """ An instance of this class represents a set of (concrete) InsnSchemes
     that share certain features.
     """
@@ -293,16 +288,11 @@ class AbstractInsn:
             return "TOP"
         return "\n".join((f"{k}: {v}" for k, v in self.features.items()))
 
-    def get_expandable_components(self):
+    def get_possible_expansions(self):
         if self.features['present'].val == False:
-            # There is no point in expanding components of insns that are
-            # guaranteed to not be present anyway.
-            # If we expand such an instruction, we should expand every feature
-            # of it to top.
-
-            assert all(map(lambda x: x[0] == 'present' or x[1].is_bottom(), self.features.items()))
-
-            return [('present', self)]
+            expansion = 'all_top'
+            benefit = 0 # TODO this should actually be large...
+            return [(expansion, benefit)]
 
         if not self.features['exact_scheme'].is_top():
             # The exact scheme is more specific than the other features (it
@@ -315,39 +305,25 @@ class AbstractInsn:
             # the sampled experiments rather than using the expanded abstract
             # block, or to make sure that blocks not covered by the original
             # block are sampled.
-            return [('exact_scheme', self.features['exact_scheme'])]
+            expansion = ('exact_scheme', AbstractFeature.TOP)
+            benefit = 0 # TODO
+            return [(expansion, benefit)]
 
         res = []
-        for k, v in self.features.items():
-            if v.is_expandable():
-                res.append( (k, v) )
+        for key, af in self.features.items():
+            for inner_expansion, benefit in af.get_possible_expansions():
+                expansion = (key, inner_expansion)
+                benefit = benefit # TODO
+                res.append((expansion, benefit))
         return res
 
-    def expand(self):
-        """Implements part of the AbstractFeature interface so that it can also
-        be expanded as a whole.
-
-        Only expansions from definitely not present AbstractInsns to TOP are
-        supported.
-        """
-        for k, v in self.features.items():
-            v.expand()
-
-        return AbstractFeature.TOP
-
     def apply_expansion(self, expansion):
-        """Implements part of the AbstractFeature interface so that it can also
-        be expanded as a whole.
-
-        Only expansions from definitely not present AbstractInsns to TOP are
-        supported.
-        """
-        assert self.features['present'].val == False
-        assert all(map(lambda x: x[0] == 'present' or x[1].is_bottom(), self.features.items()))
-        assert expansion == AbstractFeature.TOP
-
-        for k, v in self.features.items():
-            v.set_to_top()
+        if expansion == 'all_top':
+            for k, v in self.features.items():
+                v.set_to_top()
+            return
+        key, inner_expansion = expansion
+        self.features[key].apply_expansion(inner_expansion)
 
     def subsumes(self, other: "AbstractInsn") -> bool:
         """ Check if all concrete instruction instances represented by other
@@ -427,7 +403,7 @@ def _lists2tuples(obj):
         return tuple(( _lists2tuples(x) for x in obj ))
     return obj
 
-class AbstractBlock:
+class AbstractBlock(Expandable):
     """ An instance of this class represents a set of (concrete) BasicBlocks
     (up to a fixed length maxlen).
     """
@@ -485,48 +461,30 @@ class AbstractBlock:
         new_one.is_bot = self.is_bot
         return new_one
 
-    @property
-    def expandable_components(self):
-        """TODO document"""
-        expandable_components = dict()
+    def get_possible_expansions(self):
+        res = []
 
-        # collect all expandable AbstractFeatures of the instruction part
         for ai_idx, ai in enumerate(self.abs_insns):
-            for k, v in ai.get_expandable_components():
-                expandable_components[(0, ai_idx, k)] = v
+            for inner_expansion, benefit in ai.get_possible_expansions():
+                expansion = (0, ai_idx, inner_expansion)
+                res.append((expansion, benefit))
 
-        # collect all expandable AbstractFeatures of the aliasing part
-        for k, v in self._abs_aliasing.items():
-            if v.is_expandable():
-                expandable_components[(1, k)] = v
+        for key, av in self._abs_aliasing.items():
+            for inner_expansion, benefit in av.get_possible_expansions():
+                expansion = (1, key, inner_expansion)
+                res.append((expansion, benefit))
 
-        return expandable_components
+        return res
 
-    def expand(self, limit_tokens):
-        """ Choose an expandable AbstractFeature with a token not in
-        `limit_tokens` and expand it.
-
-        Returns the token of the expanded component or None if none of the
-        AbstractFeatures not in limit_tokens can be expanded.
-        """
-
-        expandable_components = self.expandable_components
-
-        # take the tokens of the collected AbstractFeatures and remove the forbidden ones
-        tokens = set(expandable_components.keys())
-        tokens.difference_update(limit_tokens)
-
-        if len(tokens) == 0:
-            # nothing to expand remains
-            return None, None
-
-        # choose an allowed expandable token, expand its AbstractFeature, and return the token
-        chosen_token = random.choice(tuple(tokens))
-        chosen_expansion = expandable_components[chosen_token].expand()
-        return (chosen_token, chosen_expansion)
-
-    def apply_expansion(self, token, expansion):
-            self.expandable_components[token].apply_expansion(expansion)
+    def apply_expansion(self, expansion):
+        component, key, inner_expansion = expansion
+        if component == 0: # Insn component
+            ai = self.abs_insns[key]
+            ai.apply_expansion(inner_expansion)
+        else: # Aliasing component
+            assert component == 1
+            av = self._abs_aliasing[key]
+            av.apply_expansion(inner_expansion)
 
     def get_abs_aliasing(self, idx1, idx2):
         """ TODO document
