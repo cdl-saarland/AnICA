@@ -22,7 +22,12 @@ class AbstractionConfig:
     def __init__(self, ctx: iwho.Context, max_block_len, predmanager=None):
         self.ctx = ctx
 
-        self.feature_keys = ['exact_scheme', 'present', 'mnemonic', 'skl_uops']
+        self.feature_keys = [
+                'exact_scheme',
+                'present',
+                'mnemonic',
+                # 'skl_uops',
+            ]
 
         self.max_block_len = max_block_len
 
@@ -153,14 +158,18 @@ class AbstractionConfig:
         res['exact_scheme'] = SingletonAbstractFeature()
         res['present'] = SingletonAbstractFeature()
         res['mnemonic'] = SingletonAbstractFeature()
-        res['skl_uops'] = SubSetAbstractFeature()
+        # res['skl_uops'] = SubSetAbstractFeature()
         res['opschemes'] = SubSetAbstractFeature()
         return res
 
     # TODO it would probably make sense to extract the indexing into its own class
     @property
     def index_order(self):
-        return ['mnemonic', 'skl_uops', 'opschemes']
+        return [
+                'mnemonic',
+                # 'skl_uops',
+                'opschemes'
+            ]
 
     def scheme_index(self, feature_key, value):
         if feature_key == 'mnemonic':
@@ -189,7 +198,7 @@ class AbstractionConfig:
 
     def build_index(self):
         self.feature_indices = dict()
-        for f in ['skl_uops', 'opschemes']:
+        for f in ['opschemes']:
             curr_idx = defaultdict(list)
             self.feature_indices[f] = curr_idx
             for ischeme in self.ctx.filtered_insn_schemes:
@@ -204,14 +213,14 @@ class AbstractionConfig:
         res = {'present': True}
         res['exact_scheme'] = ischeme
         res['mnemonic'] = self.ctx.extract_mnemonic(ischeme)
-        res['skl_uops'] = [] # This will produce a TOP entry if the feature is not present
+        # res['skl_uops'] = [] # This will produce a TOP entry if the feature is not present
 
-        from_scheme = self.ctx.get_features(ischeme)
-        if from_scheme is not None:
-            port_usage = from_scheme[0].get("SKL")
-            if port_usage is not None:
-                port_usage = port_usage.split('+')
-                res['skl_uops'] = port_usage
+        # from_scheme = self.ctx.get_features(ischeme)
+        # if from_scheme is not None:
+        #     port_usage = from_scheme[0].get("SKL")
+        #     if port_usage is not None:
+        #         port_usage = port_usage.split('+')
+        #         res['skl_uops'] = port_usage
 
         opschemes = []
         for k, opscheme in ischeme.explicit_operands.items():
