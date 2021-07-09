@@ -674,6 +674,8 @@ class AbstractBlock(Expandable):
                     for k in same[idx]:
                         prev_choice = chosen_operands.get(k, None)
                         adjusted_fixed_op = ctx.adjust_operand(fixed_op, insn_schemes[k[0]].get_operand_scheme(k[1]))
+                        if adjusted_fixed_op is None:
+                            raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires an incompatible operand for {k[1]} from aliasing with a fixed operand: {fixed_op}")
                         if prev_choice is not None and prev_choice != adjusted_fixed_op:
                             raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires different operands for {k[1]} from aliasing with fixed operands: {prev_choice} and {adjusted_fixed_op}")
                         chosen_operands[k] = adjusted_fixed_op
@@ -695,14 +697,18 @@ class AbstractBlock(Expandable):
                         disallowed = chosen_operands.get(k, None)
                         if disallowed is not None:
                             disallowed = ctx.adjust_operand(disallowed, op_scheme)
-                            try:
-                                allowed_operands.remove(disallowed)
-                            except KeyError as e:
-                                pass
+                            if disallowed is not None:
+                                try:
+                                    allowed_operands.remove(disallowed)
+                                except KeyError as e:
+                                    pass
                 chosen = random.choice(list(allowed_operands))
                 chosen_operands[idx] = chosen
                 for k in same[idx]:
-                    chosen_operands[k] = ctx.adjust_operand(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
+                    chosen_operand = ctx.adjust_operand(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
+                    if chosen_operand is None:
+                        raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires incompatible operand for {k[1]}: {chosen}")
+                    chosen_operands[k] = chosen_operand
 
         op_maps = defaultdict(dict)
         for (iidx, op_key), chosen_operand in chosen_operands.items():
