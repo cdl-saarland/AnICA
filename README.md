@@ -3,18 +3,18 @@ TODO write this
 ## TODO
 
 ### Key Functionality
+  - [ ] implement cost budgets or some other termination criterion
   - [X] implement mechanism for dropping constraints
   - [X] implement the core generalization algorithm
 
 ### Functional Extensions
-  - [X] replace the powerset domain for uop combinations with a subset domain of uops
+  - [ ] add an ISA extension/category domain
+  - [ ] add a domain that can express that an instruction may not use memory / has to use memory
   - [ ] test whether the aliasing component can find something
   - [ ] make AbstractionConfig configurable
   - [ ] make AbstractionConfig less of a god class
   - [ ] AbstractBlock.sample needs some software engineering, probably extract the aliasing portion to its own class to make it more manageable
-  - [X] add a way of restricting the insn schemes provided by iwho.Context
   - [ ] make iwho.Context configurable
-  - [X] use "type signature" as an insn feature
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
   - [ ] check whether using an SMT solver for subsumption is necessary and reasonable
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
@@ -25,12 +25,15 @@ TODO write this
     - [ ] CQA?
     - [ ] measurements
   - [X] a fancy witness exploration gui
+  - [X] add a way of restricting the insn schemes provided by iwho.Context
+  - [X] replace the powerset domain for uop combinations with a subset domain of uops
+  - [X] use "type signature" as an insn feature
 
 ### Meta Features
-  - [X] improve database scheme to make comparing measurements faster
   - [ ] make sampling deterministic (for the same seed)
   - [ ] profile running times of the components and check for bottlenecks
   - [ ] write this README
   - [ ] document everything
+  - [X] improve database scheme to make comparing measurements faster
 
 
