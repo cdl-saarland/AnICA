@@ -207,6 +207,42 @@ class AbstractionConfig:
                     for u in features[f]:
                         curr_idx[u].append(ischeme)
 
+    def compute_feasible_schemes(self, absfeature_dict):
+        """ Collect all insn schemes that match the abstract features.
+
+        `absfeature_dict` is a dict mapping feature names to instances of
+        `AbstractFeature`, like it is found in `AbstractInsn`.
+        """
+        scheme = absfeature_dict['exact_scheme'].get_val()
+        if scheme is not None:
+            # we could validate that the other features don't exclude this
+            # scheme, but that cannot be an issue as long as we only go up in
+            # the lattice
+            return (scheme,)
+
+        feasible_schemes = None
+
+        order = self.index_order
+        for k in order:
+            v = absfeature_dict[k]
+            if v.is_top():
+                continue
+            if v.is_bottom():
+                return tuple()
+            feasible_schemes_for_feature = self.scheme_index(k, v)
+            if feasible_schemes is None:
+                feasible_schemes = set(feasible_schemes_for_feature)
+            else:
+                feasible_schemes.intersection_update(feasible_schemes_for_feature)
+
+        if feasible_schemes is None:
+            # all features are TOP, no restriction
+            feasible_schemes = self.ctx.filtered_insn_schemes
+        else:
+            feasible_schemes = tuple(feasible_schemes)
+
+        return feasible_schemes
+
     def extract_features(self, ischeme: Union[iwho.InsnScheme, None]):
         if ischeme is None:
             return {'present': False}

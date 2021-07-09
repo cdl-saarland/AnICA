@@ -288,11 +288,28 @@ class AbstractInsn(Expandable):
             return "TOP"
         return "\n".join((f"{k}: {v}" for k, v in self.features.items()))
 
+    def compute_benefit(self, expansion):
+        if expansion == 'all_top':
+            # One could argue that this benefit should actually be large.
+            # However, adding new instructions into the mix is not really
+            # helpful for our purpose, so we give it low priority.
+            return 0
+
+        absfeature_dict = { k: v for k, v in self.features.items() }
+
+        replace_k, inner_expansion = expansion
+        replace_feature = deepcopy(self.features[replace_k])
+        replace_feature.apply_expansion(inner_expansion)
+        absfeature_dict[replace_k] = replace_feature
+
+        feasible_schemes = self.acfg.compute_feasible_schemes(absfeature_dict)
+        return len(feasible_schemes)
+
+
     def get_possible_expansions(self):
         if self.features['present'].val == False:
             expansion = 'all_top'
-            benefit = 0 # TODO this should actually be large...
-            return [(expansion, benefit)]
+            return [(expansion, self.compute_benefit(expansion))]
 
         if not self.features['exact_scheme'].is_top():
             # The exact scheme is more specific than the other features (it
@@ -306,14 +323,14 @@ class AbstractInsn(Expandable):
             # block, or to make sure that blocks not covered by the original
             # block are sampled.
             expansion = ('exact_scheme', AbstractFeature.TOP)
-            benefit = 0 # TODO
+            benefit = self.compute_benefit(expansion)
             return [(expansion, benefit)]
 
         res = []
         for key, af in self.features.items():
             for inner_expansion, benefit in af.get_possible_expansions():
                 expansion = (key, inner_expansion)
-                benefit = benefit # TODO
+                benefit = self.compute_benefit(expansion)
                 res.append((expansion, benefit))
         return res
 
@@ -354,8 +371,6 @@ class AbstractInsn(Expandable):
         """ Randomly choose one from the set of concrete instruction schemes
         represented by this abstract instruction.
         """
-        ctx = self.acfg.ctx
-
         if self.features['present'].val == False:
             return None
 
@@ -364,34 +379,7 @@ class AbstractInsn(Expandable):
                 # TODO one might want to adjust the probabilities here...
                 return None
 
-        # Collect all insn schemes that match the AbstractInsn.
-        scheme = self.features['exact_scheme'].get_val()
-        if scheme is not None:
-            # we could validate that the other features don't exclude this
-            # scheme, but that cannot be an issue as long as we only go up in
-            # the lattice
-            return scheme
-
-        feasible_schemes = None
-
-        order = self.acfg.index_order
-        for k in order:
-            v = self.features[k]
-            if v.is_top():
-                continue
-            if v.is_bottom():
-                raise SamplingError(f"Sampling an AbstractInsn with a BOTTOM feature: {k} in {self}")
-            feasible_schemes_for_feature = self.acfg.scheme_index(k, v)
-            if feasible_schemes is None:
-                feasible_schemes = set(feasible_schemes_for_feature)
-            else:
-                feasible_schemes.intersection_update(feasible_schemes_for_feature)
-
-        if feasible_schemes is None:
-            # all features are TOP, no restriction
-            feasible_schemes = ctx.filtered_insn_schemes
-        else:
-            feasible_schemes = tuple(feasible_schemes)
+        feasible_schemes = self.acfg.compute_feasible_schemes(self.features)
 
         if len(feasible_schemes) == 0:
             raise SamplingError(f"No InsnScheme is feasible for AbstractInsn {self}")
