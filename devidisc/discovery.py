@@ -2,12 +2,25 @@
 from copy import deepcopy
 import textwrap
 
-from .abstractblock import AbstractBlock
+from .abstractblock import AbstractBlock, SamplingError
 from .abstractionconfig import AbstractionConfig
 from .witness import WitnessTrace
 
 import logging
 logger = logging.getLogger(__name__)
+
+def sample_block_list(abstract_bb, num):
+    """Try to sample `num` samples from abstract_bb
+
+    If samples fail, the result will have fewer entries.
+    """
+    concrete_bbs = []
+    for x in range(num):
+        try:
+            concrete_bbs.append(abstract_bb.sample())
+        except SamplingError as e:
+            logger.info("a sample failed: {e}")
+    return concrete_bbs
 
 
 def discover(acfg: AbstractionConfig, start_point: AbstractBlock):
@@ -20,7 +33,7 @@ def discover(acfg: AbstractionConfig, start_point: AbstractBlock):
         # TODO some reasonable termination criterion, e.g. time, #discoveries, ...
 
         # sample a batch of blocks
-        concrete_bbs = [ start_point.sample() for x in range(acfg.discovery_batch_size) ]
+        concrete_bbs = sample_block_list(start_point, acfg.discovery_batch_size)
 
         # TODO we might want to avoid generating the result_ref here, to allow more parallelism
         interesting_bbs, result_ref = acfg.filter_interesting(concrete_bbs)
@@ -48,14 +61,13 @@ def discover(acfg: AbstractionConfig, start_point: AbstractBlock):
             discoveries.append(generalalized_bb)
             dump_discovery(generalized_bb, trace)
 
-
 def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
     logger.info("  generalizing BB:" + textwrap.indent(str(abstract_bb), 4*' ') )
 
     trace = WitnessTrace(abstract_bb)
 
     # check if sampling from abstract_bb leads to mostly interesting blocks
-    concrete_bbs = [ abstract_bb.sample() for x in range(acfg.generalization_batch_size) ]
+    concrete_bbs = sample_block_list(abstract_bb, acfg.generalization_batch_size)
 
     interesting, result_ref = acfg.is_mostly_interesting(concrete_bbs)
 
@@ -92,7 +104,7 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
         logger.info(f"  evaluating samples for expanding {chosen_expansion} (benefit: {benefit})")
 
         # sample a number of concrete blocks from it
-        concrete_bbs = [ working_copy.sample() for x in range(acfg.generalization_batch_size) ]
+        concrete_bbs = sample_block_list(working_copy, acfg.generalization_batch_size)
 
         # if they are mostly interesting, use the copy as new abstract block
         # one could also join the concrete bbs in instead
