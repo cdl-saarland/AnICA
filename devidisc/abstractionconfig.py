@@ -40,7 +40,7 @@ class AbstractionConfig:
 
         # at least this ratio of a batch of experiments must be interesting for
         # the batch to be considered mostly interesting.
-        self.mostly_interesting_ratio = 0.9
+        self.mostly_interesting_ratio = 0.97
 
         self.predmanager = predmanager
 
