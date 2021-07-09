@@ -326,7 +326,7 @@ class HTMLGraph:
         # arrows go to the script file
         connectors = []
         for src, dst in self.edges:
-            connectors.append(f'drawConnector("{src}", "{dst}")')
+            connectors.append(f'drawConnector("{src}", "{dst}");')
         connector_str = "\n".join(connectors)
         connector_str = textwrap.indent(connector_str, 4*' ')
 
