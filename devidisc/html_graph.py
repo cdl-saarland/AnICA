@@ -210,7 +210,9 @@ def _generate_measurement_site(acfg, frame_str, measdict):
             measurement_text=full_meas_text)
 
 def _asm_decode_fun(task):
-    return (task[0], task[1], "\n".join(task[3].hex2asm(task[2])))
+    return (task[0], task[1], task[3].hex2asm(task[2]))
+
+link_frame = '<a href="https://{url}" target="_blank" rel="noopener noreferrer">{caption}</a>'
 
 def add_asm_to_measdicts(acfg, series_dicts):
     ctx = acfg.ctx
@@ -222,10 +224,35 @@ def add_asm_to_measdicts(acfg, series_dicts):
         for meas_idx, meas_dict in enumerate(series_dict["measurements"]):
             tasks.append((series_idx, meas_idx, meas_dict["input"], coder))
 
+    ctx = acfg.ctx
     with Pool() as pool:
         results = pool.imap(_asm_decode_fun, tasks)
 
-        for series_idx, meas_idx, asm_str in results:
+        for series_idx, meas_idx, insn_strs in results:
+            # add links to uops.info and felixcloutier.com where available
+            # This is a bit expensive since it requires insn matching.
+            ann_insn_strs = []
+            for insn_str in insn_strs:
+                insn = ctx.match_insn_str(insn_str)
+                features = ctx.get_features(insn.scheme)
+                ann_insn_str = insn_str
+                annotations = []
+                if len(features) > 0:
+                    general_features = features[0]['any']
+                    ref_url = general_features.get("ref_url", None)
+                    if ref_url is not None:
+                        annotations.append(link_frame.format(url=ref_url, caption="ref"))
+                    uops_info_url = general_features.get("uops_info_url", None)
+                    if uops_info_url is not None:
+                        annotations.append(link_frame.format(url=uops_info_url, caption="uops.info"))
+                if len(annotations) > 0:
+                    ann = ",".join(annotations)
+                    ann_insn_str += f'<span class="asm_comment">  ; [{ann}]</span>'
+
+                ann_insn_strs.append(ann_insn_str)
+
+            asm_str = "\n".join(ann_insn_strs)
+
             series_dicts[series_idx]["measurements"][meas_idx]["asm_str"] = asm_str
 
 

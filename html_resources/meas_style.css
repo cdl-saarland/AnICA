@@ -25,3 +25,8 @@ table {
   border-collapse: collapse;
 }
 
+.asm_comment {
+    user-select: none;
+    color: gray;
+    float: right;
+}
