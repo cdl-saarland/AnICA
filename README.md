@@ -11,19 +11,21 @@ TODO write this
   - [ ] add an ISA extension/category domain
   - [ ] add a domain that can express that an instruction may not use memory / has to use memory
   - [ ] test whether the aliasing component can find something
+  - [ ] add a timeout to all predictor subprocess calls (and probably also to the de/encoder subprocess calls)
+  - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
   - [ ] make AbstractionConfig configurable
   - [ ] make AbstractionConfig less of a god class
   - [ ] AbstractBlock.sample needs some software engineering, probably extract the aliasing portion to its own class to make it more manageable
   - [ ] make iwho.Context configurable
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
   - [ ] check whether using an SMT solver for subsumption is necessary and reasonable
-  - [ ] look into sampling constraint solvers if sampling turns out to be an issue
   - [ ] add more predictors
     - [ ] Ithemal
     - [ ] DiffTune
     - [ ] OSACA
     - [ ] CQA?
     - [ ] measurements
+  - [ ] look into sampling constraint solvers if sampling turns out to be an issue
   - [X] a fancy witness exploration gui
   - [X] add a way of restricting the insn schemes provided by iwho.Context
   - [X] replace the powerset domain for uop combinations with a subset domain of uops
