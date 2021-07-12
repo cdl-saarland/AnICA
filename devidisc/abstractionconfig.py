@@ -26,6 +26,12 @@ class AbstractionConfig:
                 'exact_scheme',
                 'present',
                 'mnemonic',
+                'opschemes',
+
+                'category',
+                'extension',
+                'isa-set',
+
                 # 'skl_uops',
             ]
 
@@ -160,6 +166,11 @@ class AbstractionConfig:
         res['mnemonic'] = SingletonAbstractFeature()
         # res['skl_uops'] = SubSetAbstractFeature()
         res['opschemes'] = SubSetAbstractFeature()
+
+        res['category'] = SingletonAbstractFeature()
+        res['extension'] = SingletonAbstractFeature()
+        res['isa-set'] = SingletonAbstractFeature()
+
         return res
 
     # TODO it would probably make sense to extract the indexing into its own class
@@ -168,7 +179,11 @@ class AbstractionConfig:
         return [
                 'mnemonic',
                 # 'skl_uops',
-                'opschemes'
+                'opschemes',
+
+                'category',
+                'extension',
+                'isa-set',
             ]
 
     def scheme_index(self, feature_key, value):
@@ -192,12 +207,16 @@ class AbstractionConfig:
                     res.intersection_update(cached_val)
             return res
         elif isinstance(value, SingletonAbstractFeature):
+            x = value.val
             cached_val = index.get(x, None)
-            assert cached_val is not None
+            assert cached_val is not None, f"Found no cached value for '{x}' in the index for '{feature_key}'."
             return cached_val
 
     def build_index(self):
         self.feature_indices = dict()
+        # TODO we might want to do a loop interchange here
+
+        # subsets
         for f in ['opschemes']:
             curr_idx = defaultdict(list)
             self.feature_indices[f] = curr_idx
@@ -206,6 +225,16 @@ class AbstractionConfig:
                 if features[f] is not None:
                     for u in features[f]:
                         curr_idx[u].append(ischeme)
+
+        # singletons
+        for f in ['category', 'extension', 'isa-set']:
+            curr_idx = defaultdict(list)
+            self.feature_indices[f] = curr_idx
+            for ischeme in self.ctx.filtered_insn_schemes:
+                features = self.extract_features(ischeme)
+                x = features[f]
+                if x is not None:
+                    curr_idx[x].append(ischeme)
 
     def compute_feasible_schemes(self, absfeature_dict):
         """ Collect all insn schemes that match the abstract features.
@@ -251,12 +280,20 @@ class AbstractionConfig:
         res['mnemonic'] = self.ctx.extract_mnemonic(ischeme)
         # res['skl_uops'] = [] # This will produce a TOP entry if the feature is not present
 
-        # from_scheme = self.ctx.get_features(ischeme)
-        # if from_scheme is not None:
-        #     port_usage = from_scheme[0].get("SKL")
+        from_scheme = self.ctx.get_features(ischeme)
+        if from_scheme is not None:
+            entry = from_scheme[0]
+            res['category'] = entry.get('category', None)
+            res['extension'] = entry.get('extension', None)
+            res['isa-set'] = entry.get('isa-set', None)
+        #     port_usage = from_scheme[0]["measurements"].get("SKL")
         #     if port_usage is not None:
         #         port_usage = port_usage.split('+')
         #         res['skl_uops'] = port_usage
+        else:
+            res['category'] = None
+            res['extension'] = None
+            res['isa-set'] = None
 
         opschemes = []
         for k, opscheme in ischeme.explicit_operands.items():

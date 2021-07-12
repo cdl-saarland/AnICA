@@ -238,7 +238,7 @@ def add_asm_to_measdicts(acfg, series_dicts):
                 ann_insn_str = insn_str
                 annotations = []
                 if len(features) > 0:
-                    general_features = features[0]['any']
+                    general_features = features[0]
                     ref_url = general_features.get("ref_url", None)
                     if ref_url is not None:
                         annotations.append(link_frame.format(url=ref_url, caption="ref"))
