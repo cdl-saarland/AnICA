@@ -6,7 +6,8 @@
     "config": {
             "kind": "iaca",
             "iaca_path": "TODO: add path of IACA binary",
-            "iaca_opts": ["-arch", "SKL"]
+            "iaca_opts": ["-arch", "SKL"],
+            "timeout": 1.0
         }
 },
 "llvm-mca.12-dbg.skl": {
@@ -16,7 +17,8 @@
     "config": {
             "kind": "llvmmca",
             "llvmmca_path": "TODO: add path of llvm-mca binary",
-            "llvmmca_opts": ["-mcpu", "skylake"]
+            "llvmmca_opts": ["-mcpu", "skylake"],
+            "timeout": 1.0
         }
 },
 "test.all_1": {
