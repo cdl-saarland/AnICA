@@ -53,7 +53,8 @@ def prettify_absblock(absblock, hl_expansion=None):
         highlight_key = absblock.actx.json_ref_manager.resolve_json_references(hl_expansion[1])
 
     entries = []
-    for ((iidx1, oidx1), (iidx2,oidx2)), absval in absblock._abs_aliasing.items():
+    abs_alias_dict = absblock.abs_aliasing._aliasing_dict
+    for ((iidx1, oidx1), (iidx2,oidx2)), absval in abs_alias_dict.items():
         highlighted = highlight_key == ((iidx1, oidx1), (iidx2,oidx2))
         if absval.is_top():
             if highlighted:

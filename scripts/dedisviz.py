@@ -14,7 +14,7 @@ from iwho.utils import parse_args_with_logging
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractionconfig import AbstractionConfig
+from devidisc.abstractioncontext import AbstractionContext
 from devidisc.discovery import WitnessTrace
 from devidisc.html_graph import trace_to_html_graph
 from devidisc.measurementdb import MeasurementDB
@@ -35,22 +35,21 @@ def main():
 
     args = parse_args_with_logging(argparser, "info")
 
-    ctx = iwho.get_context('x86')
+    iwho_ctx = iwho.get_context('x86')
 
     with open(args.tracefile) as f:
         json_dict = json.load(f)
 
-    bb_len = len(json_dict['start']['abs_insns'])
-    acfg = AbstractionConfig(ctx, bb_len)
+    actx = AbstractionContext(iwho_ctx)
 
-    tr = WitnessTrace.from_json_dict(acfg, acfg.resolve_json_references(json_dict))
+    tr = WitnessTrace.from_json_dict(actx, actx.json_ref_manager.resolve_json_references(json_dict))
 
     # g = tr.to_dot()
     #
     # g.render(view=True)
 
     with MeasurementDB(args.database) as mdb:
-        g = trace_to_html_graph(tr, acfg=acfg, measurement_db=mdb)
+        g = trace_to_html_graph(tr, actx=actx, measurement_db=mdb)
 
         g.generate("./generated_html")
 
