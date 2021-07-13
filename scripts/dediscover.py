@@ -22,7 +22,7 @@ from iwho.utils import parse_args_with_logging
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractionconfig import AbstractionConfig
+from devidisc.abstractioncontext import AbstractionContext
 from devidisc.abstractblock import AbstractBlock
 import devidisc.discovery as discovery
 from devidisc.measurementdb import MeasurementDB
@@ -93,36 +93,36 @@ def main():
                 uarch = pred_entry['uarch']
             )
 
-    ctx = iwho.get_context("x86")
+    iwho_ctx = iwho.get_context("x86")
 
-    ctx.push_filter(iwho.Filters.no_control_flow)
+    iwho_ctx.push_filter(iwho.Filters.no_control_flow)
 
     skl_filter = lambda scheme, ctx: (ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]["measurements"]) or "fxrstor" in str(scheme)
-    ctx.push_filter(skl_filter) # only use instructions that have SKL measurements TODO that's a bit specific
+    iwho_ctx.push_filter(skl_filter) # only use instructions that have SKL measurements TODO that's a bit specific
 
 
     if args.generalize is not None:
         with open(args.generalize, 'r') as f:
             asm_str = f.read()
-        bb = iwho.BasicBlock(ctx, ctx.parse_asm(asm_str))
+        bb = iwho.BasicBlock(iwho_ctx, iwho_ctx.parse_asm(asm_str))
         max_block_len = len(bb)
         # TODO things need to be configurable here, and this code should probably be somewhere else
-        acfg = AbstractionConfig(ctx, max_block_len, predmanager=predman)
-        abb = AbstractBlock(acfg, bb)
-        res_abb, trace = discovery.generalize(acfg, abb)
+        actx = AbstractionContext(iwho_ctx, predmanager=predman)
+        abb = AbstractBlock(actx, bb)
+        res_abb, trace = discovery.generalize(actx, abb)
         print("Generalization Result:\n" + textwrap.indent(str(res_abb), '  '))
 
         timestamp = datetime.now().replace(microsecond=0).isoformat()
         filename = f"traces/trace_{timestamp}.json"
         with open(filename, 'w') as f:
-            json.dump(acfg.introduce_json_references(trace.to_json_dict()), f, indent=2)
+            json.dump(actx.json_ref_manager.introduce_json_references(trace.to_json_dict()), f, indent=2)
         print(f"witness trace written to: {filename}")
 
         sys.exit(0)
 
     if args.explore:
         # only use appropriate schemes
-        schemes = ctx.filtered_insn_schemes
+        schemes = iwho_ctx.filtered_insn_schemes
 
         result_base_path = Path("./results/")
 
@@ -131,7 +131,7 @@ def main():
         max_num_insns = 10
         batch_size = 10
 
-        explore(ctx, schemes, predman, result_base_path,
+        explore(iwho_ctx, schemes, predman, result_base_path,
                 max_num_insns=max_num_insns,
                 num_batches=num_batches,
                 batch_size=batch_size)

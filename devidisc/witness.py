@@ -4,7 +4,6 @@ from typing import Optional
 
 from graphviz import Digraph
 
-from .abstractionconfig import AbstractionConfig
 from .abstractblock import AbstractBlock
 
 class WitnessTrace:
@@ -79,8 +78,8 @@ class WitnessTrace:
         return res
 
     def __str__(self):
-        acfg = self.start.acfg
-        json_dict = acfg.introduce_json_references(self.to_json_dict())
+        actx = self.start.actx
+        json_dict = actx.json_ref_manager.introduce_json_references(self.to_json_dict())
         return json.dumps(json_dict, indent=2, separators=(',', ':'))
 
     def to_json_dict(self):
@@ -93,8 +92,8 @@ class WitnessTrace:
         return res
 
     @staticmethod
-    def from_json_dict(acfg, json_dict):
-        start_bb = AbstractBlock.from_json_dict(acfg, json_dict['start'])
+    def from_json_dict(actx, json_dict):
+        start_bb = AbstractBlock.from_json_dict(actx, json_dict['start'])
         res = WitnessTrace(start_bb)
         for v in json_dict['trace']:
             res.trace.append(WitnessTrace.Witness.from_json_dict(v))

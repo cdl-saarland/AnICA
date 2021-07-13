@@ -50,7 +50,7 @@ def prettify_absblock(absblock, hl_expansion=None):
 
     highlight_key = None
     if hl_expansion is not None and hl_expansion[0] == 1:
-        highlight_key = absblock.acfg.resolve_json_references(hl_expansion[1])
+        highlight_key = absblock.actx.json_ref_manager.resolve_json_references(hl_expansion[1])
 
     entries = []
     for ((iidx1, oidx1), (iidx2,oidx2)), absval in absblock._abs_aliasing.items():
@@ -84,8 +84,8 @@ def prettify_absblock(absblock, hl_expansion=None):
 
     return res
 
-def trace_to_html_graph(witness: WitnessTrace, acfg=None, measurement_db=None):
-    g = HTMLGraph("DeviDisc Visualization", acfg=acfg)
+def trace_to_html_graph(witness: WitnessTrace, actx, measurement_db=None):
+    g = HTMLGraph("DeviDisc Visualization", actx=actx)
 
     abb = deepcopy(witness.start)
 
@@ -150,7 +150,7 @@ _predictor_run_frame = """
         </tr>
 """
 
-def _generate_measurement_site(acfg, frame_str, measdict):
+def _generate_measurement_site(actx, frame_str, measdict):
     series_id = measdict.get("series_id", "N")
     series_date = measdict["series_date"]
     source_computer = measdict["source_computer"]
@@ -183,8 +183,8 @@ def _generate_measurement_site(acfg, frame_str, measdict):
 
         # compute interestingness to sort by it
         eval_res = {x: {"TP": r.get("result", None)} for x, r in enumerate(m["predictor_runs"])}
-        interestingness = acfg.compute_interestingness(eval_res)
-        if acfg.is_interesting(eval_res):
+        interestingness = actx.interestingness_metric.compute_interestingness(eval_res)
+        if actx.interestingness_metric.is_interesting(eval_res):
             num_interesting += 1
 
         full_predictor_run_text = "\n".join(predictor_run_texts)
@@ -214,9 +214,9 @@ def _asm_decode_fun(task):
 
 link_frame = '<a href="https://{url}" target="_blank" rel="noopener noreferrer">{caption}</a>'
 
-def add_asm_to_measdicts(acfg, series_dicts):
-    ctx = acfg.ctx
-    coder = ctx.coder
+def add_asm_to_measdicts(actx, series_dicts):
+    iwho_ctx = actx.iwho_ctx
+    coder = iwho_ctx.coder
 
     # this takes some time, but is trivially parallelizable
     tasks = []
@@ -224,7 +224,6 @@ def add_asm_to_measdicts(acfg, series_dicts):
         for meas_idx, meas_dict in enumerate(series_dict["measurements"]):
             tasks.append((series_idx, meas_idx, meas_dict["input"], coder))
 
-    ctx = acfg.ctx
     with Pool() as pool:
         results = pool.imap(_asm_decode_fun, tasks)
 
@@ -233,8 +232,8 @@ def add_asm_to_measdicts(acfg, series_dicts):
             # This is a bit expensive since it requires insn matching.
             ann_insn_strs = []
             for insn_str in insn_strs:
-                insn = ctx.match_insn_str(insn_str)
-                features = ctx.get_features(insn.scheme)
+                insn = iwho_ctx.match_insn_str(insn_str)
+                features = iwho_ctx.get_features(insn.scheme)
                 ann_insn_str = insn_str
                 annotations = []
                 if features is not None and len(features) > 0:
@@ -264,10 +263,10 @@ class HTMLGraph:
             self.link = link
             self.kind = kind
 
-    def __init__(self, title, acfg=None):
+    def __init__(self, title, actx):
         self.title = title
 
-        self.acfg = acfg
+        self.actx = actx
 
         self.rows = []
         self.current_row = []
@@ -313,7 +312,7 @@ class HTMLGraph:
         os.makedirs(dest_path)
 
         if len(self.measurement_sites) > 0:
-            add_asm_to_measdicts(self.acfg, [measdict for link, measdict in self.measurement_sites])
+            add_asm_to_measdicts(self.actx, [measdict for link, measdict in self.measurement_sites])
 
             meas_dir = dest_path / "measurements"
             os.makedirs(meas_dir)
@@ -321,7 +320,7 @@ class HTMLGraph:
                 meas_frame_str = f.read()
 
             for link, measdict in self.measurement_sites:
-                site_str = _generate_measurement_site(self.acfg, meas_frame_str, measdict)
+                site_str = _generate_measurement_site(self.actx, meas_frame_str, measdict)
                 with open(dest_path / link, "w") as f:
                     f.write(site_str)
 

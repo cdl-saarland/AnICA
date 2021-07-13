@@ -254,12 +254,12 @@ class AbstractInsn(Expandable):
     that share certain features.
     """
 
-    def __init__(self, acfg: "AbstractionConfig"):
-        self.acfg = acfg
-        self.features = self.acfg.init_abstract_features()
+    def __init__(self, actx: "AbstractionContext"):
+        self.actx = actx
+        self.features = actx.insn_feature_manager.init_abstract_features()
 
     def __deepcopy__(self, memo):
-        new_one = AbstractInsn(self.acfg)
+        new_one = AbstractInsn(self.actx)
         new_one.features = deepcopy(self.features, memo)
         return new_one
 
@@ -270,8 +270,8 @@ class AbstractInsn(Expandable):
         return res
 
     @staticmethod
-    def from_json_dict(acfg, json_dict):
-        res = AbstractInsn(acfg)
+    def from_json_dict(actx, json_dict):
+        res = AbstractInsn(actx)
         init_features = res.features
         assert set(init_features.keys()) == set(json_dict.keys())
         json_features = dict()
@@ -302,7 +302,7 @@ class AbstractInsn(Expandable):
         replace_feature.apply_expansion(inner_expansion)
         absfeature_dict[replace_k] = replace_feature
 
-        feasible_schemes = self.acfg.compute_feasible_schemes(absfeature_dict)
+        feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(absfeature_dict)
         return len(feasible_schemes)
 
 
@@ -362,7 +362,7 @@ class AbstractInsn(Expandable):
         the basic block.
         """
 
-        insn_features = self.acfg.extract_features(insn_scheme)
+        insn_features = self.actx.insn_feature_manager.extract_features(insn_scheme)
 
         for k, v in insn_features.items():
             self.features[k].join(v)
@@ -379,7 +379,7 @@ class AbstractInsn(Expandable):
                 # TODO one might want to adjust the probabilities here...
                 return None
 
-        feasible_schemes = self.acfg.compute_feasible_schemes(self.features)
+        feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(self.features)
 
         if len(feasible_schemes) == 0:
             raise SamplingError(f"No InsnScheme is feasible for AbstractInsn {self}")
@@ -395,8 +395,8 @@ def _lists2tuples(obj):
 class AbstractAliasInfo(Expandable):
     """ TODO document """
 
-    def __init__(self, acfg):
-        self.acfg = acfg
+    def __init__(self, actx):
+        self.actx = actx
         # A mapping from pairs of (instruction index, operand index) pairs to a
         # boolean SingletonAbstractFeature.
         # An entry for (op1, op2) means "if op1 and op2 allow for aliasing,
@@ -422,8 +422,8 @@ class AbstractAliasInfo(Expandable):
         return res
 
     @staticmethod
-    def from_json_dict(acfg, json_dict):
-        res = AbstractAliasInfo(acfg)
+    def from_json_dict(actx, json_dict):
+        res = AbstractAliasInfo(actx)
         aliasing = dict()
         for k, v in json_dict['aliasing_dict']:
             key = _lists2tuples(k)
@@ -433,7 +433,7 @@ class AbstractAliasInfo(Expandable):
         return res
 
     def __deepcopy__(self, memo):
-        new_one = AbstractAliasInfo(self.acfg)
+        new_one = AbstractAliasInfo(self.actx)
         new_one._aliasing_dict = { k: deepcopy(v, memo) for k, v in self._aliasing_dict.items() } # no need to duplicate the keys here
         new_one.is_bot = self.is_bot
         return new_one
@@ -523,7 +523,7 @@ class AbstractAliasInfo(Expandable):
             if ii is None:
                 continue
             for operand, (op_key, op_scheme) in ii.get_operands():
-                if self.acfg.skip_for_aliasing(op_scheme):
+                if self.actx.iwho_augmentation.skip_for_aliasing(op_scheme):
                     continue
                 idx = (insn_idx, op_key)
                 all_indices.append((idx, operand))
@@ -538,7 +538,7 @@ class AbstractAliasInfo(Expandable):
             # if operand schemes are not compatible, this entry is ignored
             op_scheme1 = bb_insns[idx1[0]].scheme.get_operand_scheme(idx1[1])
             op_scheme2 = bb_insns[idx2[0]].scheme.get_operand_scheme(idx2[1])
-            if not self.acfg.is_compatible(op_scheme1, op_scheme2):
+            if not self.actx.iwho_augmentation.is_compatible(op_scheme1, op_scheme2):
                 if ad.is_bottom():
                     # This is to avoid bottom entries for incompatible operand
                     # combinations when initializing. Those would not be
@@ -546,9 +546,9 @@ class AbstractAliasInfo(Expandable):
                     ad.set_to_top()
                 continue
 
-            if self.acfg.must_alias(op1, op2):
+            if self.actx.iwho_augmentation.must_alias(op1, op2):
                 ad.join(True)
-            elif not self.acfg.may_alias(op1, op2):
+            elif not self.actx.iwho_augmentation.may_alias(op1, op2):
                 ad.join(False)
             else:
                 ad.set_to_top()
@@ -592,7 +592,7 @@ class AbstractAliasInfo(Expandable):
                 continue
 
             # if operand schemes are not compatible, this entry is ignored
-            if not self.acfg.is_compatible(op_scheme1, op_scheme2):
+            if not self.actx.iwho_augmentation.is_compatible(op_scheme1, op_scheme2):
                 continue
 
             if should_alias.val is True:
@@ -612,13 +612,13 @@ class AbstractAliasInfo(Expandable):
 
         Helper function for sampling.
         """
-        ctx = self.acfg.ctx
+        ctx = self.actx.iwho_ctx
 
         for iidx, ischeme in enumerate(insn_schemes):
             if ischeme is None:
                 continue
             for op_key, op_scheme in ischeme.operand_keys:
-                if self.acfg.skip_for_aliasing(op_scheme) or not op_scheme.is_fixed():
+                if self.actx.iwho_augmentation.skip_for_aliasing(op_scheme) or not op_scheme.is_fixed():
                     continue
                 idx = (iidx, op_key)
                 fixed_op = op_scheme.fixed_operand
@@ -648,7 +648,7 @@ class AbstractAliasInfo(Expandable):
 
                     # Check if an earlier choice already implies an operand here.
                     prev_choice = chosen_operands.get(k, None)
-                    if prev_choice is not None and not self.acfg.must_alias(prev_choice, adjusted_fixed_op):
+                    if prev_choice is not None and not self.actx.iwho_augmentation.must_alias(prev_choice, adjusted_fixed_op):
                         raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires different operands for {k[1]} from aliasing with fixed operands: {prev_choice} and {adjusted_fixed_op}")
 
                     # TODO technically, we would still need to validate that we
@@ -666,7 +666,7 @@ class AbstractAliasInfo(Expandable):
         """
         # in here, backtracking would be necessary
 
-        ctx = self.acfg.ctx
+        ctx = self.actx.iwho_ctx
 
         for iidx, ischeme in enumerate(insn_schemes):
             if ischeme is None:
@@ -678,8 +678,8 @@ class AbstractAliasInfo(Expandable):
                     continue
 
                 # choose an operand that is not already taken in not_same:
-                allowed_operands = set(self.acfg.allowed_operands(op_scheme))
-                if not self.acfg.skip_for_aliasing(op_scheme):
+                allowed_operands = set(self.actx.iwho_augmentation.allowed_operands(op_scheme))
+                if not self.actx.iwho_augmentation.skip_for_aliasing(op_scheme):
                     # remove all elements from allowed_operands that are
                     # blocked by the not_same set
                     for k in not_same[idx]:
@@ -735,7 +735,7 @@ class AbstractAliasInfo(Expandable):
             op_maps[iidx][op_key] = chosen_operand
 
         # instantiate the schemes with the chosen operands
-        bb = iwho.BasicBlock(self.acfg.ctx)
+        bb = iwho.BasicBlock(self.actx.iwho_ctx)
         for iidx, ischeme in enumerate(insn_schemes):
             if ischeme is None:
                 bb.append(None)
@@ -754,15 +754,13 @@ class AbstractAliasInfo(Expandable):
         return bb
 
 class AbstractBlock(Expandable):
-    """ An instance of this class represents a set of (concrete) BasicBlocks
-    (up to a fixed length maxlen).
+    """ An instance of this class represents a set of (concrete) BasicBlocks.
     """
 
-    def __init__(self, acfg: "AbstractionConfig", bb: Optional[iwho.BasicBlock]=None):
-        self.acfg = acfg
-        self.maxlen = acfg.max_block_len
-        self.abs_insns = [ AbstractInsn(self.acfg) for i in range(self.maxlen) ]
-        self.abs_aliasing = AbstractAliasInfo(self.acfg)
+    def __init__(self, actx: "AbstractionContext", bb: iwho.BasicBlock):
+        self.actx = actx
+        self.abs_insns = [ ]
+        self.abs_aliasing = AbstractAliasInfo(self.actx)
 
         if bb is not None:
             self.join(bb)
@@ -774,17 +772,16 @@ class AbstractBlock(Expandable):
         return res
 
     @staticmethod
-    def from_json_dict(acfg, json_dict):
-        res = AbstractBlock(acfg)
+    def from_json_dict(actx, json_dict):
+        res = AbstractBlock(actx, bb=None)
         res.abs_insns = []
         for sub_dict in json_dict['abs_insns']:
-            res.abs_insns.append(AbstractInsn.from_json_dict(acfg, sub_dict))
-        res.abs_aliasing = AbstractAliasInfo.from_json_dict(acfg, json_dict['abs_aliasing'])
+            res.abs_insns.append(AbstractInsn.from_json_dict(actx, sub_dict))
+        res.abs_aliasing = AbstractAliasInfo.from_json_dict(actx, json_dict['abs_aliasing'])
         return res
 
     def __deepcopy__(self, memo):
-        new_one = AbstractBlock(self.acfg)
-        new_one.maxlen = self.maxlen
+        new_one = AbstractBlock(self.actx, bb=None)
         new_one.abs_insns = deepcopy(self.abs_insns, memo)
         new_one.abs_aliasing = deepcopy(self.abs_aliasing, memo)
         return new_one
@@ -834,17 +831,22 @@ class AbstractBlock(Expandable):
     def subsumes(self, other: "AbstractBlock") -> bool:
         """ Check if all concrete basic blocks represented by other are also
         represented by self.
-
-        other is expected to have the same maxlen as self.
         """
-        # we expect compatible AbstractBlocks with the same number of abstract
-        # insns (do note that abstract insns could have a "not present" state).
-        assert self.maxlen == other.maxlen
-
         # check if all abstract insns are subsumed
         for self_ai, other_ai in zip(self.abs_insns, other.abs_insns):
             if not self_ai.subsumes(other_ai):
                 return False
+
+        if len(other.abs_insns) > len(self.abs_insns):
+            # If other has more instructions than self, we need to check
+            # whether one of the additional ones is not BOTTOM (since
+            # non-present instructions are implicitly BOTTOM).
+            # Since AbstractInsn right now has no is_bottom() method and this
+            # case appears to be rather exotic, we use this hack here instead:
+            bottom = AbstractInsn(self.actx)
+            for other_ai in other.abs_insns[len(self.abs_insns):]:
+                if not bottom.subsumes(other_ai):
+                    return False
 
         return self.abs_aliasing.subsumes(other.abs_aliasing)
 
@@ -852,13 +854,12 @@ class AbstractBlock(Expandable):
         """ Update self so that it additionally represents bb (and possibly,
         due to over-approximation, even more basic blocks).
         """
-        assert self.maxlen >= len(bb.insns)
-
-        len_diff = self.maxlen - len(bb.insns)
-
         bb_insns = list(bb.insns)
 
-        for x in range(len_diff):
+        while len(bb_insns) > len(self.abs_insns):
+            self.abs_insns.append(AbstractInsn(self.actx))
+
+        while len(bb_insns) < len(self.abs_insns):
             bb_insns.append(None)
 
         assert(len(bb_insns) == len(self.abs_insns))

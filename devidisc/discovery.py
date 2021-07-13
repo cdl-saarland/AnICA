@@ -3,7 +3,7 @@ from copy import deepcopy
 import textwrap
 
 from .abstractblock import AbstractBlock, SamplingError
-from .abstractionconfig import AbstractionConfig
+from .abstractioncontext import AbstractionContext
 from .witness import WitnessTrace
 
 import logging
@@ -23,8 +23,9 @@ def sample_block_list(abstract_bb, num):
     return concrete_bbs
 
 
-def discover(acfg: AbstractionConfig, start_point: AbstractBlock):
-    ctx = acfg.ctx
+def discover(actx: AbstractionContext, start_point: AbstractBlock):
+
+    discovery_batch_size = actx.discovery_cfg.discovery_batch_size
 
     discoveries = []
 
@@ -33,16 +34,16 @@ def discover(acfg: AbstractionConfig, start_point: AbstractBlock):
         # TODO some reasonable termination criterion, e.g. time, #discoveries, ...
 
         # sample a batch of blocks
-        concrete_bbs = sample_block_list(start_point, acfg.discovery_batch_size)
+        concrete_bbs = sample_block_list(start_point, discovery_batch_size)
 
         # TODO we might want to avoid generating the result_ref here, to allow more parallelism
-        interesting_bbs, result_ref = acfg.filter_interesting(concrete_bbs)
+        interesting_bbs, result_ref = actx.interestingness_metric.filter_interesting(concrete_bbs)
 
         logger.info(f"  {len(interesting_bbs)} out of {len(concrete_bbs)} ({100 * len(interesting_bbs) / len(concrete_bbs):.2f}%) are interesting")
 
         # for each interesting one:
         for bb in interesting_bbs:
-            abstracted_bb = AbstractBlock(acfg, sampled_block)
+            abstracted_bb = AbstractBlock(actx, sampled_block)
             # check if it is already subsumed by a discovery
             # (TODO depending on what is faster, we might want to do this before checking for interestingness)
 
@@ -55,21 +56,23 @@ def discover(acfg: AbstractionConfig, start_point: AbstractBlock):
                 continue
 
             # if not: generalize
-            generalized_bb, trace = generalize(acfg, abstracted_bb)
+            generalized_bb, trace = generalize(actx, abstracted_bb)
 
             logger.info("  adding new discovery:" + textwrap.indent(str(generalized_bb), 4*' '))
             discoveries.append(generalalized_bb)
             dump_discovery(generalized_bb, trace)
 
-def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
+def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock):
+    generalization_batch_size = actx.discovery_cfg.generalization_batch_size
+
     logger.info("  generalizing BB:" + textwrap.indent(str(abstract_bb), 4*' ') )
 
     trace = WitnessTrace(abstract_bb)
 
     # check if sampling from abstract_bb leads to mostly interesting blocks
-    concrete_bbs = sample_block_list(abstract_bb, acfg.generalization_batch_size)
+    concrete_bbs = sample_block_list(abstract_bb, generalization_batch_size)
 
-    interesting, result_ref = acfg.is_mostly_interesting(concrete_bbs)
+    interesting, result_ref = actx.interestingness_metric.is_mostly_interesting(concrete_bbs)
 
     if not interesting:
         logger.info("  samples from the BB are not uniformly interesting!")
@@ -104,11 +107,11 @@ def generalize(acfg: AbstractionConfig, abstract_bb: AbstractBlock):
         logger.info(f"  evaluating samples for expanding {chosen_expansion} (benefit: {benefit})")
 
         # sample a number of concrete blocks from it
-        concrete_bbs = sample_block_list(working_copy, acfg.generalization_batch_size)
+        concrete_bbs = sample_block_list(working_copy, generalization_batch_size)
 
         # if they are mostly interesting, use the copy as new abstract block
         # one could also join the concrete bbs in instead
-        interesting, result_ref = acfg.is_mostly_interesting(concrete_bbs)
+        interesting, result_ref = actx.interestingness_metric.is_mostly_interesting(concrete_bbs)
 
         if interesting:
             logger.info(f"  samples for expanding {chosen_expansion} are interesting, adjusting BB")

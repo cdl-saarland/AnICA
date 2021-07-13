@@ -16,11 +16,12 @@ import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
 from devidisc.abstractblock import AbstractBlock
-from devidisc.abstractionconfig import AbstractionConfig
+from devidisc.abstractioncontext import AbstractionContext
 from devidisc.discovery import discover, generalize
 from devidisc.predmanager import PredictorManager
 from devidisc.witness import WitnessTrace
 
+from test_utils import *
 
 def extract_mnemonic(insn_str):
     return iwho.x86.extract_mnemonic(insn_str)
@@ -72,87 +73,77 @@ class ErrorPredictor(Predictor):
         raise RuntimeError("this predictor only causes errors")
 
 
-@pytest.fixture
-def random():
-    rand.seed(0)
-
-@pytest.fixture(scope="module")
-def ctx():
-    return iwho.get_context("x86")
-
 @pytest.fixture(scope="function")
-def acfg(ctx):
+def actx_pred():
+    iwho_ctx = iwho.get_context("x86")
+
     predman = PredictorManager(None)
-    acfg = AbstractionConfig(ctx, max_block_len=4, predmanager=predman)
+    actx_pred = AbstractionContext(iwho_ctx, predmanager=predman)
 
-    acfg.generalization_batch_size = 10
-    acfg.discovery_batch_size = 10
-    acfg.mostly_interesting_ratio = 1.0
+    actx_pred.discovery_cfg.generalization_batch_size = 10
+    actx_pred.discovery_cfg.discovery_batch_size = 10
 
-    yield acfg
+    actx_pred.interestingness_metric.mostly_interesting_ratio = 1.0
+
+    yield actx_pred
     predman.close()
 
-def add_preds(acfg, preds):
-    predman = acfg.predmanager
+def add_preds(actx_pred, preds):
+    predman = actx_pred.predmanager
     for p in preds:
         add_to_predman(predman, p)
 
-def make_bb(ctx, asm):
-    if isinstance(ctx, AbstractionConfig):
-        ctx = ctx.ctx
-    return iwho.BasicBlock(ctx, ctx.parse_asm(asm))
 
-
-def test_interestingness_error(random, acfg):
+def test_interestingness_error(random, actx_pred):
     # errors should be handled gracefully and are interesting
-    add_preds(acfg, [CountPredictor(), ErrorPredictor()])
+    add_preds(actx_pred, [CountPredictor(), ErrorPredictor()])
 
     bbs = []
-    bbs.append(make_bb(acfg, "sub rax, 0x2a"))
+    bbs.append(make_bb(actx_pred, "sub rax, 0x2a"))
 
-    assert acfg.is_mostly_interesting(bbs)[0]
+    assert actx_pred.interestingness_metric.is_mostly_interesting(bbs)[0]
 
 
-def test_interestingness_01(random, acfg):
-    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
-
-    bbs = []
-    bbs.append(make_bb(acfg, "add rax, 0x2a"))
-
-    assert acfg.is_mostly_interesting(bbs)[0]
-
-def test_interestingness_02(random, acfg):
-    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
+def test_interestingness_01(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddBadPredictor()])
 
     bbs = []
-    bbs.append(make_bb(acfg, "sub rax, 0x2a"))
+    bbs.append(make_bb(actx_pred, "add rax, 0x2a"))
 
-    assert not acfg.is_mostly_interesting(bbs)[0]
+    assert actx_pred.interestingness_metric.is_mostly_interesting(bbs)[0]
 
-def test_interestingness_03(random, acfg):
-    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
+def test_interestingness_02(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddBadPredictor()])
 
     bbs = []
-    bbs.append(make_bb(acfg, "add rbx, rax\nsub rax, 0x2a"))
+    bbs.append(make_bb(actx_pred, "sub rax, 0x2a"))
 
-    assert acfg.is_mostly_interesting(bbs)[0]
+    assert not actx_pred.interestingness_metric.is_mostly_interesting(bbs)[0]
 
-def _check_trace_json(acfg, tr):
+def test_interestingness_03(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddBadPredictor()])
+
+    bbs = []
+    bbs.append(make_bb(actx_pred, "add rbx, rax\nsub rax, 0x2a"))
+
+    assert actx_pred.interestingness_metric.is_mostly_interesting(bbs)[0]
+
+def _check_trace_json(actx_pred, tr):
     res_ab = tr.replay(validate=True)
 
-    json_dict = acfg.introduce_json_references(tr.to_json_dict())
+    json_dict = actx_pred.json_ref_manager.introduce_json_references(tr.to_json_dict())
     print(json_dict)
     json_str = json.dumps(json_dict)
     print(json_str)
-    loaded_dict = acfg.resolve_json_references(json.loads(json_str))
-    loaded_trace = WitnessTrace.from_json_dict(acfg, loaded_dict)
+    loaded_dict = actx_pred.json_ref_manager.resolve_json_references(json.loads(json_str))
+    loaded_trace = WitnessTrace.from_json_dict(actx_pred, loaded_dict)
     loaded_ab = loaded_trace.replay(validate=True)
     assert loaded_ab.subsumes(res_ab)
     assert res_ab.subsumes(loaded_ab)
 
-def test_witness_trace_01(random, acfg):
-    bb = make_bb(acfg, "add rax, 0x2a\nsub rbx, rax")
-    abb = AbstractBlock(acfg, bb)
+def test_witness_trace_01(random, actx_pred):
+    bb = make_bb(actx_pred, "add rax, 0x2a\nsub rbx, rax")
+    abb = AbstractBlock(actx_pred, bb)
 
     tr = WitnessTrace(abb)
 
@@ -168,17 +159,17 @@ def test_witness_trace_01(random, acfg):
     assert abb.subsumes(res_ab)
     assert res_ab.subsumes(abb)
 
-    _check_trace_json(acfg, tr)
+    _check_trace_json(actx_pred, tr)
 
 
-def test_generalize_01(random, acfg):
-    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
+def test_generalize_01(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddBadPredictor()])
 
-    bb = make_bb(acfg, "add rax, 0x2a")
+    bb = make_bb(actx_pred, "add rax, 0x2a")
 
-    abb = AbstractBlock(acfg, bb)
+    abb = AbstractBlock(actx_pred, bb)
 
-    gen_abb, trace = generalize(acfg, abb)
+    gen_abb, trace = generalize(actx_pred, abb)
 
     print(trace)
 
@@ -189,17 +180,17 @@ def test_generalize_01(random, acfg):
 
     trace.replay(validate=True)
 
-    _check_trace_json(acfg, trace)
+    _check_trace_json(actx_pred, trace)
 
-def test_generalize_02(random, acfg):
-    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
+def test_generalize_02(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddBadPredictor()])
 
     # this one is not interesting in the first place, so it should not change
-    bb = make_bb(acfg, "sub rax, 0x2a")
+    bb = make_bb(actx_pred, "sub rax, 0x2a")
 
-    abb = AbstractBlock(acfg, bb)
+    abb = AbstractBlock(actx_pred, bb)
 
-    gen_abb, trace = generalize(acfg, abb)
+    gen_abb, trace = generalize(actx_pred, abb)
 
     print(trace)
 
@@ -210,16 +201,16 @@ def test_generalize_02(random, acfg):
 
     res_ab = trace.replay(validate=True)
 
-    _check_trace_json(acfg, trace)
+    _check_trace_json(actx_pred, trace)
 
-def test_generalize_03(random, acfg):
-    add_preds(acfg, [CountPredictor(), AddBadPredictor()])
+def test_generalize_03(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddBadPredictor()])
 
-    bb = make_bb(acfg, "add rax, 0x2a\nsub rbx, rax")
+    bb = make_bb(actx_pred, "add rax, 0x2a\nsub rbx, rax")
 
-    abb = AbstractBlock(acfg, bb)
+    abb = AbstractBlock(actx_pred, bb)
 
-    gen_abb, trace = generalize(acfg, abb)
+    gen_abb, trace = generalize(actx_pred, abb)
 
     print(trace)
 
@@ -230,22 +221,25 @@ def test_generalize_03(random, acfg):
 
     res_ab = trace.replay(validate=True)
 
-    _check_trace_json(acfg, trace)
+    _check_trace_json(actx_pred, trace)
 
 
 if __name__ == "__main__":
     rand.seed(0)
     init_logging("info")
+
+    iwho_ctx = iwho.get_context("x86")
+
     predman = PredictorManager(None)
-    ctx = iwho.get_context("x86")
-    acfg = AbstractionConfig(ctx, max_block_len=4, predmanager=predman)
+    actx_pred = AbstractionContext(iwho_ctx, predmanager=predman)
 
-    acfg.generalization_batch_size = 10
-    acfg.discovery_batch_size = 10
-    acfg.mostly_interesting_ratio = 1.0
+    actx_pred.discovery_cfg.generalization_batch_size = 10
+    actx_pred.discovery_cfg.discovery_batch_size = 10
 
-    test_generalize_03(None, acfg)
+    actx_pred.interestingness_metric.mostly_interesting_ratio = 1.0
+
+    test_generalize_03(None, actx_pred)
 
     # import cProfile
-    # cProfile.run('test_generalize_03(None, acfg)')
+    # cProfile.run('test_generalize_03(None, actx_pred)')
     # predman.close()
