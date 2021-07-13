@@ -10,6 +10,7 @@ TODO write this
 ### Functional Extensions
   - [ ] add a domain that can express that an instruction may not use memory / has to use memory
   - [ ] test whether the aliasing component can find something
+  - [ ] revisit the TODOs in the aliasing sampling
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
   - [ ] make AbstractionConfig configurable
   - [ ] make AbstractionConfig less of a god class
