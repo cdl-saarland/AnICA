@@ -13,8 +13,6 @@ TODO write this
   - [ ] revisit the TODOs in the aliasing sampling
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
   - [ ] make AbstractionConfig configurable
-  - [ ] make AbstractionConfig less of a god class
-  - [ ] AbstractBlock.sample needs some software engineering, probably extract the aliasing portion to its own class to make it more manageable
   - [ ] make iwho.Context configurable
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
   - [ ] check whether using an SMT solver for subsumption is necessary and reasonable
@@ -25,6 +23,8 @@ TODO write this
     - [ ] CQA?
     - [ ] measurements
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
+  - [X] make AbstractionConfig less of a god class
+  - [X] AbstractBlock.sample needs some software engineering, probably extract the aliasing portion to its own class to make it more manageable
   - [X] add an ISA extension/category domain
   - [X] add a timeout to all predictor subprocess calls
   - [X] a fancy witness exploration gui
