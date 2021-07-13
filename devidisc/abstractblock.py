@@ -13,7 +13,7 @@ from enum import Enum
 import itertools
 import random
 import textwrap
-from typing import Optional, Union
+from typing import Optional, Union, Sequence
 
 import iwho
 
@@ -391,112 +391,93 @@ def _lists2tuples(obj):
         return tuple(( _lists2tuples(x) for x in obj ))
     return obj
 
-class AbstractBlock(Expandable):
-    """ An instance of this class represents a set of (concrete) BasicBlocks
-    (up to a fixed length maxlen).
-    """
 
-    def __init__(self, acfg: "AbstractionConfig", bb: Optional[iwho.BasicBlock]=None):
+class AbstractAliasInfo(Expandable):
+    """ TODO document """
+
+    def __init__(self, acfg):
         self.acfg = acfg
-        self.maxlen = acfg.max_block_len
-        self.abs_insns = [ AbstractInsn(self.acfg) for i in range(self.maxlen) ]
-
-        self._abs_aliasing = dict()
         # A mapping from pairs of (instruction index, operand index) pairs to a
         # boolean SingletonAbstractFeature.
         # An entry for (op1, op2) means "if op1 and op2 allow for aliasing,
         # then {they alias, they don't alias, anything goes}.
-        #
+        self._aliasing_dict = dict()
+
         # The semantics of entries not present in the above map changes over
-        # the lifetime of the AbstractBlock, through the value of the following
+        # the lifetime of the Abstraction, through the value of the following
         # flag. In the beginning, before any concrete Block is joined in,
         # nothing will be present, which should be interpreted as a BOTTOM
         # value for everything. When joining the first concrete Block in, the
         # map gets entries for all the observed relationships, and any
         # non-present relationship that might be encountered later should be
         # considered TOP.
+        # In a valid state, an object of this class with entries in the
+        # _aliasing_dict will have is_bot set to False.
         self.is_bot = True
-
-        if bb is not None:
-            self.join(bb)
 
     def to_json_dict(self):
         res = dict()
-        res['abs_insns'] = [ ai.to_json_dict() for ai in self.abs_insns ]
-        res['abs_aliasing'] = [ (k, x.to_json_dict()) for k, x in self._abs_aliasing.items() ]
+        res['aliasing_dict'] = [ (k, x.to_json_dict()) for k, x in self._aliasing_dict.items() ]
         res['is_bot'] = self.is_bot
         return res
 
     @staticmethod
     def from_json_dict(acfg, json_dict):
-        res = AbstractBlock(acfg)
-        res.abs_insns = []
-        for sub_dict in json_dict['abs_insns']:
-            res.abs_insns.append(AbstractInsn.from_json_dict(acfg, sub_dict))
+        res = AbstractAliasInfo(acfg)
         aliasing = dict()
-        for k, v in json_dict['abs_aliasing']:
+        for k, v in json_dict['aliasing_dict']:
             key = _lists2tuples(k)
             aliasing[key] = SingletonAbstractFeature.from_json_dict(v)
-        res._abs_aliasing = aliasing
+        res._aliasing_dict = aliasing
         res.is_bot = json_dict['is_bot']
         return res
 
     def __deepcopy__(self, memo):
-        new_one = AbstractBlock(self.acfg)
-        new_one.maxlen = self.maxlen
-        new_one.abs_insns = deepcopy(self.abs_insns, memo)
-        new_one._abs_aliasing = { k: deepcopy(v, memo) for k, v in self._abs_aliasing.items() } # no need to duplicate the keys here
+        new_one = AbstractAliasInfo(self.acfg)
+        new_one._aliasing_dict = { k: deepcopy(v, memo) for k, v in self._aliasing_dict.items() } # no need to duplicate the keys here
         new_one.is_bot = self.is_bot
         return new_one
 
     def get_possible_expansions(self):
+        """ Implements Expandable """
         res = []
 
-        for ai_idx, ai in enumerate(self.abs_insns):
-            for inner_expansion, benefit in ai.get_possible_expansions():
-                expansion = (0, ai_idx, inner_expansion)
-                res.append((expansion, benefit))
-
-        for key, av in self._abs_aliasing.items():
+        for key, av in self._aliasing_dict.items():
             for inner_expansion, benefit in av.get_possible_expansions():
-                expansion = (1, key, inner_expansion)
+                expansion = (key, inner_expansion)
                 res.append((expansion, benefit))
 
         return res
 
     def apply_expansion(self, expansion):
-        component, key, inner_expansion = expansion
-        if component == 0: # Insn component
-            ai = self.abs_insns[key]
-            ai.apply_expansion(inner_expansion)
-        else: # Aliasing component
-            assert component == 1
-            av = self._abs_aliasing[key]
-            av.apply_expansion(inner_expansion)
+        """ Implements Expandable """
+        key, inner_expansion = expansion
+        av = self._aliasing_dict[key]
+        av.apply_expansion(inner_expansion)
 
-    def get_abs_aliasing(self, idx1, idx2):
-        """ TODO document
-        """
+    def get_component(self, idx1, idx2):
+        """ TODO document """
         key = tuple(sorted((idx1, idx2)))
-        res = self._abs_aliasing.get(key, None)
+        res = self._aliasing_dict.get(key, None)
         if res is None and self.is_bot:
             res = SingletonAbstractFeature()
-            self._abs_aliasing[key] = res
+            self._aliasing_dict[key] = res
         return res
 
+    def do_compaction(self):
+        """ If self is not BOTTOM: clear explicit TOP components from the dict,
+        as non-present entries are considered TOP anyway.
+        """
+        if self.is_bot:
+            return
+        new_aliasing = { k: v  for k, v in self._aliasing_dict.items() if not v.is_top() }
+        self._aliasing_dict = new_aliasing
+
     def __str__(self) -> str:
-        def format_insn(x):
-            idx, abs_insn = x
-            return "{:2}:\n{}".format(idx, textwrap.indent(str(abs_insn), '  '))
-
-        # instruction part
-        insn_part = "\n".join(map(format_insn, enumerate(self.abs_insns)))
-        res = "AbstractInsns:\n" + textwrap.indent(insn_part, '  ')
-
-        # dependency part
         entries = []
-        for ((iidx1, oidx1), (iidx2,oidx2)), absval in self._abs_aliasing.items():
+        for ((iidx1, oidx1), (iidx2,oidx2)), absval in self._aliasing_dict.items():
             if absval.is_top():
+                # skip TOP entries, as they make the output quite large
                 continue
             elif absval.is_bottom():
                 valtxt = "BOTTOM"
@@ -506,30 +487,14 @@ class AbstractBlock(Expandable):
                 valtxt = "must alias"
             else:
                 assert False
-
             entries.append(f"{iidx1}:{oidx1} - {iidx2}:{oidx2} : {valtxt}")
 
         entries.sort()
-        res += "\nAliasing:\n" + textwrap.indent("\n".join(entries), '  ')
+        return "\n".join(entries)
 
-        return res
+    def subsumes(self, other: "AbstractAliasInfo") -> bool:
+        """ TODO document """
 
-    def subsumes(self, other: "AbstractBlock") -> bool:
-        """ Check if all concrete basic blocks represented by other are also
-        represented by self.
-
-        other is expected to have the same maxlen as self.
-        """
-        # we expect compatible AbstractBlocks with the same number of abstract
-        # insns (do note that abstract insns could have a "not present" state).
-        assert self.maxlen == other.maxlen
-
-        # check if all abstract insns are subsumed
-        for self_ai, other_ai in zip(self.abs_insns, other.abs_insns):
-            if not self_ai.subsumes(other_ai):
-                return False
-
-        # aliasing
         if other.is_bot:
             return True
 
@@ -537,34 +502,22 @@ class AbstractBlock(Expandable):
             return False
 
         # all items not present are considered TOP and subsume everything
-        for k, sv in self._abs_aliasing.items():
+        for k, sv in self._aliasing_dict.items():
             if sv.is_top():
                 continue
-            ov = other._abs_aliasing.get(k, None)
+            ov = other._aliasing_dict.get(k, None)
             if ov is None or not sv.subsumes(ov):
                 return False
 
         return True
 
     def join(self, bb):
-        """ Update self so that it additionally represents bb (and possibly,
-        due to over-approximation, even more basic blocks).
+        """ Update self so that it additionally represents at least the
+        aliasing of bb.
         """
-        assert self.maxlen >= len(bb.insns)
-
-        len_diff = self.maxlen - len(bb.insns)
-
         bb_insns = list(bb.insns)
 
-        for x in range(len_diff):
-            bb_insns.append(None)
-
-        assert(len(bb_insns) == len(self.abs_insns))
-
-        for a, b in zip(self.abs_insns, bb_insns):
-            scheme = None if b is None else b.scheme
-            a.join(scheme)
-
+        # identify all operand indices in bb that we care about
         all_indices = []
         for insn_idx, ii in enumerate(bb_insns):
             if ii is None:
@@ -575,8 +528,10 @@ class AbstractBlock(Expandable):
                 idx = (insn_idx, op_key)
                 all_indices.append((idx, operand))
 
+        # for each combination of such operand indices, update the
+        # corresponding entry in the dict
         for (idx1, op1), (idx2, op2) in itertools.combinations(all_indices, 2):
-            ad = self.get_abs_aliasing(idx1, idx2)
+            ad = self.get_component(idx1, idx2)
             if ad is None or ad.is_top():
                 continue
 
@@ -602,25 +557,29 @@ class AbstractBlock(Expandable):
         # non-present entries in the abs_aliasing dict.
         self.is_bot = False
 
+        # components could have gone to TOP, we don't need them in the dict
+        self.do_compaction()
 
-    def sample(self) -> iwho.BasicBlock:
-        """ Randomly sample a basic block that is represented by self.
+    def havoc(self):
+        """Clear all constraints."""
+        self.is_bot = False
+        self._aliasing_dict = dict()
+
+    def _compute_partitions(self, insn_schemes: Sequence[iwho.InsnScheme]):
+        """ Extract aliasing constraints into a more workable form.
+
+        Returns two mappings from op_indices to sets of op_indices: (same, not_same)
+          - same is a mapping from instruction operands to sets of instruction
+            operands with which they should alias
+          - not_same is a mapping from instruction operands to sets of
+            instruction operands with which they should not alias
+
+        Helper function for sampling.
         """
-        ctx = self.acfg.ctx
+        same = defaultdict(set)
+        not_same = defaultdict(set)
 
-        insn_schemes = []
-        for ai in self.abs_insns:
-            insn_scheme = ai.sample() # may be None
-            insn_schemes.append(insn_scheme)
-
-        # aliasing/operands
-        if self.is_bot:
-            return None
-
-        same = defaultdict(set) # a mapping from instruction operands to sets of instruction operands with which they should alias
-        not_same = defaultdict(set) # a mapping from instruction operands to sets of instruction operands with which they should not alias
-
-        for (insn_op1, insn_op2), should_alias in self._abs_aliasing.items():
+        for (insn_op1, insn_op2), should_alias in self._aliasing_dict.items():
             iidx1, op_key1 = insn_op1
             iidx2, op_key2 = insn_op2
             # Do not enter information for instructions and operands that are
@@ -643,67 +602,140 @@ class AbstractBlock(Expandable):
                 not_same[insn_op1].add(insn_op2)
                 not_same[insn_op2].add(insn_op1)
 
-        chosen_operands = dict()
+        return same, not_same
 
-        # go through all insn_schemes and pin each fixed operand
+    def _choose_fixed_operands(self, chosen_operands, insn_schemes, same, not_same):
+        """ Go through all insn_schemes and pin each fixed operand.
+
+        Results are entered into the chosen_operands dict, which is also
+        returned.
+
+        Helper function for sampling.
+        """
+        ctx = self.acfg.ctx
+
         for iidx, ischeme in enumerate(insn_schemes):
             if ischeme is None:
                 continue
             for op_key, op_scheme in ischeme.operand_keys:
-                if self.acfg.skip_for_aliasing(op_scheme):
+                if self.acfg.skip_for_aliasing(op_scheme) or not op_scheme.is_fixed():
                     continue
                 idx = (iidx, op_key)
-                if op_scheme.is_fixed():
-                    fixed_op = op_scheme.fixed_operand
-                    prev_choice = chosen_operands.get(idx, None)
-                    if prev_choice is not None and prev_choice != fixed_op:
-                        raise SamplingError(f"InsnScheme {ischeme} requires different operands for {op_key} from aliasing with fixed operands: {prev_choice} and {fixed_op}")
-                    chosen_operands[idx] = fixed_op
-                    for k in same[idx]:
-                        prev_choice = chosen_operands.get(k, None)
-                        adjusted_fixed_op = ctx.adjust_operand(fixed_op, insn_schemes[k[0]].get_operand_scheme(k[1]))
-                        if adjusted_fixed_op is None:
-                            raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires an incompatible operand for {k[1]} from aliasing with a fixed operand: {fixed_op}")
-                        if prev_choice is not None and prev_choice != adjusted_fixed_op:
-                            raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires different operands for {k[1]} from aliasing with fixed operands: {prev_choice} and {adjusted_fixed_op}")
-                        chosen_operands[k] = adjusted_fixed_op
+                fixed_op = op_scheme.fixed_operand
 
-        # remaining unchosen operands are not determined by fixed operands
+                # Check if an earlier choice already implies an operand here.
+                prev_choice = chosen_operands.get(idx, None)
+                if prev_choice is not None:
+                    if prev_choice != fixed_op:
+                        raise SamplingError(f"InsnScheme {ischeme} requires different operands for {op_key} from aliasing with fixed operands: {prev_choice} and {fixed_op}")
+                    else:
+                        # No need to go through the same dict, they have been
+                        # set when the prev_choice was set.
+                        continue
+
+                # choose the fixed operand
+                chosen_operands[idx] = fixed_op
+
+                # for all operands that are supposed to alias, choose an
+                # appropriate operand as well
+                for k in same[idx]:
+                    # try to find an adjusted version of the fixed operand that
+                    # works for this operand (usually, this would do nothing or
+                    # change the operand width).
+                    adjusted_fixed_op = ctx.adjust_operand(fixed_op, insn_schemes[k[0]].get_operand_scheme(k[1]))
+                    if adjusted_fixed_op is None:
+                        raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires an incompatible operand for {k[1]} from aliasing with a fixed operand: {fixed_op}")
+
+                    # Check if an earlier choice already implies an operand here.
+                    prev_choice = chosen_operands.get(k, None)
+                    if prev_choice is not None and not self.acfg.must_alias(prev_choice, adjusted_fixed_op):
+                        raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires different operands for {k[1]} from aliasing with fixed operands: {prev_choice} and {adjusted_fixed_op}")
+
+                    # TODO technically, we would still need to validate that we
+                    # don't violate a must-not-alias constraint, here or later
+                    chosen_operands[k] = adjusted_fixed_op
+        return chosen_operands
+
+    def _choose_remaining_operands(self, chosen_operands, insn_schemes, same, not_same):
+        """ Choose/sample fitting operands for the insn_schemes that are not
+        yet specified by chosen_operands.
+
+        The result is entered into chosen_operands, which is also returned.
+
+        Helper function for sampling.
+        """
         # in here, backtracking would be necessary
+
+        ctx = self.acfg.ctx
+
         for iidx, ischeme in enumerate(insn_schemes):
             if ischeme is None:
                 continue
             for op_key, op_scheme in ischeme.operand_keys:
                 idx = (iidx, op_key)
+                # we already chose an operand here
                 if chosen_operands.get(idx, None) is not None:
                     continue
-                # choose an operand that is not already taken in the not_same
-                # set
+
+                # choose an operand that is not already taken in not_same:
                 allowed_operands = set(self.acfg.allowed_operands(op_scheme))
                 if not self.acfg.skip_for_aliasing(op_scheme):
+                    # remove all elements from allowed_operands that are
+                    # blocked by the not_same set
                     for k in not_same[idx]:
                         disallowed = chosen_operands.get(k, None)
+                        if disallowed is None:
+                            continue
+                        disallowed = ctx.adjust_operand(disallowed, op_scheme)
                         if disallowed is not None:
-                            disallowed = ctx.adjust_operand(disallowed, op_scheme)
-                            if disallowed is not None:
-                                try:
-                                    allowed_operands.remove(disallowed)
-                                except KeyError as e:
-                                    pass
+                            try:
+                                allowed_operands.remove(disallowed)
+                            except KeyError as e:
+                                pass
+
+                # TODO It might be more effective to now "intersect" (modulo
+                # aliasing operands) allowed_operands with the allowed_operands
+                # of the same set, to aviod unnecessary sampling errors in the
+                # following step.
+
+                # choose one from the allowed_operands
                 chosen = random.choice(list(allowed_operands))
                 chosen_operands[idx] = chosen
+
+                # also choose this one for the entries in the same set
                 for k in same[idx]:
                     chosen_operand = ctx.adjust_operand(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
                     if chosen_operand is None:
                         raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires incompatible operand for {k[1]}: {chosen}")
                     chosen_operands[k] = chosen_operand
 
+        return chosen_operands
+
+    def sample(self, insn_schemes: Sequence[iwho.InsnScheme]) -> iwho.BasicBlock:
+        """ TODO document """
+        if self.is_bot:
+            raise SamplingError(f"Trying to sample a basic block with BOTTOM as aliasing information")
+
+        # for each operand, determine which operands should and which ones
+        # shouldn't alias
+        same, not_same = self._compute_partitions(insn_schemes)
+
+        chosen_operands = dict()
+
+        # go through all insn_schemes and pin each fixed operand
+        chosen_operands = self._choose_fixed_operands(chosen_operands, insn_schemes, same, not_same)
+
+        # remaining unchosen operands are not determined by fixed operands
+        chosen_operands = self._choose_remaining_operands(chosen_operands, insn_schemes, same, not_same)
+
+        # split the index of the chosen_operands mapping such that we can just
+        # pass the inner dicts to InsnSchemes.instantate()
         op_maps = defaultdict(dict)
         for (iidx, op_key), chosen_operand in chosen_operands.items():
             op_maps[iidx][op_key] = chosen_operand
 
         # instantiate the schemes with the chosen operands
-        bb = iwho.BasicBlock(ctx)
+        bb = iwho.BasicBlock(self.acfg.ctx)
         for iidx, ischeme in enumerate(insn_schemes):
             if ischeme is None:
                 bb.append(None)
@@ -720,4 +752,135 @@ class AbstractBlock(Expandable):
             bb.append(instance)
 
         return bb
+
+class AbstractBlock(Expandable):
+    """ An instance of this class represents a set of (concrete) BasicBlocks
+    (up to a fixed length maxlen).
+    """
+
+    def __init__(self, acfg: "AbstractionConfig", bb: Optional[iwho.BasicBlock]=None):
+        self.acfg = acfg
+        self.maxlen = acfg.max_block_len
+        self.abs_insns = [ AbstractInsn(self.acfg) for i in range(self.maxlen) ]
+        self.abs_aliasing = AbstractAliasInfo(self.acfg)
+
+        if bb is not None:
+            self.join(bb)
+
+    def to_json_dict(self):
+        res = dict()
+        res['abs_insns'] = [ ai.to_json_dict() for ai in self.abs_insns ]
+        res['abs_aliasing'] = self.abs_aliasing.to_json_dict()
+        return res
+
+    @staticmethod
+    def from_json_dict(acfg, json_dict):
+        res = AbstractBlock(acfg)
+        res.abs_insns = []
+        for sub_dict in json_dict['abs_insns']:
+            res.abs_insns.append(AbstractInsn.from_json_dict(acfg, sub_dict))
+        res.abs_aliasing = AbstractAliasInfo.from_json_dict(acfg, json_dict['abs_aliasing'])
+        return res
+
+    def __deepcopy__(self, memo):
+        new_one = AbstractBlock(self.acfg)
+        new_one.maxlen = self.maxlen
+        new_one.abs_insns = deepcopy(self.abs_insns, memo)
+        new_one.abs_aliasing = deepcopy(self.abs_aliasing, memo)
+        return new_one
+
+    def get_possible_expansions(self):
+        """ Implements Expandable """
+        res = []
+
+        for ai_idx, ai in enumerate(self.abs_insns):
+            for inner_expansion, benefit in ai.get_possible_expansions():
+                expansion = (0, ai_idx, inner_expansion)
+                res.append((expansion, benefit))
+
+        for inner_expansion, benefit in self.abs_aliasing.get_possible_expansions():
+                expansion = (1, inner_expansion)
+                res.append((expansion, benefit))
+
+        return res
+
+    def apply_expansion(self, expansion):
+        """ Implements Expandable """
+        component = expansion[0]
+        if component == 0: # Insn component
+            key, inner_expansion = expansion[1:]
+            ai = self.abs_insns[key]
+            ai.apply_expansion(inner_expansion)
+        else: # Aliasing component
+            assert component == 1
+            inner_expansion = expansion[1]
+            self.abs_aliasing.apply_expansion(inner_expansion)
+
+    def __str__(self) -> str:
+        def format_insn(x):
+            idx, abs_insn = x
+            return "{:2}:\n{}".format(idx, textwrap.indent(str(abs_insn), '  '))
+
+        # instruction part
+        insn_part = "\n".join(map(format_insn, enumerate(self.abs_insns)))
+        res = "AbstractInsns:\n" + textwrap.indent(insn_part, '  ')
+
+        # aliasing part
+        aliasing_str = str(self.abs_aliasing)
+        res += "\nAliasing:\n" + textwrap.indent(aliasing_str, '  ')
+
+        return res
+
+    def subsumes(self, other: "AbstractBlock") -> bool:
+        """ Check if all concrete basic blocks represented by other are also
+        represented by self.
+
+        other is expected to have the same maxlen as self.
+        """
+        # we expect compatible AbstractBlocks with the same number of abstract
+        # insns (do note that abstract insns could have a "not present" state).
+        assert self.maxlen == other.maxlen
+
+        # check if all abstract insns are subsumed
+        for self_ai, other_ai in zip(self.abs_insns, other.abs_insns):
+            if not self_ai.subsumes(other_ai):
+                return False
+
+        return self.abs_aliasing.subsumes(other.abs_aliasing)
+
+    def join(self, bb):
+        """ Update self so that it additionally represents bb (and possibly,
+        due to over-approximation, even more basic blocks).
+        """
+        assert self.maxlen >= len(bb.insns)
+
+        len_diff = self.maxlen - len(bb.insns)
+
+        bb_insns = list(bb.insns)
+
+        for x in range(len_diff):
+            bb_insns.append(None)
+
+        assert(len(bb_insns) == len(self.abs_insns))
+
+        for a, b in zip(self.abs_insns, bb_insns):
+            scheme = None if b is None else b.scheme
+            a.join(scheme)
+
+        self.abs_aliasing.join(bb)
+
+    def sample(self) -> iwho.BasicBlock:
+        """ Randomly sample a basic block that is represented by self.
+
+        May throw a SamplingError in case sampling is not possible. This could
+        be because the constraints are actually contradictory (rather uncommon)
+        or because the polynomial sampling algorithm took a wrong path trying
+        to solve the NP-hard sampling problem.
+        """
+        insn_schemes = []
+        for ai in self.abs_insns:
+            insn_scheme = ai.sample() # may be None
+            insn_schemes.append(insn_scheme)
+
+        return self.abs_aliasing.sample(insn_schemes)
 

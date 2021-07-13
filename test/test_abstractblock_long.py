@@ -19,13 +19,9 @@ from devidisc.abstractionconfig import AbstractionConfig
 def ctx():
     return iwho.get_context("x86")
 
-
 def havoc_alias_part(absblock):
-    # this sets the aliasing part of the abstract block to top by clearing
-    # the respective dict (non-present entries in non-bottom abstract blocks
-    # are considered top.
-    absblock._abs_aliasing = dict()
-    absblock.is_bot = False
+    # this sets the aliasing part of the abstract block to top
+    absblock.abs_aliasing.havoc()
     return absblock
 
 
