@@ -50,7 +50,7 @@ def prettify_absblock(absblock, hl_expansion=None):
 
     highlight_key = None
     if hl_expansion is not None and hl_expansion[0] == 1:
-        highlight_key = absblock.actx.json_ref_manager.resolve_json_references(hl_expansion[1])
+        highlight_key = absblock.actx.json_ref_manager.resolve_json_references(hl_expansion[1])[0]
 
     entries = []
     abs_alias_dict = absblock.abs_aliasing._aliasing_dict
