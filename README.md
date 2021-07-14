@@ -9,7 +9,6 @@ TODO write this
 
 ### Functional Extensions
   - [ ] add a domain that can express that an instruction may not use memory / has to use memory
-  - [ ] test whether the aliasing component can find something
   - [ ] revisit the TODOs in the aliasing sampling
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
   - [ ] make AbstractionConfig configurable
@@ -23,6 +22,7 @@ TODO write this
     - [ ] CQA?
     - [ ] measurements
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
+  - [X] test whether the aliasing component can find something
   - [X] make AbstractionConfig less of a god class
   - [X] AbstractBlock.sample needs some software engineering, probably extract the aliasing portion to its own class to make it more manageable
   - [X] add an ISA extension/category domain

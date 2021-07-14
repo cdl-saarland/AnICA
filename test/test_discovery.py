@@ -72,10 +72,47 @@ class ErrorPredictor(Predictor):
     def evaluate(self, basic_block, *args, **kwargs):
         raise RuntimeError("this predictor only causes errors")
 
+class AddAddDelayPredictor(Predictor):
+    predictor_name = "add_add_delay"
+
+    def __init__(self, actx):
+        self.actx = actx
+
+    def evaluate(self, basic_block, *args, **kwargs):
+        try:
+            res = 0.0
+
+            previous_was_an_add = False
+            prev_written = None
+
+            for insn_str in basic_block.get_asm().split('\n'):
+                insn = self.actx.iwho_ctx.match_insn_str(insn_str)
+                res += 1.0
+                if extract_mnemonic(insn) == 'add':
+                    if previous_was_an_add:
+                        read = set(insn.read_operands)
+                        if not read.isdisjoint(prev_written):
+                            res += 1.0
+                    previous_was_an_add = True
+                    prev_written = set(insn.written_operands)
+                else:
+                    previous_was_an_add = False
+                    prev_written = None
+
+            return {'TP': res}
+        except Exception as e:
+            print(f"an error occured: {e}")
+
+
 
 @pytest.fixture(scope="function")
 def actx_pred():
     iwho_ctx = iwho.get_context("x86")
+
+    iwho_ctx.push_filter(iwho.Filters.no_control_flow)
+
+    skl_filter = lambda scheme, ctx: (ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]["measurements"]) or "fxrstor" in str(scheme)
+    iwho_ctx.push_filter(skl_filter) # only use instructions that have SKL measurements
 
     predman = PredictorManager(None)
     actx_pred = AbstractionContext(iwho_ctx, predmanager=predman)
@@ -218,6 +255,30 @@ def test_generalize_03(random, actx_pred):
 
     mnemonic_feature = gen_abb.abs_insns[0].features['mnemonic']
     assert mnemonic_feature.val == "add"
+
+    res_ab = trace.replay(validate=True)
+
+    _check_trace_json(actx_pred, trace)
+
+
+def test_generalize_aliasing_01(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddAddDelayPredictor(actx_pred)])
+
+    bb = make_bb(actx_pred, "vaddpd ymm1, ymm2, ymm3\nadd rax, 0x2a\nadd rbx, rax\nsub rbx, rax")
+
+    abb = AbstractBlock(actx_pred, bb)
+
+    gen_abb, trace = generalize(actx_pred, abb)
+
+    print(trace)
+
+    assert gen_abb.subsumes(abb)
+
+    assert gen_abb.abs_insns[1].features['mnemonic'].val == 'add'
+    assert gen_abb.abs_insns[2].features['mnemonic'].val == 'add'
+
+    alias_comp = gen_abb.abs_aliasing.get_component((1, (iwho.InsnScheme.OperandKind.EXPLICIT, 'reg0')), (2, (iwho.InsnScheme.OperandKind.EXPLICIT, 'reg1')))
+    assert alias_comp is not None and alias_comp.val == True
 
     res_ab = trace.replay(validate=True)
 
