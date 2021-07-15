@@ -1,15 +1,17 @@
 from datetime import datetime
 import sqlite3
 
-from .configurable import Configurable
+from .configurable import ConfigMeta
 
-class MeasurementDB(Configurable):
+class MeasurementDB(metaclass=ConfigMeta):
     """TODO document"""
+    config_options = dict(
+        db_name = ('measurements.db',
+            'path and file name of the sqlite3 database to use'),
+    )
+
     def __init__(self, config):
-        Configurable.__init__(self, defaults=dict(
-            db_name = ('measurements.db',
-                'path and file name of the sqlite3 database to use'),
-        ), config=config)
+        self.configure(config)
 
         self.con = None
         self.nesting_level = 0 # for making the ContextManager re-entrant

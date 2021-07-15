@@ -7,7 +7,7 @@ from typing import Union, Sequence
 import iwho
 
 from .abstractblock import *
-from .configurable import Configurable
+from .configurable import ConfigMeta
 
 
 _default_features = [
@@ -20,7 +20,7 @@ _default_features = [
         ["isa-set", "singleton"]
     ]
 
-class InsnFeatureManager(Configurable):
+class InsnFeatureManager(metaclass=ConfigMeta):
     """ A class to manage abstract and concrete instruction features.
 
     It provides indices to quickly compute InsnSchemes that fulfill constraints
@@ -33,15 +33,17 @@ class InsnFeatureManager(Configurable):
         - mnemonic
     """
 
+    config_options = dict(
+        features = (_default_features,
+            'An ordered list of tuples containing the names of features and '
+            'the kind of abstraction to use for it. The order affects the '
+            'index lookup order and as a consequence the run time.'),
+    )
+
     not_indexed = {'exact_scheme', 'present'}
 
     def __init__(self, iwho_ctx, config):
-        Configurable.__init__(self, defaults=dict(
-            features = (_default_features,
-                'An ordered list of tuples containing the names of features '
-                'and the kind of abstraction to use for it. The order affects '
-                'the index lookup order and as a consequence the run time.'),
-        ), config=config)
+        self.configure(config)
 
         self.iwho_ctx = iwho_ctx
 

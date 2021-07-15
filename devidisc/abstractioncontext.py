@@ -10,16 +10,20 @@ from .measurementdb import MeasurementDB
 from .predmanager import PredictorManager
 
 
-from .configurable import Configurable
+from .configurable import ConfigMeta
 
-class DiscoveryConfig(Configurable):
+class DiscoveryConfig(metaclass=ConfigMeta):
+    config_options = dict(
+        discovery_batch_size = (100,
+            'the number of basic blocks to sample at a time when looking for '
+            'new interesting blocks'),
+        generalization_batch_size = (100,
+            'the number of basic blocks to sample when validating that an '
+            'abstract block is still interesting'),
+    )
+
     def __init__(self, config):
-        Configurable.__init__(self, defaults=dict(
-            discovery_batch_size = (100,
-                'the number of basic blocks to sample at a time when looking for new interesting blocks'),
-            generalization_batch_size = (100,
-                'the number of basic blocks to sample when validating that an abstract block is still interesting'),
-        ), config=config)
+        self.configure(config)
 
 
 class AbstractionContext:
@@ -63,11 +67,34 @@ class AbstractionContext:
     def set_predmanager(self, predmanager):
         self.interestingness_metric.set_predmanager(predmanager)
 
-    def get_default_config(self):
+    @staticmethod
+    def get_default_config():
         res = dict()
-        res['insn_feature_manager'] = self.insn_feature_manager.get_default_config()
-        res['interestingness_metric'] = self.interestingness_metric.get_default_config()
-        res['discovery'] = self.discovery_cfg.get_default_config()
+        res['insn_feature_manager'] = InsnFeatureManager.get_default_config()
+        res['interestingness_metric'] = InterestingnessMetric.get_default_config()
+        res['discovery'] = DiscoveryConfig.get_default_config()
+        res['measurement_db'] = MeasurementDB.get_default_config()
+
+        return res
+
+    def get_config(self):
+        res = dict()
+        res['insn_feature_manager'] = self.insn_feature_manager.get_config()
+
+        if self.interestingness_metric is None:
+            res['interestingness_metric'] = None
+        else:
+            res['interestingness_metric'] = self.interestingness_metric.get_config()
+
+        if self.discovery_cfg is None:
+            res['discovery'] = None
+        else:
+            res['discovery'] = self.discovery_cfg.get_config()
+
+        if self.measurement_db is None:
+            res['measurement_db'] = None
+        else:
+            res['measurement_db'] = self.measurement_db.get_config()
 
         return res
 

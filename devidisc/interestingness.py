@@ -5,20 +5,22 @@ from typing import Sequence
 
 import iwho
 
-from .configurable import Configurable
+from .configurable import ConfigMeta
 
-class InterestingnessMetric(Configurable):
+class InterestingnessMetric(metaclass=ConfigMeta):
     """TODO"""
-    def __init__(self, config):
 
-        Configurable.__init__(self, defaults=dict(
-            min_interestingness = (0.1,
-                'the interestingness of an experiment must be at least that '
-                'high to be considered interesting'),
-            mostly_interesting_ratio = (0.97,
-                'at least this ratio of a batch of experiments must be '
-                'interesting for it to be considered mostly interesting.'),
-        ), config=config)
+    config_options = dict(
+        min_interestingness = (0.1,
+            'the interestingness of an experiment must be at least that high '
+            'to be considered interesting'),
+        mostly_interesting_ratio = (0.97,
+            'at least this ratio of a batch of experiments must be interesting '
+            'for it to be considered mostly interesting.'),
+    )
+
+    def __init__(self, config):
+        self.configure(config)
 
         self.predmanager = None
 

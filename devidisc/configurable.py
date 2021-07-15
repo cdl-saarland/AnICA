@@ -2,35 +2,120 @@
 
 
 class ConfigError(Exception):
+    """ An error indicating that something went wrong in the DeviDisc
+    configuration.
+    """
     pass
 
-class Configurable:
-    """ TODO document
+class ConfigurableImpl:
+    """ Parent class that is mixed in for classes with ConfigMeta as metaclass.
+
+    It provides several methods to access the config data:
+      - the instance method `configure` to set the data (the subclass should
+        call this early, probably in its constructor)
+      - the instance method `get_config` to get a json-printable dictionary
+        containing the current config
+      - the class method `get_default_config` to get a json-printable
+        dictionary containing the default configuration for the class
     """
-    def __init__(self, defaults, config={}):
-        self._defaults = dict()
-        self._docs = dict()
-        for key, (val, doc) in defaults.items():
-            self._defaults[key] = val
-            self._docs[key] = doc
-        self.set_config(config)
 
     _comment_suffixes = ['.doc', '.comment', '.info', '.c']
 
-    def set_config(self, partial_config):
+    def configure(self, partial_config):
+        """ Use the specified config to initialize the fields specified as
+        config_options in the subclass.
+
+        Unspecified fields are taken from the default config.
+
+        Throws a ConfigError if the given config contains an unknown entry.
+        """
         for key in partial_config.keys():
-            if key not in self._defaults.keys():
+            if key not in self._config_defaults.keys():
                 if any(map(lambda suffix: key.endswith(suffix), self._comment_suffixes)):
                     continue
-                raise ConfigError("Unknown config key for configurable class '{}': '{}'".format(self.__class__.__name__, key))
-        for key, default_val in self._defaults.items():
+                raise ConfigError(
+                        "Unknown config key for configurable class '{}': '{}'".format(
+                            self.__class__.__name__, key))
+        for key, default_val in self._config_defaults.items():
             val = partial_config.get(key, default_val)
             setattr(self, key, val)
 
-    def get_default_config(self):
+    def get_config(self):
+        """ Produce a json-printable dictionary containing the config of this
+        object.
+
+        Using this in `configure` should reproduce the current config options.
+        """
         res = dict()
-        for key, val in self._defaults.items():
+        for key in self._config_defaults.keys():
+            res[key] = getattr(self, key)
+            res[f'{key}.doc'] = self._config_docs[key]
+        return res
+
+    @classmethod
+    def get_default_config(cls):
+        """ Produce a json-printable dictionary containing the default config
+        of this object.
+        """
+        res = dict()
+        for key, val in cls._config_defaults.items():
             res[key] = val
-            res[f'{key}.doc'] = self._docs[key]
-        return self._defaults
+            res[f'{key}.doc'] = cls._config_docs[key]
+        return res
+
+
+class ConfigMeta(type):
+    """ Meta class to use for classes whose instances should contain
+    reproducably configurable options.
+
+    Classes that specify this metaclass need a `config_options` class attribute
+    that contains a dictionary mapping options to tuples of default values and
+    an explanatory comment in their definition.
+    They should also call self.configure(config) with a suitable config
+    dictionary in their __init__ method.
+
+    In practice, this is less horrible than it sounds, consider the following
+    example:
+    ```
+    class Foo(metaclass=ConfigMeta):
+        config_options = dict(
+            bar = (42, 'an important field')
+        )
+        def __init__(self, config):
+            self.configure(config)
+
+    foo1 = Foo({})
+    foo2 = Foo({"bar": 47})
+    foo3 = Foo({"baz": 47}) # raises a ConfigError, because `baz` is not a valid option
+
+    print(foo1.bar) # 42
+    print(foo2.bar) # 47
+    print(foo2.get_config()) # a dictionary configuring bar to 47
+    print(Foo.get_default_config()) # a dictionary configuring bar to 42
+    ```
+    """
+
+    def __new__(cls, class_name, parents, attrs):
+        assert 'config_options' in attrs,\
+            "Implementations of the Configurable MetaClass need a 'config_options' class attribute!"
+
+        opts = attrs['config_options']
+
+        assert isinstance(opts, dict), "'config_options' needs to be a dict!"
+
+        defaults = dict()
+        docs = dict()
+        for key, (val, doc) in opts.items():
+            defaults[key] = val
+            docs[key] = doc
+
+        del attrs['config_options'] # clean up
+
+        res = type.__new__(cls, class_name, parents + (ConfigurableImpl,), attrs)
+
+        res._config_defaults = defaults
+        res._config_docs = docs
+
+        return res
+
 
