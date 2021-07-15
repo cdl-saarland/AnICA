@@ -1,10 +1,16 @@
 from datetime import datetime
 import sqlite3
 
-class MeasurementDB:
+from .configurable import Configurable
+
+class MeasurementDB(Configurable):
     """TODO document"""
-    def __init__(self, db_name):
-        self.db_name = db_name
+    def __init__(self, config):
+        Configurable.__init__(self, defaults=dict(
+            db_name = ('measurements.db',
+                'path and file name of the sqlite3 database to use'),
+        ), config=config)
+
         self.con = None
         self.nesting_level = 0 # for making the ContextManager re-entrant
 

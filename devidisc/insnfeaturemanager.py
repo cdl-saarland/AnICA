@@ -7,8 +7,20 @@ from typing import Union, Sequence
 import iwho
 
 from .abstractblock import *
+from .configurable import Configurable
 
-class InsnFeatureManager:
+
+_default_features = [
+        ["exact_scheme", "singleton"],
+        ["present", "singleton"],
+        ["mnemonic", "singleton"],
+        ["opschemes", "subset"],
+        ["category", "singleton"],
+        ["extension", "singleton"],
+        ["isa-set", "singleton"]
+    ]
+
+class InsnFeatureManager(Configurable):
     """ A class to manage abstract and concrete instruction features.
 
     It provides indices to quickly compute InsnSchemes that fulfill constraints
@@ -23,24 +35,23 @@ class InsnFeatureManager:
 
     not_indexed = {'exact_scheme', 'present'}
 
-    def __init__(self, iwho_ctx, feature_config):
-        """
-        [ (key, kind), ... ]
-        This is a list and not a dictionary since order matters: indices will
-        be queried according to the order of the feature_config. Placing
-        features that filter more fine-grained earlier should therefore be
-        better for the running time.
-        """
-        self.iwho_ctx = iwho_ctx
-        self.feature_config = feature_config
+    def __init__(self, iwho_ctx, config):
+        Configurable.__init__(self, defaults=dict(
+            features = (_default_features,
+                'An ordered list of tuples containing the names of features '
+                'and the kind of abstraction to use for it. The order affects '
+                'the index lookup order and as a consequence the run time.'),
+        ), config=config)
 
-        self.index_order = [ key for key, kind in feature_config if key not in self.not_indexed ]
+        self.iwho_ctx = iwho_ctx
+
+        self.index_order = [ key for key, kind in self.features if key not in self.not_indexed ]
         self.feature_indices = dict()
         self._build_index()
 
     def _build_index(self):
         # add indices for all the relevant features
-        for key, kind in self.feature_config:
+        for key, kind in self.features:
             if key in self.not_indexed or key == "mnemonic":
                 # No index needed, either because we don't use one or, in
                 # the case of the mnemonic, because it is already indexed
@@ -51,7 +62,7 @@ class InsnFeatureManager:
         # fill the indices with all relevant instructions
         for ischeme in self.iwho_ctx.filtered_insn_schemes:
             insn_features = self.extract_features(ischeme)
-            for key, kind in self.feature_config:
+            for key, kind in self.features:
                 if key in self.not_indexed or key == "mnemonic":
                     continue
                 curr_idx = self.feature_indices[key]
@@ -70,7 +81,7 @@ class InsnFeatureManager:
 
     def init_abstract_features(self):
         res = dict()
-        for key, kind in self.feature_config:
+        for key, kind in self.features:
             if kind == "singleton":
                 absval = SingletonAbstractFeature()
             elif kind == "subset":

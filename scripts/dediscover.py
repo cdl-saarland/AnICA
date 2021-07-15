@@ -40,7 +40,7 @@ def main():
     default_config = HERE.parent / "config.json"
     default_jobs = multiprocessing.cpu_count()
     default_seed = 424242
-    default_db = "measurements.db"
+    # default_db = "measurements.db"
 
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     argparser.add_argument('-c', '--config', default=default_config, metavar="CONFIG",
@@ -52,8 +52,8 @@ def main():
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
             help='seed for the rng')
 
-    argparser.add_argument('-d', '--database', metavar='database', default=default_db,
-            help='path to an sqlite3 measurement database that has been initialized via dedisdb.py -c, for storing measurements to')
+    # argparser.add_argument('-d', '--database', metavar='database', default=default_db,
+    #         help='path to an sqlite3 measurement database that has been initialized via dedisdb.py -c, for storing measurements to')
 
 
     argparser.add_argument('--explore', action='store_true', help='just randomly explore basic blocks')
@@ -67,23 +67,34 @@ def main():
     random.seed(args.seed)
 
     with open(args.config, 'r') as config_file:
-        config = json.load(config_file)
+        pred_config_dict = json.load(config_file)
 
     # The predman keeps track of all the predictors and interacts with them
     num_processes = args.jobs
 
-    create_db = not os.path.isfile(args.database)
+    # create_db = not os.path.isfile(args.database)
 
-    measurement_db = MeasurementDB(args.database)
+    # measurement_db = MeasurementDB(args.database)
 
-    if create_db:
-        with measurement_db as m:
-            m.create_tables()
+    # if create_db:
+    #     with measurement_db as m:
+    #         m.create_tables()
 
-    predman = PredictorManager(num_processes=num_processes, measurement_db=measurement_db)
+    iwho_ctx = iwho.get_context("x86")
+
+    iwho_ctx.push_filter(iwho.Filters.no_control_flow)
+
+    skl_filter = lambda scheme, ctx: (ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]["measurements"]) or "fxrstor" in str(scheme)
+    iwho_ctx.push_filter(skl_filter) # only use instructions that have SKL measurements TODO that's a bit specific
+
+    actx = AbstractionContext(config={}, iwho_ctx=iwho_ctx)
+
+    # this should be moved into AbstractionContext as well
+    predman = PredictorManager(num_processes=num_processes, measurement_db=actx.measurement_db)
+    actx.set_predmanager(predman)
 
     for pkey in args.predictors:
-        pred_entry = config[pkey]
+        pred_entry = pred_config_dict[pkey]
         pred_config = pred_entry['config']
 
         predman.register_predictor(key=pkey,
@@ -93,21 +104,11 @@ def main():
                 uarch = pred_entry['uarch']
             )
 
-    iwho_ctx = iwho.get_context("x86")
-
-    iwho_ctx.push_filter(iwho.Filters.no_control_flow)
-
-    skl_filter = lambda scheme, ctx: (ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]["measurements"]) or "fxrstor" in str(scheme)
-    iwho_ctx.push_filter(skl_filter) # only use instructions that have SKL measurements TODO that's a bit specific
-
-
     if args.generalize is not None:
         with open(args.generalize, 'r') as f:
             asm_str = f.read()
         bb = iwho.BasicBlock(iwho_ctx, iwho_ctx.parse_asm(asm_str))
-        max_block_len = len(bb)
-        # TODO things need to be configurable here, and this code should probably be somewhere else
-        actx = AbstractionContext(iwho_ctx, predmanager=predman)
+
         abb = AbstractBlock(actx, bb)
         res_abb, trace = discovery.generalize(actx, abb)
         print("Generalization Result:\n" + textwrap.indent(str(res_abb), '  '))

@@ -26,8 +26,8 @@ def main():
 
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    argparser.add_argument('-d', '--database', metavar='database', default=default_db,
-            help='path to an sqlite3 measurement database that has been initialized via dedisdb.py -c, for storing measurements to')
+    # argparser.add_argument('-d', '--database', metavar='database', default=default_db,
+            # help='path to an sqlite3 measurement database that has been initialized via dedisdb.py -c, for storing measurements to')
 
     # TODO acfg config, ctx config
     # TODO mode of operation: dot, html, end result, ...
@@ -40,7 +40,8 @@ def main():
     with open(args.tracefile) as f:
         json_dict = json.load(f)
 
-    actx = AbstractionContext(iwho_ctx)
+    # TODO this should take the config from the witness
+    actx = AbstractionContext(config={}, iwho_ctx=iwho_ctx)
 
     tr = WitnessTrace.from_json_dict(actx, actx.json_ref_manager.resolve_json_references(json_dict))
 
@@ -48,7 +49,7 @@ def main():
     #
     # g.render(view=True)
 
-    with MeasurementDB(args.database) as mdb:
+    with actx.measurement_db as mdb:
         g = trace_to_html_graph(tr, actx=actx, measurement_db=mdb)
 
         g.generate("./generated_html")

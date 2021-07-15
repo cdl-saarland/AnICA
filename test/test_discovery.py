@@ -114,19 +114,34 @@ def actx_pred():
     skl_filter = lambda scheme, ctx: (ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]["measurements"]) or "fxrstor" in str(scheme)
     iwho_ctx.push_filter(skl_filter) # only use instructions that have SKL measurements
 
+    config = {
+        "insn_feature_manager": {
+            "features": [
+                ["exact_scheme", "singleton"],
+                ["present", "singleton"],
+                ["mnemonic", "singleton"],
+                ["opschemes", "subset"],
+            ]
+        },
+        "discovery": {
+            "discovery_batch_size": 10,
+            "generalization_batch_size": 10
+        },
+        "interestingness": {
+            'min_interestingness': 0.1,
+            'mostly_interesting_ratio': 1.0,
+        },
+        "measurement_db": None,
+    }
+
     predman = PredictorManager(None)
-    actx_pred = AbstractionContext(iwho_ctx, predmanager=predman)
-
-    actx_pred.discovery_cfg.generalization_batch_size = 10
-    actx_pred.discovery_cfg.discovery_batch_size = 10
-
-    actx_pred.interestingness_metric.mostly_interesting_ratio = 1.0
+    actx_pred = AbstractionContext(config, iwho_ctx=iwho_ctx, predmanager=predman)
 
     yield actx_pred
     predman.close()
 
 def add_preds(actx_pred, preds):
-    predman = actx_pred.predmanager
+    predman = actx_pred.interestingness_metric.predmanager
     for p in preds:
         add_to_predman(predman, p)
 

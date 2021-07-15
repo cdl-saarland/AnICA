@@ -23,6 +23,7 @@ class WitnessTrace:
             return WitnessTrace.Witness(**json_dict)
 
     def __init__(self, abs_block):
+        # TODO this should probably contain the config as well
         self.start = deepcopy(abs_block)
         self.trace = []
 

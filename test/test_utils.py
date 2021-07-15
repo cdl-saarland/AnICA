@@ -21,7 +21,20 @@ def random():
 @pytest.fixture(scope="module")
 def actx():
     iwho_ctx = iwho.get_context("x86")
-    return AbstractionContext(iwho_ctx)
+    config = {
+        "insn_feature_manager": {
+            "features": [
+                ["exact_scheme", "singleton"],
+                ["present", "singleton"],
+                ["mnemonic", "singleton"],
+                ["opschemes", "subset"],
+            ]
+        },
+        "discovery": None,
+        "interestingness": None,
+        "measurement_db": None,
+    }
+    return AbstractionContext(config, iwho_ctx=iwho_ctx)
 
 def havoc_alias_part(absblock):
     # this sets the aliasing part of the abstract block to top
