@@ -249,6 +249,144 @@ class SubSetAbstractFeature(AbstractFeature):
                 self.val.intersection_update(feature)
 
 
+class SubSetOrDefinitelyNotAbstractFeature(AbstractFeature):
+    r""" An abstract domain for representing all sets of items that are a
+    (non-strict) superset of a set of feature values and the set of items where
+    no feature value applies.
+
+    Intended for things like this:
+
+                                   +-----+
+                                   | TOP |
+                                   +-----+
+                                  /       \
+                   +-------------+         \
+                   | definitely  |          \
+                   | uses memory |           +-----+
+                   +-------------+                  \
+                  /       |       \                  \
+         +--------+  +----------+  +--------+       +--------------+
+         | reads  |  | accesses |  | writes |       | does not use |
+         | memory |  |  k bits  |  | memory |       |    memory    |
+         +--------+  +----------+  +--------+       +--------------+
+           |    \    /      |   \     /   |               |
+           |     +==+       |    +===+    |               |
+           |    /    \      |   /     \   |               |
+ +--------------+ +----------------+ +---------------+    |
+ | reads k bits | | reads & writes | | writes k bits |    |
+ |  of memory   | |     memory     | |   of memory   |    |
+ +--------------+ +----------------+ +---------------+    +
+                \         |         /                    /
+                +------------------+                    /
+                |  reads & writes  |              +----+
+                | k bits of memory |             /
+                +------------------+            /
+                                    \          /
+                                     +--------+
+                                     | BOTTOM |
+                                     +--------+
+    """
+
+    def __init__(self):
+        self.subfeature = SubSetAbstractFeature()
+
+        self.is_in_subfeature = SingletonAbstractFeature()
+
+    def __deepcopy__(self, memo):
+        new_one = self.__class__()
+        new_one.subfeature = deepcopy(self.subfeature, memo)
+        new_one.is_in_subfeature = deepcopy(self.is_in_subfeature, memo)
+        return new_one
+
+    def to_json_dict(self):
+        return {
+                "subfeature": self.subfeature.to_json_dict(),
+                "is_in_subfeature": self.is_in_subfeature.to_json_dict(),
+            }
+
+    @staticmethod
+    def from_json_dict(json_dict):
+        res = OrDefinitelyNot()
+        res.subfeature = SubSetAbstractFeature.from_json_dict(json_dict['subfeature'])
+        res.is_in_subfeature = SingletonAbstractFeature.from_json_dict(json_dict['is_in_subfeature'])
+        return res
+
+    def get_possible_expansions(self):
+        if self.is_top():
+            return []
+        if self.is_bottom() or self.is_in_subfeature.val == False or self.subfeature.is_top():
+            return [(AbstractFeature.TOP, 1)]
+
+        return self.subfeature.get_possible_expansions()
+
+    def apply_expansion(self, expansion):
+        if expansion == AbstractFeature.TOP:
+            self.set_to_top()
+            return
+        self.subfeature.apply_expansion(expansion)
+
+    def __str__(self) -> str:
+        if self.is_bottom():
+            return "BOTTOM"
+        if self.is_top():
+            return "TOP"
+        if self.is_in_subfeature.val == True:
+            if self.subfeature.is_top():
+                return "definitely something"
+            return "at least " + str(self.subfeature)
+        assert self.is_in_subfeature.val == False
+        return "definitely not"
+
+    def is_top(self) -> bool:
+        return self.is_in_subfeature.is_top()
+
+    def is_bottom(self) -> bool:
+        return self.is_in_subfeature.is_bottom()
+
+    def set_to_top(self):
+        self.is_in_subfeature.set_to_top()
+        self.subfeature.set_to_top()
+
+    def subsumes(self, other: AbstractFeature) -> bool:
+        assert isinstance(other, self.__class__)
+        if other.is_bottom():
+            return True
+        if self.is_bottom():
+            return False
+        if self.is_top():
+            return True
+        if other.is_top():
+            return False
+
+        if self.is_in_subfeature.val == False:
+            return other.is_in_subfeature.val == False
+
+        assert self.is_in_subfeature.val == True and other.is_in_subfeature.val == True
+
+        return self.subfeature.subsumes(other.subfeature)
+
+    def subsumes_feature(self, feature) -> bool:
+        if feature is None:
+            return True
+        if self.is_bottom():
+            return False
+        if self.is_top():
+            return True
+
+        if self.is_in_subfeature.val == False:
+            return len(feature) == 0
+
+        return self.subfeature.subsumes_feature(feature)
+
+    def join(self, feature):
+        if feature is not None:
+            if len(feature) == 0:
+                self.is_in_subfeature.join(False)
+                self.subfeature.set_to_top()
+            else:
+                self.is_in_subfeature.join(True)
+                self.subfeature.join(feature)
+
 class AbstractInsn(Expandable):
     """ An instance of this class represents a set of (concrete) InsnSchemes
     that share certain features.

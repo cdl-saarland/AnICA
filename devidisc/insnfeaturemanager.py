@@ -9,15 +9,31 @@ import iwho
 from .abstractblock import *
 from .configurable import ConfigMeta
 
+import iwho.x86
+
+def is_memory_opscheme(opscheme):
+    # TODO this is x86 specific
+    if opscheme.is_fixed():
+        return isinstance(opscheme.fixed_operand, iwho.x86.MemoryOperand)
+    else:
+        return isinstance(opscheme.operand_constraint, iwho.x86.MemConstraint)
+
+def mem_access_width(opscheme):
+    # TODO this is x86 specific
+    if opscheme.is_fixed():
+        return opscheme.fixed_operand.width
+    else:
+        return opscheme.operand_constraint.width
 
 _default_features = [
         ["exact_scheme", "singleton"],
         ["present", "singleton"],
         ["mnemonic", "singleton"],
         ["opschemes", "subset"],
+        ["memory_usage", "subset_or_definitely_not"],
         ["category", "singleton"],
         ["extension", "singleton"],
-        ["isa-set", "singleton"]
+        ["isa-set", "singleton"],
     ]
 
 class InsnFeatureManager(metaclass=ConfigMeta):
@@ -78,6 +94,13 @@ class InsnFeatureManager(metaclass=ConfigMeta):
                 elif kind == "subset":
                     for elem in feature_value:
                         curr_idx[elem].append(ischeme)
+                elif kind == "subset_or_definitely_not":
+                    for elem in feature_value:
+                        curr_idx[elem].append(ischeme)
+                    if len(feature_value) == 0:
+                        curr_idx['_definitely_not_'].append(ischeme)
+                    else:
+                        curr_idx['_definitely_'].append(ischeme)
                 else:
                     assert False, f"unknown feature kind for key {key}: {kind}"
 
@@ -88,6 +111,8 @@ class InsnFeatureManager(metaclass=ConfigMeta):
                 absval = SingletonAbstractFeature()
             elif kind == "subset":
                 absval = SubSetAbstractFeature()
+            elif kind == "subset_or_definitely_not":
+                absval = SubSetOrDefinitelyNotAbstractFeature()
             else:
                 assert False, f"unknown feature kind for key {key}: {kind}"
             res[key] = absval
@@ -143,7 +168,15 @@ class InsnFeatureManager(metaclass=ConfigMeta):
 
         index = self.feature_indices[feature_key]
 
-        if isinstance(value, SubSetAbstractFeature):
+        if isinstance(value, SubSetAbstractFeature) or isinstance(value, SubSetOrDefinitelyNotAbstractFeature):
+            if isinstance(value, SubSetOrDefinitelyNotAbstractFeature):
+                if value.is_in_subfeature.val == False:
+                    return set(index['_definitely_not_'])
+                assert value.is_in_subfeature.val == True
+                if value.subfeature.is_top():
+                    return set(index['_definitely_'])
+                value = value.subfeature
+
             # We are looking for InsnSchemes that contain all elements of
             # value, i.e. the intersection of the InsnScheme sets associated to
             # those elements.
@@ -170,21 +203,42 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         if ischeme is None:
             return {'present': False}
         remaining_features = set(self.index_order)
-        res = {'present': True}
+
+        res = dict()
+        res['present'] = True
         remaining_features.discard('present')
+
         res['exact_scheme'] = ischeme
         remaining_features.discard('exact_scheme')
-        res['mnemonic'] = self.iwho_ctx.extract_mnemonic(ischeme)
-        remaining_features.discard('mnemonic')
 
-        opschemes = []
-        for k, opscheme in ischeme.explicit_operands.items():
-            opschemes.append(str(opscheme))
-        for opscheme in ischeme.implicit_operands:
-            opschemes.append(str(opscheme))
-        res['opschemes'] = opschemes
-        remaining_features.discard('opschemes')
+        if 'mnemonic' in remaining_features:
+            res['mnemonic'] = self.iwho_ctx.extract_mnemonic(ischeme)
+            remaining_features.discard('mnemonic')
 
+        if 'opschemes' in remaining_features or 'memory_usage' in remaining_features:
+            memory_opschemes = []
+            opschemes = []
+            for k, opscheme in ischeme.explicit_operands.items():
+                if is_memory_opscheme(opscheme):
+                    memory_opschemes.append(opscheme)
+                opschemes.append(str(opscheme))
+            for opscheme in ischeme.implicit_operands:
+                opschemes.append(str(opscheme))
+
+        if 'opschemes' in remaining_features:
+            res['opschemes'] = opschemes
+            remaining_features.discard('opschemes')
+
+        if 'memory_usage' in remaining_features:
+            mem_usage = set()
+            for opscheme in memory_opschemes:
+                if opscheme.is_read:
+                    mem_usage.add("R")
+                if opscheme.is_written:
+                    mem_usage.add("W")
+                mem_usage.add(f"S:{mem_access_width(opscheme)}")
+            res['memory_usage'] = mem_usage
+            remaining_features.discard('memory_usage')
 
         from_scheme = self.iwho_ctx.get_features(ischeme)
         for key in remaining_features:
