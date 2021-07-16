@@ -306,7 +306,7 @@ class SubSetOrDefinitelyNotAbstractFeature(AbstractFeature):
 
     @staticmethod
     def from_json_dict(json_dict):
-        res = OrDefinitelyNot()
+        res = SubSetOrDefinitelyNotAbstractFeature()
         res.subfeature = SubSetAbstractFeature.from_json_dict(json_dict['subfeature'])
         res.is_in_subfeature = SingletonAbstractFeature.from_json_dict(json_dict['is_in_subfeature'])
         return res
