@@ -269,9 +269,9 @@ class SubSetOrDefinitelyNotAbstractFeature(AbstractFeature):
          | reads  |  | accesses |  | writes |       | does not use |
          | memory |  |  k bits  |  | memory |       |    memory    |
          +--------+  +----------+  +--------+       +--------------+
-           |    \    /      |   \     /   |               |
-           |     +==+       |    +===+    |               |
-           |    /    \      |   /     \   |               |
+           |    \    /    |     \     /   |               |
+           |     +==+     |      +===+    |               |
+           |    /    \    |     /     \   |               |
  +--------------+ +----------------+ +---------------+    |
  | reads k bits | | reads & writes | | writes k bits |    |
  |  of memory   | |     memory     | |   of memory   |    |
