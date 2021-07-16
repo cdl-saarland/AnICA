@@ -30,7 +30,13 @@ def prettify_absinsn(absinsn, hl_feature=None):
         res = '<ul class="featurelist">' + res + "</ul>"
     return res
 
-def prettify_absblock(absblock, hl_expansion=None):
+def get_represented_insn_schemes(absinsn):
+    actx = absinsn.actx
+    feasible_schemes = actx.insn_feature_manager.compute_feasible_schemes(absinsn.features)
+    return feasible_schemes
+
+
+def prettify_absblock(absblock, hl_expansion=None, go_explicit_if_shorter=True):
     res = ""
     res += "<b>Abstract Instructions:</b>\n"
     res += "<table>\n"
@@ -40,7 +46,17 @@ def prettify_absblock(absblock, hl_expansion=None):
         hl_feature = None
         if hl_expansion is not None and hl_expansion[0] == 0 and hl_expansion[1] == idx:
             hl_feature = hl_expansion[2]
-        insn_str = prettify_absinsn(ai, hl_feature)
+
+        insn_str = None
+
+        if go_explicit_if_shorter and hl_feature is None:
+            repr_schemes = get_represented_insn_schemes(ai)
+            if len(repr_schemes) <= len(ai.features):
+                insn_str = "\n".join(map(lambda x: f"<li>{x}</li>",repr_schemes))
+                insn_str = 'one of:<ul class="featurelist">' + insn_str + "</ul>"
+
+        if insn_str is None:
+            insn_str = prettify_absinsn(ai, hl_feature)
         res += f"<td>{insn_str}</td>\n"
         res += "</tr>"
 
