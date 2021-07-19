@@ -8,6 +8,7 @@ TODO write this
   - [X] implement the core generalization algorithm
 
 ### Functional Extensions
+  - [ ] at least for the insn part, we could rather easily sample from  gamma(new) \ gamma(old), maybe that's a good idea
   - [ ] revisit the TODOs in the aliasing sampling
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
   - [ ] make AbstractionConfig configurable
