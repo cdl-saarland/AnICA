@@ -4,6 +4,7 @@
 from collections import defaultdict
 from typing import Union, Sequence
 
+import editdistance
 import iwho
 
 from .abstractblock import *
@@ -28,7 +29,7 @@ def mem_access_width(opscheme):
 _default_features = [
         ["exact_scheme", "singleton"],
         ["present", "singleton"],
-        ["mnemonic", "singleton"],
+        ["mnemonic", ["editdistance", 3]], # "singleton"
         ["opschemes", "subset"],
         ["memory_usage", "subset_or_definitely_not"],
         ["category", "singleton"],
@@ -67,6 +68,11 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         self.feature_indices = dict()
         self._build_index()
 
+        # A per-feature index mapping concrete string features s to a list of
+        # concrete features with their editing distance from s.
+        # We build that one on demand with `get_editdists()`.
+        self.editdist_indices = dict()
+
     def _build_index(self):
         # add indices for all the relevant features
         for key, kind in self.features:
@@ -89,7 +95,10 @@ class InsnFeatureManager(metaclass=ConfigMeta):
                 if feature_value is None:
                     continue
 
-                if kind == "singleton":
+                if isinstance(kind, list) or isinstance(kind, tuple):
+                    kind, *args = kind
+
+                if kind == "singleton" or kind == "editdistance":
                     curr_idx[feature_value].append(ischeme)
                 elif kind == "subset":
                     for elem in feature_value:
@@ -107,12 +116,19 @@ class InsnFeatureManager(metaclass=ConfigMeta):
     def init_abstract_features(self):
         res = dict()
         for key, kind in self.features:
+            args = []
+            if isinstance(kind, list) or isinstance(kind, tuple):
+                # arguments are passed lisp style
+                kind, *args = kind
             if kind == "singleton":
                 absval = SingletonAbstractFeature()
             elif kind == "subset":
                 absval = SubSetAbstractFeature()
             elif kind == "subset_or_definitely_not":
                 absval = SubSetOrDefinitelyNotAbstractFeature()
+            elif kind == "editdistance":
+                assert len(args) == 1, "Wrong number of arguments for editditance feature: {len(args)} (expected: 1)"
+                absval = EditDistanceAbstractFeature(args[0])
             else:
                 assert False, f"unknown feature kind for key {key}: {kind}"
             res[key] = absval
@@ -197,6 +213,43 @@ class InsnFeatureManager(metaclass=ConfigMeta):
             cached_val = index.get(x, None)
             assert cached_val is not None, f"Found no cached value for '{x}' in the index for '{feature_key}'."
             return cached_val
+
+        elif isinstance(value, EditDistanceAbstractFeature):
+            base = value.base
+            curr_dist = value.curr_dist
+            editing_distances = self.get_editdists(feature_key, base)
+            res = set()
+            for entry, dist in editing_distances:
+                if dist > curr_dist:
+                    # the editing distances are sorted in ascending order upon
+                    # initialization, if we see one that is too far away, all
+                    # following ones will be too far away as well
+                    break
+                cached_val = index.get(entry, None)
+                assert cached_val is not None, f"Found no cached value for '{x}' in the index for '{feature_key}'."
+                res.update(cached_val)
+
+            return res
+
+    def get_editdists(self, feature_key, base):
+        index = self.editdist_indices.get(feature_key)
+        if index is None:
+            index = dict()
+            self.editdist_indices[feature_key] = index
+        res = index.get(base, None)
+        if res is None:
+            # create a list of (concrete feature, edit distance) pairs for the
+            # base and sort it by ascending edit distance
+            res = []
+            if feature_key == 'mnemonic':
+                scheme_index = self.iwho_ctx.mnemonic_to_insn_schemes
+            else:
+                scheme_index = self.feature_indices[feature_key]
+            for k in scheme_index.keys():
+                res.append((k, editdistance.eval(base, k)))
+            res.sort(key=lambda x: x[1])
+            index[base] = res
+        return res
 
     def extract_features(self, ischeme: Union[iwho.InsnScheme, None]):
         if ischeme is None:

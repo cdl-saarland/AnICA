@@ -25,6 +25,7 @@ TODO write this
     - [ ] CQA?
     - [ ] measurements
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
+  - [X] implement an editdistance domain for mnemonics
   - [X] add a domain that can express that an instruction may not use memory / has to use memory
   - [X] test whether the aliasing component can find something
   - [X] make AbstractionConfig less of a god class

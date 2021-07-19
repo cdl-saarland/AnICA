@@ -15,6 +15,7 @@ import random
 import textwrap
 from typing import Optional, Union, Sequence
 
+import editdistance
 import iwho
 
 import logging
@@ -93,6 +94,93 @@ class AbstractFeature(Expandable, ABC):
     @abstractmethod
     def join(self, feature):
         pass
+
+class EditDistanceAbstractFeature(AbstractFeature):
+    def __init__(self, max_dist):
+        self.top = False
+        self.base = None
+        self.curr_dist = 0
+        self.max_dist = max_dist
+
+    def _normalize(self):
+        if not self.top and self.curr_dist > self.max_dist:
+            self.set_to_top()
+
+    def __deepcopy__(self, memo):
+        new_one = EditDistanceAbstractFeature(max_dist=self.max_dist)
+        new_one.top = self.top
+        new_one.base = self.base # no need to copy at all
+        new_one.curr_dist = self.curr_dist
+        return new_one
+
+    def to_json_dict(self):
+        return {
+                'top': self.top,
+                'base': self.base,
+                'curr_dist': self.curr_dist,
+                'max_dist': self.max_dist,
+            }
+
+    @staticmethod
+    def from_json_dict(json_dict):
+        res = EditDistanceAbstractFeature(max_dist=json_dict['max_dist'])
+        res.top = json_dict['top']
+        res.base = json_dict['base']
+        res.curr_dist = json_dict['curr_dist']
+        return res
+
+    def __str__(self) -> str:
+        if self.is_top():
+            return "TOP"
+        if self.is_bottom():
+            return "BOTTOM"
+        return f"'{self.base}' + at most {self.curr_dist} edits"
+
+    def get_possible_expansions(self):
+        if self.is_top():
+            return []
+        return [(self.curr_dist + 1, 1)]
+
+    def apply_expansion(self, expansion):
+        self.curr_dist = expansion
+        self._normalize()
+
+    def is_top(self) -> bool:
+        return self.top
+
+    def is_bottom(self) -> bool:
+        return not self.top and self.base is None
+
+    def set_to_top(self):
+        self.top = True
+        self.base = None
+        self.curr_dist = None
+
+    def subsumes(self, other: AbstractFeature) -> bool:
+        assert isinstance(other, EditDistanceAbstractFeature)
+        # that's an approximation
+        return self.is_top() or other.is_bottom() or (self.base == other.base
+                and self.curr_dist >= other.curr_dist)
+
+    def subsumes_feature(self, feature) -> bool:
+        # TODO implement?
+        assert False, "TODO implement?"
+
+    def join(self, feature):
+        if feature is None:
+            return
+        if self.is_top():
+            return
+        if self.is_bottom():
+            self.base = feature
+            self.curr_dist = 0
+            return
+        if self.base != feature:
+            d = editdistance.eval(self.base, feature)
+            if d > self.curr_dist:
+                self.curr_dist = d
+                self._normalize()
+        return
 
 
 class SingletonAbstractFeature(AbstractFeature):
