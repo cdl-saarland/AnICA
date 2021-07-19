@@ -163,10 +163,9 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         if feature_key == 'mnemonic':
             # We don't need to cache that, since the iwho context already does
             # that.
-            mnemonic = value.val
-            return self.iwho_ctx.mnemonic_to_insn_schemes[mnemonic]
-
-        index = self.feature_indices[feature_key]
+            index = self.iwho_ctx.mnemonic_to_insn_schemes
+        else:
+            index = self.feature_indices[feature_key]
 
         if isinstance(value, SubSetAbstractFeature) or isinstance(value, SubSetOrDefinitelyNotAbstractFeature):
             if isinstance(value, SubSetOrDefinitelyNotAbstractFeature):
