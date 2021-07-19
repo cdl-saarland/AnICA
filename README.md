@@ -11,6 +11,7 @@ TODO write this
   - [ ] at least for the insn part, we could rather easily sample from  gamma(new) \ gamma(old), maybe that's a good idea
   - [ ] revisit the TODOs in the aliasing sampling
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
+  - [ ] add js functions to generate a running script for each test case
   - [ ] make AbstractionConfig configurable
   - [ ] make iwho.Context configurable
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
