@@ -36,7 +36,7 @@ def get_represented_insn_schemes(absinsn):
     return feasible_schemes
 
 
-def prettify_absblock(absblock, hl_expansion=None, go_explicit_if_shorter=True):
+def prettify_absblock(absblock, hl_expansion=None, go_explicit_if_shorter=False):
     res = ""
     res += "<b>Abstract Instructions:</b>\n"
     res += "<table>\n"
@@ -328,19 +328,6 @@ class HTMLGraph:
         shutil.rmtree(dest_path, ignore_errors=True)
         os.makedirs(dest_path)
 
-        if len(self.measurement_sites) > 0:
-            add_asm_to_measdicts(self.actx, [measdict for link, measdict in self.measurement_sites])
-
-            meas_dir = dest_path / "measurements"
-            os.makedirs(meas_dir)
-            with open(self.html_resources_path / "meas_frame.html") as f:
-                meas_frame_str = f.read()
-
-            for link, measdict in self.measurement_sites:
-                site_str = _generate_measurement_site(self.actx, meas_frame_str, measdict)
-                with open(dest_path / link, "w") as f:
-                    f.write(site_str)
-
         # copy style file
         shutil.copy(self.html_resources_path / "style.css", dest_path)
         shutil.copy(self.html_resources_path / "meas_style.css", dest_path)
@@ -381,3 +368,17 @@ class HTMLGraph:
         with open(dest_path / "script.js", "w") as f:
             f.write(script)
 
+        print("Only generating measurement sites remaining, feel free to open the site already.")
+
+        if len(self.measurement_sites) > 0:
+            add_asm_to_measdicts(self.actx, [measdict for link, measdict in self.measurement_sites])
+
+            meas_dir = dest_path / "measurements"
+            os.makedirs(meas_dir)
+            with open(self.html_resources_path / "meas_frame.html") as f:
+                meas_frame_str = f.read()
+
+            for link, measdict in self.measurement_sites:
+                site_str = _generate_measurement_site(self.actx, meas_frame_str, measdict)
+                with open(dest_path / link, "w") as f:
+                    f.write(site_str)
