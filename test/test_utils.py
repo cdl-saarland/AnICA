@@ -30,7 +30,6 @@ def actx():
                 ["opschemes", "subset"],
             ]
         },
-        "discovery": None,
         "interestingness": None,
         "measurement_db": None,
     }
