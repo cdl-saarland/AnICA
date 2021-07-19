@@ -513,8 +513,8 @@ class AbstractInsn(Expandable):
             return None
 
         if self.features['present'].is_top():
-            if random.choice([True, False]):
-                # TODO one might want to adjust the probabilities here...
+            skip_likelyhood = self.actx.sampling_cfg.skip_insn_bias
+            if random.uniform(0.0, 1.0) <= skip_likelyhood:
                 return None
 
         feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(self.features)

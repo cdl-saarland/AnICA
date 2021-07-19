@@ -25,6 +25,16 @@ class DiscoveryConfig(metaclass=ConfigMeta):
     def __init__(self, config):
         self.configure(config)
 
+class SamplingConfig(metaclass=ConfigMeta):
+    config_options = dict(
+        skip_insn_bias = (1.0,
+            'the likelyhood in [0.0, 1.0] to skip an instruction whose \'present\' result is TOP when sampling (1.0 will always skip, 0.0 will always take an instruction)'
+            ),
+    )
+
+    def __init__(self, config):
+        self.configure(config)
+
 
 class AbstractionContext:
     """ An instance of the Context pattern to collect and manage the necessary
@@ -50,10 +60,11 @@ class AbstractionContext:
         if interestingness_config is not None:
             self.interestingness_metric = InterestingnessMetric(interestingness_config)
 
-        self.discovery_cfg = None
         discovery_config = config.get('discovery', {})
-        if discovery_config is not None:
-            self.discovery_cfg = DiscoveryConfig(discovery_config)
+        self.discovery_cfg = DiscoveryConfig(discovery_config)
+
+        sampling_config = config.get('sampling', {})
+        self.sampling_cfg = SamplingConfig(sampling_config)
 
         self.measurement_db = None
         measurementdb_config = config.get('measurement_db', {})
@@ -73,6 +84,7 @@ class AbstractionContext:
         res['insn_feature_manager'] = InsnFeatureManager.get_default_config()
         res['interestingness_metric'] = InterestingnessMetric.get_default_config()
         res['discovery'] = DiscoveryConfig.get_default_config()
+        res['sampling'] = SamplingConfig.get_default_config()
         res['measurement_db'] = MeasurementDB.get_default_config()
 
         return res
@@ -86,10 +98,8 @@ class AbstractionContext:
         else:
             res['interestingness_metric'] = self.interestingness_metric.get_config()
 
-        if self.discovery_cfg is None:
-            res['discovery'] = None
-        else:
-            res['discovery'] = self.discovery_cfg.get_config()
+        res['discovery'] = self.discovery_cfg.get_config()
+        res['sampling'] = self.sampling_cfg.get_config()
 
         if self.measurement_db is None:
             res['measurement_db'] = None

@@ -9,6 +9,8 @@ TODO write this
 
 ### Functional Extensions
   - [ ] at least for the insn part, we could rather easily sample from  gamma(new) \ gamma(old), maybe that's a good idea
+  - [ ] slice witness traces without the optional instructions
+  - [ ] maybe give highest priority to the present feature and go to TOP in the absinsn once it is set to TOP
   - [ ] revisit the TODOs in the aliasing sampling
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
   - [ ] add js functions to generate a running script for each test case
