@@ -94,12 +94,19 @@ class WitnessTrace:
 
     @staticmethod
     def from_json_dict(actx, json_dict):
-        start_bb = AbstractBlock.from_json_dict(actx, json_dict['start'])
-        res = WitnessTrace(start_bb)
+        start = AbstractBlock.from_json_dict(actx, json_dict['start'])
+        res = WitnessTrace(start)
         for v in json_dict['trace']:
             res.trace.append(WitnessTrace.Witness.from_json_dict(v))
         return res
 
+    def dump_json(self, filename):
+        actx = self.start.actx
+        out_data = dict()
+        out_data['config'] = actx.get_config()
+        out_data['trace'] = actx.json_ref_manager.introduce_json_references(self.to_json_dict())
+        with open(filename, 'w') as f:
+            json.dump(out_data, f, indent=2)
 
     def to_dot(self):
         g = Digraph()

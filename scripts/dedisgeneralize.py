@@ -79,8 +79,7 @@ def main():
 
         timestamp = datetime.now().replace(microsecond=0).isoformat()
         filename = f"traces/trace_{timestamp}.json"
-        with open(filename, 'w') as f:
-            json.dump(actx.json_ref_manager.introduce_json_references(trace.to_json_dict()), f, indent=2)
+        trace.dump_json(filename)
         print(f"witness trace written to: {filename}")
 
         sys.exit(0)
