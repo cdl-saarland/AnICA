@@ -514,6 +514,10 @@ class AbstractInsn(Expandable):
             return "TOP"
         return "\n".join((f"{k}: {v}" for k, v in self.features.items()))
 
+    def havoc(self):
+        for k, v in self.features.items():
+            v.set_to_top()
+
     def compute_benefit(self, expansion):
         if expansion == 'all_top':
             # One could argue that this benefit should actually be large.
@@ -990,6 +994,16 @@ class AbstractBlock(Expandable):
 
         if bb is not None:
             self.join(bb)
+
+    @staticmethod
+    def make_top(actx, num_insns):
+        res = AbstractBlock(actx, None)
+        for x in range(num_insns):
+            ai = AbstractInsn(actx)
+            ai.havoc()
+            res.abs_insns.append(ai)
+        res.abs_aliasing.havoc()
+        return res
 
     def to_json_dict(self):
         res = dict()

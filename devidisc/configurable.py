@@ -17,7 +17,7 @@ def load_json_config(path):
     with open(path, 'r') as f:
         json_dict = json.load(f)
 
-    basepath = path.parent
+    basepath = path.parent.resolve()
     res = _make_paths_absolute(basepath, json_dict)
 
     return res
@@ -33,7 +33,7 @@ def _make_paths_absolute(basepath, obj):
                 path = Path(value)
                 if not path.is_absolute():
                     path = basepath.joinpath(path)
-                new_value = path
+                new_value = str(path)
             else:
                 new_value = _make_paths_absolute(basepath, value)
             res[key] = new_value

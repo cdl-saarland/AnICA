@@ -32,6 +32,7 @@ dot
 *.db
 traces/
 measurements/
+discovery_results/
 generated_html/
 *.s
 

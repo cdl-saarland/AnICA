@@ -1,0 +1,34 @@
+{
+  "insn_feature_manager": {
+    "features": [
+      [ "exact_scheme", "singleton" ],
+      [ "present", "singleton" ]
+    ]
+  },
+  "iwho": {
+    "context_specifier": "x86_uops_info",
+    "filters": [
+      "no_cf",
+      "with_measurements:SKL"
+    ]
+  },
+  "interestingness_metric": {
+    "min_interestingness": 0.1,
+    "mostly_interesting_ratio": 0.97
+  },
+  "discovery": {
+    "discovery_batch_size": 4,
+    "discovery_max_block_len": 6,
+    "generalization_batch_size": 4
+  },
+  "sampling": {
+    "skip_insn_bias": 0.5
+  },
+  "measurement_db": {
+    "db_name": "measurements.db"
+  },
+  "predmanager": {
+    "registry_path": "../predictors/pred_registry.json",
+    "num_processes": 0
+  }
+}
