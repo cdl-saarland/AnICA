@@ -24,6 +24,7 @@ sys.path.append(import_path)
 
 from devidisc.abstractioncontext import AbstractionContext
 from devidisc.abstractblock import AbstractBlock
+from devidisc.configurable import load_json_config
 import devidisc.discovery as discovery
 from devidisc.measurementdb import MeasurementDB
 from devidisc.predmanager import PredictorManager
@@ -40,21 +41,19 @@ def main():
     default_pred_config = HERE.parent / "configs" / "predictors" / "pred_config.json"
     default_jobs = multiprocessing.cpu_count()
     default_seed = 424242
-    # default_db = "measurements.db"
 
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     argparser.add_argument('-p', '--predconfig', default=default_pred_config, metavar="CONFIG",
             help='predictor configuration file in json format')
+
+    argparser.add_argument('-c', '--config', metavar="CONFIG", default=None,
+            help='abstraction configuration file in json format')
 
     argparser.add_argument('-j', '--jobs', type=int, default=default_jobs, metavar="N",
             help='number of worker processes to use at most for running predictors')
 
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
             help='seed for the rng')
-
-    # argparser.add_argument('-d', '--database', metavar='database', default=default_db,
-    #         help='path to an sqlite3 measurement database that has been initialized via dedisdb.py -c, for storing measurements to')
-
 
     argparser.add_argument('--explore', action='store_true', help='just randomly explore basic blocks')
 
@@ -72,22 +71,10 @@ def main():
     # The predman keeps track of all the predictors and interacts with them
     num_processes = args.jobs
 
-    # create_db = not os.path.isfile(args.database)
+    actx_config = load_json_config(args.config)
 
-    # measurement_db = MeasurementDB(args.database)
-
-    # if create_db:
-    #     with measurement_db as m:
-    #         m.create_tables()
-
-    iwho_ctx = iwho.get_context("x86")
-
-    iwho_ctx.push_filter(iwho.Filters.no_control_flow)
-
-    skl_filter = lambda scheme, ctx: (ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]["measurements"]) or "fxrstor" in str(scheme)
-    iwho_ctx.push_filter(skl_filter) # only use instructions that have SKL measurements TODO that's a bit specific
-
-    actx = AbstractionContext(config={}, iwho_ctx=iwho_ctx)
+    actx = AbstractionContext(config=actx_config)
+    iwho_ctx = actx.iwho_ctx
 
     # this should be moved into AbstractionContext as well
     predman = PredictorManager(num_processes=num_processes, measurement_db=actx.measurement_db)

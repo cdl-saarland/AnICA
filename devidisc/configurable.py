@@ -1,5 +1,48 @@
 """ TODO document"""
 
+from pathlib import Path
+import json
+
+def load_json_config(path):
+    """ Load a config dict in json format from the given path.
+
+    Fields that end in `_path` and that specify a relative path are made
+    absolute by considering them relative to the directory of the given path.
+    """
+    if path is None:
+        return dict()
+
+    path = Path(path)
+
+    with open(path, 'r') as f:
+        json_dict = json.load(f)
+
+    basepath = path.parent
+    res = _make_paths_absolute(basepath, json_dict)
+
+    return res
+
+def _make_paths_absolute(basepath, obj):
+    """ Recursive helper method for `load_json_config`, to make paths absolute.
+    """
+    if isinstance(obj, dict):
+        res = dict()
+        for key, value in obj.items():
+            new_value = None
+            if key.endswith('_path') and isinstance(value, str):
+                path = Path(value)
+                if not path.is_absolute():
+                    path = basepath.joinpath(path)
+                new_value = path
+            else:
+                new_value = make_paths_absolute(basepath, value)
+            res[key] = new_value
+        return res
+    elif isinstance(obj, list) or isinstance(obj, tuple):
+        return tuple(( make_paths_absolute(basepath, x) for x in obj))
+    else:
+        return obj
+
 
 class ConfigError(Exception):
     """ An error indicating that something went wrong in the DeviDisc
