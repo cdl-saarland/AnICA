@@ -1,0 +1,53 @@
+{
+"iaca.skl": {
+    "tool": "iaca",
+    "version": "v3.0-28-g1ba2cbb",
+    "uarch": "SKL",
+    "config": {
+            "kind": "iaca",
+            "iaca_path": "/opt/iaca/iaca",
+            "iaca_opts": ["-arch", "SKL"],
+            "timeout": 1.0
+        }
+},
+"llvm-mca.12-dbg.skl": {
+    "tool": "llvm-mca",
+    "version": "12-dbg",
+    "uarch": "SKL",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "/home/ritter/projects/portmapping/llvm/install/bin/llvm-mca",
+            "llvmmca_opts": ["-mcpu", "skylake"],
+            "timeout": 1.0
+        }
+},
+"llvm-mca.9-rel.skl": {
+    "tool": "llvm-mca",
+    "version": "9.0.1-rel+assert",
+    "uarch": "SKL",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "/home/ritter/projects/portmapping/llvm9/install/bin/llvm-mca",
+            "llvmmca_opts": ["-mcpu", "skylake"],
+            "timeout": 1.0
+        }
+},
+"test.all_1": {
+    "tool": "testpredictor",
+    "version": "all_1",
+    "uarch": "any",
+    "config": {
+            "kind": "test",
+            "mnemonic_costs": {}
+        }
+},
+"test.add_expensive": {
+    "tool": "testpredictor",
+    "version": "add_expensive",
+    "uarch": "any",
+    "config": {
+            "kind": "test",
+            "mnemonic_costs": {"add": 2.0}
+        }
+}
+}

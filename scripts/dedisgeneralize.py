@@ -37,14 +37,14 @@ logger = logging.getLogger(__name__)
 def main():
     HERE = Path(__file__).parent
 
-    default_config = HERE.parent / "config.json"
+    default_pred_config = HERE.parent / "configs" / "predictors" / "pred_config.json"
     default_jobs = multiprocessing.cpu_count()
     default_seed = 424242
     # default_db = "measurements.db"
 
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    argparser.add_argument('-c', '--config', default=default_config, metavar="CONFIG",
-            help='configuration file in json format')
+    argparser.add_argument('-p', '--predconfig', default=default_pred_config, metavar="CONFIG",
+            help='predictor configuration file in json format')
 
     argparser.add_argument('-j', '--jobs', type=int, default=default_jobs, metavar="N",
             help='number of worker processes to use at most for running predictors')
@@ -60,13 +60,13 @@ def main():
 
     argparser.add_argument('-g', '--generalize', metavar='asm file', default=None, help='path to a file containing the assembly of a basic block to generalize')
 
-    argparser.add_argument('predictors', nargs=2, metavar="PREDICTOR_ID", help='two identifiers of predictors specified in the config')
+    argparser.add_argument('predictors', nargs="+", metavar="PREDICTOR_ID", help='one or more identifiers of predictors specified in the config')
 
     args = parse_args_with_logging(argparser, "info")
 
     random.seed(args.seed)
 
-    with open(args.config, 'r') as config_file:
+    with open(args.predconfig, 'r') as config_file:
         pred_config_dict = json.load(config_file)
 
     # The predman keeps track of all the predictors and interacts with them
