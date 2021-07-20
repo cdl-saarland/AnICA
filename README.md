@@ -14,8 +14,6 @@ TODO write this
   - [ ] revisit the TODOs in the aliasing sampling
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
   - [ ] add js functions to generate a running script for each test case
-  - [ ] make AbstractionConfig configurable
-  - [ ] make iwho.Context configurable
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
   - [ ] check whether using an SMT solver for subsumption is necessary and reasonable
   - [ ] add more predictors
@@ -25,6 +23,8 @@ TODO write this
     - [ ] CQA?
     - [ ] measurements
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
+  - [X] make AbstractionConfig configurable
+  - [X] make iwho.Context configurable
   - [X] implement an editdistance domain for mnemonics
   - [X] add a domain that can express that an instruction may not use memory / has to use memory
   - [X] test whether the aliasing component can find something
