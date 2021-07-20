@@ -35,11 +35,11 @@ def _make_paths_absolute(basepath, obj):
                     path = basepath.joinpath(path)
                 new_value = path
             else:
-                new_value = make_paths_absolute(basepath, value)
+                new_value = _make_paths_absolute(basepath, value)
             res[key] = new_value
         return res
     elif isinstance(obj, list) or isinstance(obj, tuple):
-        return tuple(( make_paths_absolute(basepath, x) for x in obj))
+        return tuple(( _make_paths_absolute(basepath, x) for x in obj))
     else:
         return obj
 

@@ -45,5 +45,5 @@ env
 dist/
 
 # local config files:
-config.json
+**/pred_registry.json
 

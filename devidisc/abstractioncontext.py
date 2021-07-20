@@ -77,7 +77,7 @@ class AbstractionContext:
     objects for performing a deviation discovery campaign.
     """
 
-    def __init__(self, config, *, predmanager=None):
+    def __init__(self, config):
 
         self.iwho_cfg = IWHOConfig(config.get('iwho', {}))
         iwho_ctx = self.iwho_cfg.create_context()
@@ -106,12 +106,13 @@ class AbstractionContext:
         if measurementdb_config is not None:
             self.measurement_db = MeasurementDB(measurementdb_config)
 
-        if predmanager is not None:
-            self.set_predmanager(predmanager)
-
-
-    def set_predmanager(self, predmanager):
-        self.interestingness_metric.set_predmanager(predmanager)
+        self.predmanager = None
+        predman_config = config.get('predmanager', {})
+        if predman_config is not None:
+            self.predmanager = PredictorManager(predman_config)
+            self.interestingness_metric.set_predmanager(self.predmanager)
+            if self.measurement_db is not None:
+                self.predmanager.set_measurement_db(self.measurement_db)
 
     @staticmethod
     def get_default_config():
@@ -122,6 +123,7 @@ class AbstractionContext:
         res['discovery'] = DiscoveryConfig.get_default_config()
         res['sampling'] = SamplingConfig.get_default_config()
         res['measurement_db'] = MeasurementDB.get_default_config()
+        res['predmanager'] = PredictorManager.get_default_config()
 
         return res
 
@@ -143,6 +145,11 @@ class AbstractionContext:
             res['measurement_db'] = None
         else:
             res['measurement_db'] = self.measurement_db.get_config()
+
+        if self.predmanager is None:
+            res['predmanager'] = None
+        else:
+            res['predmanager'] = self.predmanager.get_config()
 
         return res
 

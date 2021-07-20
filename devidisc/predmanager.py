@@ -2,14 +2,16 @@
 """
 
 from datetime import datetime
+from functools import partial
 import json
 import multiprocessing
 from multiprocessing import Pool
+import os
 import socket
 
+from iwho.predictors import Predictor
 
-from functools import partial
-
+from .configurable import ConfigMeta, load_json_config
 
 def evaluate_bb(bb, pred):
     try:
@@ -54,7 +56,7 @@ class LightBBWrapper:
         return self.asm_str
 
 
-class PredictorManager:
+class PredictorManager(metaclass=ConfigMeta):
     """ A helper class to work with a number of iwho.Predictors, to
     conveniently support multiprocessing.
 
@@ -74,9 +76,26 @@ class PredictorManager:
     the PredictorManager methods to run (some of) them on a batch of basic
     blocks.
     """
-    def __init__(self, num_processes=0, measurement_db=None):
-        self.dbman = measurement_db
+
+    config_options = dict(
+            registry_path=(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                    '..', 'configs', 'predictors', 'pred_registry.json'),
+                'path to a predictor registry in json format'),
+            num_processes=(0,
+                'number of predictor processes to use. A value <= 0 uses the number of available cores, None/null runs everything in the main process.')
+        )
+
+
+    def __init__(self, config):
+        self.configure(config)
+
+        self.pred_registry = load_json_config(self.registry_path)
+
+        self.dbman = None
         self.pool = None
+
+        num_processes = self.num_processes
+
         if num_processes is not None:
             if num_processes <= 0:
                 num_processes = multiprocessing.cpu_count()
@@ -102,16 +121,32 @@ class PredictorManager:
         if self.pool is not None:
             self.pool.close()
 
-    def register_predictor(self, key, predictor, toolname, version, uarch):
-        if key in self.predictor_map:
-            # using the same predictor twice should be okay
-            return
-        self.predictor_map[key] = {
-                "predictor": predictor,
-                "toolname": toolname,
-                "version": version,
-                "uarch": uarch,
-            }
+    def set_measurement_db(self, dbmanager):
+        """ Set a database manager to be used for storing measurements.
+        """
+        self.dbman = dbmanager
+
+    def set_predictors(self, keys):
+        """ Set the group of predictors to use.
+
+        `keys` is expected to be a list of keys into the predictor registry
+        with which the PredictorManager has been configured.
+        """
+        self.predictor_map.clear()
+        for key in keys:
+            if key in self.predictor_map:
+                # ignore duplicates
+                continue
+
+            pred_entry = self.pred_registry[key]
+            pred_config = pred_entry['config']
+
+            self.predictor_map[key] = {
+                    "predictor": Predictor.get(pred_config),
+                    "toolname": pred_entry['tool'],
+                    "version": pred_entry['version'],
+                    "uarch": pred_entry['uarch'],
+                }
 
     @property
     def predictors(self):

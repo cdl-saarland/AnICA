@@ -26,23 +26,6 @@ from test_utils import *
 def extract_mnemonic(insn_str):
     return iwho.x86.extract_mnemonic(insn_str)
 
-def add_to_predman(predman, pred):
-    predname = pred.predictor_name
-    key_base = predname
-    x = 0
-    while True:
-        x += 1
-        key = key_base + "_{}".format(x)
-        if key not in predman.predictor_map:
-            break
-
-    predman.register_predictor(key=key,
-            predictor=pred,
-            toolname=predname,
-            version="0.1",
-            uarch="any")
-
-
 # Some naive predictors for testing
 class CountPredictor(Predictor):
     predictor_name = "test_count"
@@ -107,13 +90,6 @@ class AddAddDelayPredictor(Predictor):
 
 @pytest.fixture(scope="function")
 def actx_pred():
-    iwho_ctx = iwho.get_context("x86")
-
-    iwho_ctx.push_filter(iwho.Filters.no_control_flow)
-
-    skl_filter = lambda scheme, ctx: (ctx.get_features(scheme) is not None and "SKL" in ctx.get_features(scheme)[0]["measurements"]) or "fxrstor" in str(scheme)
-    iwho_ctx.push_filter(skl_filter) # only use instructions that have SKL measurements
-
     config = {
         "insn_feature_manager": {
             "features": [
@@ -123,27 +99,46 @@ def actx_pred():
                 ["opschemes", "subset"],
             ]
         },
+        "iwho": {
+            "context_specifier": "x86_uops_info",
+            "filters": ['no_cf', 'with_measurements:SKL'],
+        },
         "discovery": {
             "discovery_batch_size": 10,
-            "generalization_batch_size": 10
+            "generalization_batch_size": 10,
         },
         "interestingness": {
             'min_interestingness': 0.1,
             'mostly_interesting_ratio': 1.0,
         },
         "measurement_db": None,
+        "predmanager": { "num_processes": None },
     }
 
-    predman = PredictorManager(None)
-    actx_pred = AbstractionContext(config, iwho_ctx=iwho_ctx, predmanager=predman)
+    actx_pred = AbstractionContext(config)
 
     yield actx_pred
-    predman.close()
+    actx_pred.predmanager.close()
 
 def add_preds(actx_pred, preds):
-    predman = actx_pred.interestingness_metric.predmanager
-    for p in preds:
-        add_to_predman(predman, p)
+    predman = actx_pred.predmanager
+    for pred in preds:
+        predname = pred.predictor_name
+        key_base = predname
+        x = 0
+        while True:
+            x += 1
+            key = key_base + "_{}".format(x)
+            if key not in predman.predictor_map:
+                break
+
+        predman.predictor_map[key] = {
+                "predictor": pred,
+                "toolname": predname,
+                "version": "0.1",
+                "uarch": "any",
+            }
+
 
 
 def test_interestingness_error(random, actx_pred):
@@ -184,9 +179,9 @@ def _check_trace_json(actx_pred, tr):
     res_ab = tr.replay(validate=True)
 
     json_dict = actx_pred.json_ref_manager.introduce_json_references(tr.to_json_dict())
-    print(json_dict)
+    # print(json_dict)
     json_str = json.dumps(json_dict)
-    print(json_str)
+    # print(json_str)
     loaded_dict = actx_pred.json_ref_manager.resolve_json_references(json.loads(json_str))
     loaded_trace = WitnessTrace.from_json_dict(actx_pred, loaded_dict)
     loaded_ab = loaded_trace.replay(validate=True)
@@ -223,7 +218,7 @@ def test_generalize_01(random, actx_pred):
 
     gen_abb, trace = generalize(actx_pred, abb)
 
-    print(trace)
+    # print(trace)
 
     assert gen_abb.subsumes(abb)
 
@@ -244,7 +239,7 @@ def test_generalize_02(random, actx_pred):
 
     gen_abb, trace = generalize(actx_pred, abb)
 
-    print(trace)
+    # print(trace)
 
     assert gen_abb.subsumes(abb)
     assert abb.subsumes(gen_abb)
@@ -264,7 +259,7 @@ def test_generalize_03(random, actx_pred):
 
     gen_abb, trace = generalize(actx_pred, abb)
 
-    print(trace)
+    # print(trace)
 
     assert gen_abb.subsumes(abb)
 
@@ -285,7 +280,7 @@ def test_generalize_aliasing_01(random, actx_pred):
 
     gen_abb, trace = generalize(actx_pred, abb)
 
-    print(trace)
+    # print(trace)
 
     assert gen_abb.subsumes(abb)
 

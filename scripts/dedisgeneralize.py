@@ -26,8 +26,6 @@ from devidisc.abstractioncontext import AbstractionContext
 from devidisc.abstractblock import AbstractBlock
 from devidisc.configurable import load_json_config
 import devidisc.discovery as discovery
-from devidisc.measurementdb import MeasurementDB
-from devidisc.predmanager import PredictorManager
 from devidisc.random_exploration import explore
 
 
@@ -38,13 +36,11 @@ logger = logging.getLogger(__name__)
 def main():
     HERE = Path(__file__).parent
 
-    default_pred_config = HERE.parent / "configs" / "predictors" / "pred_config.json"
+    default_pred_registry = HERE.parent / "configs" / "predictors" / "pred_registry.json"
     default_jobs = multiprocessing.cpu_count()
     default_seed = 424242
 
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    argparser.add_argument('-p', '--predconfig', default=default_pred_config, metavar="CONFIG",
-            help='predictor configuration file in json format')
 
     argparser.add_argument('-c', '--config', metavar="CONFIG", default=None,
             help='abstraction configuration file in json format')
@@ -65,31 +61,12 @@ def main():
 
     random.seed(args.seed)
 
-    with open(args.predconfig, 'r') as config_file:
-        pred_config_dict = json.load(config_file)
-
-    # The predman keeps track of all the predictors and interacts with them
-    num_processes = args.jobs
-
     actx_config = load_json_config(args.config)
 
     actx = AbstractionContext(config=actx_config)
+    actx.predmanager.set_predictors(args.predictors)
+
     iwho_ctx = actx.iwho_ctx
-
-    # this should be moved into AbstractionContext as well
-    predman = PredictorManager(num_processes=num_processes, measurement_db=actx.measurement_db)
-    actx.set_predmanager(predman)
-
-    for pkey in args.predictors:
-        pred_entry = pred_config_dict[pkey]
-        pred_config = pred_entry['config']
-
-        predman.register_predictor(key=pkey,
-                predictor = Predictor.get(pred_config),
-                toolname = pred_entry['tool'],
-                version = pred_entry['version'],
-                uarch = pred_entry['uarch']
-            )
 
     if args.generalize is not None:
         with open(args.generalize, 'r') as f:
