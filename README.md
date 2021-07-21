@@ -15,6 +15,7 @@ TODO write this
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
   - [ ] add js functions to generate a running script for each test case
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
+  - [ ] make `llvm-mc` findable for iwho
   - [ ] check whether using an SMT solver for subsumption is necessary and reasonable
   - [ ] add more predictors
     - [ ] Ithemal
