@@ -1,9 +1,11 @@
 
+from typing import Optional, Sequence
 from copy import deepcopy
 from datetime import datetime
 import math
 import os
 import textwrap
+from pathlib import Path
 
 from .abstractblock import AbstractBlock, SamplingError
 from .abstractioncontext import AbstractionContext
@@ -26,11 +28,19 @@ def sample_block_list(abstract_bb, num):
     return concrete_bbs
 
 
-def discover(actx: AbstractionContext, termination={}, start_point: AbstractBlock = None, out_dir=None):
-    """ TODO document
+def discover(actx: AbstractionContext, termination={}, start_point: Optional[AbstractBlock] = None, out_dir: Optional[Path]=None):
+    """ Run the central deviation discovery algorithm.
 
-    `termination` is expected to be a dictionary with some of the following
-    keys set:
+    If an AbstractBlock is given as `start_point`, discovery will only sample
+    from it for finding new starting points for generalization. Otherwise, a
+    TOP AbstractBlock is used for this purpose. Generalization is not
+    restricted through this parameter.
+
+    If an `out_dir` is specified, reports and witnesses are written there for
+    further evaluation.
+
+    `termination` is expected to be a dictionary that may have some of the
+    following keys set:
         - hours, minutes, seconds: if any of those are set, they are added
           together and considered as a soft timeout (i.e. once a batch is
           complete and at least as much time has passed since the start of the
@@ -40,7 +50,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: AbstractBloc
         - num_discoveries: if this is set to an int N, terminate if after a
           discovery batch N or more total discoveries have been found
     If more than one of the above is set, this method terminates when the first
-    of them triggers.
+    of them triggers. If none are set, this procedure will run indefinitely.
     """
 
     if start_point is None:
@@ -134,6 +144,11 @@ def discover(actx: AbstractionContext, termination={}, start_point: AbstractBloc
 
 
 def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock):
+    """ Generalize the given AbstractBlock while presering interestingness.
+
+    This means that we try to adjust it such that it represents a maximal
+    number of concrete blocks that are still mostly interesting.
+    """
     generalization_batch_size = actx.discovery_cfg.generalization_batch_size
 
     logger.info("  generalizing BB:" + textwrap.indent(str(abstract_bb), 4*' ') )
