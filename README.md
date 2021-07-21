@@ -3,7 +3,7 @@ TODO write this
 ## TODO
 
 ### Key Functionality
-  - [ ] implement cost budgets or some other termination criterion
+  - [X] implement cost budgets or some other termination criterion
   - [X] implement mechanism for dropping constraints
   - [X] implement the core generalization algorithm
 
