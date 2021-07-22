@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import json
 import math
 import os
+import shutil
 import textwrap
 from pathlib import Path
 
@@ -84,13 +85,34 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
     curr_num_batches = 0
     curr_num_discoveries = 0
     start_time = datetime.now()
+    curr_seconds_passed = 0
 
     total_sampled = 0
     per_batch_stats = []
 
+    report = dict()
+    report['num_batches'] = curr_num_batches
+    report['num_total_sampled'] = total_sampled
+    report['num_discoveries'] = curr_num_discoveries
+    report['seconds_passed'] = curr_seconds_passed
+    report['per_batch_stats'] = per_batch_stats
+
+    def write_report():
+        if out_dir is not None:
+            report_file = out_dir / 'report.json'
+            if report_file.exists():
+                # backup previous version, for safety
+                shutil.copy(report_file, out_dir / 'report.bak.json')
+            with open(report_file, 'w') as f:
+                json.dump(report, f, indent=2)
+
     logger.info("starting discovery loop")
     while True:
         # check if we should terminate for some reason
+        curr_seconds_passed = (datetime.now() - start_time).total_seconds()
+        report['seconds_passed'] = curr_seconds_passed
+        write_report()
+
         if curr_num_batches >= max_num_batches:
             logger.info("terminating discovery loop: maximal number of batches explored")
             break
@@ -99,10 +121,12 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             logger.info("terminating discovery loop: maximal number of discoveries found")
             break
 
-        curr_seconds_passed = (datetime.now() - start_time).total_seconds()
         if curr_seconds_passed >= max_seconds_passed:
             logger.info("terminating discovery loop: time budget exceeded")
             break
+
+        per_batch_entry = dict()
+        per_batch_stats.append(per_batch_entry)
 
         batch_start_time = datetime.now()
 
@@ -111,16 +135,23 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         concrete_bbs = sample_block_list(start_point, discovery_batch_size)
         sampling_time = ((datetime.now() - start_sampling_time) / timedelta(microseconds=1)) / 1000
         total_sampled += len(concrete_bbs)
+        report['num_total_sampled'] = total_sampled
+        per_batch_entry['num_sampled'] = len(concrete_bbs)
+        per_batch_entry['sampling_time'] = sampling_time
 
         # TODO we might want to avoid generating the result_ref here, to allow more parallelism
         start_interestingness_time = datetime.now()
         interesting_bbs, result_ref = actx.interestingness_metric.filter_interesting(concrete_bbs)
         interestingness_time = ((datetime.now() - start_interestingness_time) / timedelta(microseconds=1)) / 1000
+        per_batch_entry['num_interesing'] = len(interesting_bbs)
+        per_batch_entry['interestingness_time'] = interestingness_time
 
         logger.info(f"  {len(interesting_bbs)} out of {len(concrete_bbs)} ({100 * len(interesting_bbs) / len(concrete_bbs):.2f}%) are interesting")
 
         per_sample_stats = []
+        per_batch_entry['per_interesting_sample_stats'] = per_sample_stats
         num_subsumed = 0
+        per_batch_entry['num_interesting_subsumed'] = num_subsumed
         # for each interesting one:
         for idx, bb in enumerate(interesting_bbs):
             abstracted_bb = AbstractBlock(actx, bb)
@@ -140,6 +171,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             stats['subsumption_time'] = subsumption_time
             if already_found:
                 num_subsumed += 1
+                per_batch_entry['num_interesting_subsumed'] = num_subsumed
                 continue
 
             # if not: generalize
@@ -155,35 +187,19 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             logger.info("  adding new discovery:" + textwrap.indent(str(generalized_bb), 4*' '))
             discoveries.append(generalized_bb)
             curr_num_discoveries += 1
+            report['num_discoveries'] = curr_num_discoveries
 
             if out_dir is not None:
                 trace.dump_json(witness_dir / f'generalization_batch{curr_num_batches:03}_idx{idx:03}.json')
 
+            write_report()
+
         batch_time = ((datetime.now() - batch_start_time) / timedelta(microseconds=1)) / 1000
-        per_batch_stats.append({
-                'num_sampled': len(concrete_bbs),
-                'num_interesing': len(interesting_bbs),
-                'interestingness_ratio': None if len(concrete_bbs) == 0 else len(interesting_bbs) / len(concrete_bbs),
-                'num_interesting_subsumed': num_subsumed,
-                'interesting_subsumed_ratio': None if len(interesting_bbs) == 0 else num_subsumed / len(interesting_bbs),
-                'batch_time': batch_time,
-                'sampling_time': sampling_time,
-                'interestingness_time': interestingness_time,
-                'per_interesting_sample_stats': per_sample_stats,
-            })
+        per_batch_entry['batch_time'] = batch_time
 
         curr_num_batches += 1
-
-    if out_dir is not None:
-        report = dict()
         report['num_batches'] = curr_num_batches
-        report['num_total_sampled'] = total_sampled
-        report['num_discoveries'] = curr_num_discoveries
-        report['discovery_ratio'] = None if total_sampled == 0 else curr_num_discoveries / total_sampled
-        report['seconds_passed'] = curr_seconds_passed
-        report['per_batch_stats'] = per_batch_stats
-        with open(out_dir / 'report.json', 'w') as f:
-            json.dump(report, f, indent=2)
+        write_report()
 
     return discoveries
 
