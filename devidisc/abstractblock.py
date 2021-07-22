@@ -449,6 +449,9 @@ class SubSetOrDefinitelyNotAbstractFeature(AbstractFeature):
         if self.is_in_subfeature.val == False:
             return other.is_in_subfeature.val == False
 
+        if self.is_in_subfeature.val == True and other.is_in_subfeature.val == False:
+            return False
+
         assert self.is_in_subfeature.val == True and other.is_in_subfeature.val == True
 
         return self.subfeature.subsumes(other.subfeature)
