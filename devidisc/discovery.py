@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .abstractblock import AbstractBlock, SamplingError
 from .abstractioncontext import AbstractionContext
+from .satsumption import check_subsumed
 from .witness import WitnessTrace
 
 import logging
@@ -164,7 +165,11 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             start_subsumption_time = datetime.now()
             already_found = False
             for d in discoveries:
-                if d.subsumes(abstracted_bb):
+                if actx.discovery_cfg.use_sat_subsumption:
+                    is_subsumed = check_subsumed(bb=bb, ab=d)
+                else:
+                    is_subsumed = d.subsumes(abstracted_bb)
+                if is_subsumed:
                     logger.info("  existing discovery already subsumes the block:" + textwrap.indent(str(d), 4*' '))
                     already_found = True
             subsumption_time = ((datetime.now() - start_subsumption_time) / timedelta(microseconds=1)) / 1000
