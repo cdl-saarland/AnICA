@@ -144,7 +144,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         start_interestingness_time = datetime.now()
         interesting_bbs, result_ref = actx.interestingness_metric.filter_interesting(concrete_bbs)
         interestingness_time = ((datetime.now() - start_interestingness_time) / timedelta(microseconds=1)) / 1000
-        per_batch_entry['num_interesing'] = len(interesting_bbs)
+        per_batch_entry['num_interesting'] = len(interesting_bbs)
         per_batch_entry['interestingness_time'] = interestingness_time
 
         logger.info(f"  {len(interesting_bbs)} out of {len(concrete_bbs)} ({100 * len(interesting_bbs) / len(concrete_bbs):.2f}%) are interesting")
@@ -231,7 +231,7 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock):
         trace.add_termination(comment="Samples from the starting block are not interesting!", measurements=result_ref)
         return abstract_bb, trace
 
-    # a set of expansions that we tried to apply but did not yield interesing
+    # a set of expansions that we tried to apply but did not yield interesting
     # results
     do_not_expand = set()
 
