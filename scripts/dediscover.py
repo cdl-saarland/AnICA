@@ -11,7 +11,7 @@ import random
 import os
 import sys
 
-from iwho.utils import parse_args_with_logging
+from iwho.utils import init_logging
 
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
@@ -45,7 +45,7 @@ def main():
     argparser.add_argument('outdir', metavar="OUTDIR",
             help='output directory for reports and results')
 
-    args = parse_args_with_logging(argparser, "info")
+    args = argparser.parse_args()
 
     random.seed(args.seed)
 
@@ -55,16 +55,18 @@ def main():
 
     while True:
         for config in campaign_config:
-            actx_config = load_json_config(config['abstraction_config_path'])
-            termination_criterion = config['termination']
-            predictor_keys = config['predictors']
-
             # create a campaign directory
             timestamp = datetime.now().replace(microsecond=0).isoformat()
             curr_out_dir = outdir / f'campaign_{timestamp}'
             os.makedirs(curr_out_dir)
             with open(curr_out_dir / 'campaign_config.json', 'w') as f:
                 json.dump(config, f, indent=4)
+
+            init_logging('info', logfile=curr_out_dir / 'log.txt')
+
+            actx_config = load_json_config(config['abstraction_config_path'])
+            termination_criterion = config['termination']
+            predictor_keys = config['predictors']
 
             # set the db path
             actx_config['measurement_db'] = {"db_name": str(curr_out_dir / 'measurements.db')}
