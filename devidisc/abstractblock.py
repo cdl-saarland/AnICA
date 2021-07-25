@@ -921,15 +921,15 @@ class AbstractAliasInfo(Expandable):
                             continue
                         disallowed = ctx.adjust_operand(disallowed, op_scheme)
                         if disallowed is not None:
-                            try:
-                                allowed_operands.remove(disallowed)
-                            except KeyError as e:
-                                pass
+                            allowed_operands.discard(disallowed)
 
                 # TODO It might be more effective to now "intersect" (modulo
                 # aliasing operands) allowed_operands with the allowed_operands
                 # of the same set, to aviod unnecessary sampling errors in the
                 # following step.
+
+                if len(allowed_operands) == 0:
+                    raise SamplingError(f"InsnScheme {ischeme} has no allowed operands left for operand '{op_key}' ({op_scheme})")
 
                 # choose one from the allowed_operands
                 chosen = random.choice(list(allowed_operands))
