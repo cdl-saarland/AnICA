@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import json
+import textwrap
 
 def load_json_config(path):
     """ Load a config dict in json format from the given path.
@@ -43,6 +44,45 @@ def _make_paths_absolute(basepath, obj):
         return tuple(( _make_paths_absolute(basepath, x) for x in obj))
     else:
         return obj
+
+
+def pretty_print(obj, filter_doc=False):
+    """ A prettier alternative to just json-dumping a config dict.
+    If filter_doc is True, keys that are considered documentation (because of
+    their suffix) are omitted.
+    """
+    json_str = json.dumps(obj)
+    if len(json_str) <= 80:
+        return json_str
+
+    if isinstance(obj, dict):
+
+        entries = []
+        for key, value in obj.items():
+            if filter_doc and any(map(lambda suffix: key.endswith(suffix), ConfigurableImpl._comment_suffixes)):
+                continue
+
+            value_str = pretty_print(value, filter_doc=filter_doc)
+            lines = value_str.split('\n')
+            if len(lines) > 1:
+                value_str = lines[0] + "\n" + 4*" " + ("\n" + 4*" ").join(lines[1:])
+            entries.append(f'  {json.dumps(key)}: ' + value_str )
+
+        res = "{\n"
+        res += ",\n".join(entries)
+        res += "\n}"
+        return res
+    elif isinstance(obj, list) or isinstance(obj, tuple):
+        entries = []
+        for value in obj:
+            value_str = pretty_print(value, filter_doc=filter_doc)
+            entries.append(textwrap.indent(value_str, '  '))
+        res = "[\n"
+        res += ",\n".join(entries)
+        res += "\n]"
+        return res
+    else:
+        return json_str
 
 
 class ConfigError(Exception):
