@@ -94,7 +94,7 @@ class AbstractionContext:
         self.insn_feature_manager = InsnFeatureManager(self.iwho_ctx, ifm_config)
 
         self.interestingness_metric = None
-        interestingness_config = config.get('interestingness', {})
+        interestingness_config = config.get('interestingness_metric', {})
         if interestingness_config is not None:
             self.interestingness_metric = InterestingnessMetric(interestingness_config)
 
