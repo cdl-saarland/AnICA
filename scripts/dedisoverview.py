@@ -38,6 +38,7 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
     all_keys = sorted(all_keys)
 
     heatmap_data = defaultdict(dict)
+    # for k1, k2 in itertools.product(all_keys, repeat=2):
     for k1, k2 in itertools.combinations(all_keys, r=2):
         print(f"{k1}, {k2}")
         res = 0
@@ -53,7 +54,7 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
         heatmap_data[k1][k2] = res / len(data)
 
     df = pd.DataFrame(heatmap_data)
-    cmap = sns.color_palette("crest", as_cmap=True)
+    cmap = sns.color_palette("rocket", as_cmap=True)
 
     p = sns.heatmap(df, annot=True, fmt=".2f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=1.0)
     plt.title(f"Ratio of blocks with a rel. error >= {err_threshold} on a set of {len(data)} blocks")
