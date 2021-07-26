@@ -110,18 +110,17 @@ def main():
             except SamplingError as e:
                 logger.info("a sample failed: {e}")
 
-    # find out what predictors we need
-    already_present = set(keys)
-    actual_preds = []
-    for k in args.predictors:
-        if k in already_present:
-            logger.warning(f'skipping specified predictor id {k} as it is already present in the input data')
-        else:
-            actual_preds.append(k)
-            keys.append(k)
-
+    # set the predictors we need
     predman = actx.predmanager
-    predman.set_predictors(actual_preds)
+    predman.set_predictors(args.predictors)
+
+    already_found = set(keys)
+    matching_predictors = predman.predictor_map.keys()
+    for p in matching_predictors:
+        if p in already_found:
+            del predman.predictor_map[p]
+        else:
+            keys.append(p)
 
     iwho_ctx = actx.iwho_ctx
 

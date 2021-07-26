@@ -7,6 +7,7 @@ import json
 import multiprocessing
 from multiprocessing import Pool
 import os
+import re
 import socket
 
 from iwho.predictors import Predictor
@@ -133,7 +134,18 @@ class PredictorManager(metaclass=ConfigMeta):
         with which the PredictorManager has been configured.
         """
         self.predictor_map.clear()
+        actual_keys = []
         for key in keys:
+            if key in self.pred_registry:
+                actual_keys.append(key)
+            else:
+                pat = re.compile(key)
+                for k in self.pred_registry.keys():
+                    if pat.fullmatch(k):
+                        actual_keys.append(k)
+                # TODO we should warn if none of them match
+
+        for key in actual_keys:
             if key in self.predictor_map:
                 # ignore duplicates
                 continue
