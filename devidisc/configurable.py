@@ -6,8 +6,9 @@ import json
 def load_json_config(path):
     """ Load a config dict in json format from the given path.
 
-    Fields that end in `_path` and that specify a relative path are made
-    absolute by considering them relative to the directory of the given path.
+    Fields that end in `_path` and that specify a relative path starting with a
+    '.' are made absolute by considering them relative to the directory of the
+    given path.
     """
     if path is None:
         return dict()
@@ -31,7 +32,7 @@ def _make_paths_absolute(basepath, obj):
             new_value = None
             if key.endswith('_path') and isinstance(value, str):
                 path = Path(value)
-                if not path.is_absolute():
+                if str(path).startswith('.'):
                     path = basepath.joinpath(path)
                 new_value = str(path)
             else:
