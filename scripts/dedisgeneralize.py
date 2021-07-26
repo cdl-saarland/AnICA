@@ -36,17 +36,12 @@ logger = logging.getLogger(__name__)
 def main():
     HERE = Path(__file__).parent
 
-    default_pred_registry = HERE.parent / "configs" / "predictors" / "pred_registry.json"
-    default_jobs = multiprocessing.cpu_count()
     default_seed = 424242
 
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     argparser.add_argument('-c', '--config', metavar="CONFIG", default=None,
-            help='abstraction configuration file in json format')
-
-    argparser.add_argument('-j', '--jobs', type=int, default=default_jobs, metavar="N",
-            help='number of worker processes to use at most for running predictors')
+            help='abstraction context configuration file in json format')
 
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
             help='seed for the rng')
