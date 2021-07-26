@@ -7,7 +7,9 @@ TODO mode of operation
 """
 
 import argparse
+from collections import defaultdict
 import csv
+import itertools
 
 import os
 import random
@@ -25,6 +27,38 @@ from devidisc.configurable import load_json_config
 
 import logging
 logger = logging.getLogger(__name__)
+
+def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
+    import pandas as pd
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    all_keys = set(keys)
+    all_keys.discard('bb')
+    all_keys = sorted(all_keys)
+
+    heatmap_data = defaultdict(dict)
+    for k1, k2 in itertools.combinations(all_keys, r=2):
+        print(f"{k1}, {k2}")
+        res = 0
+        for row in data:
+            # TODO use a generalized version from interestingness.py
+            values = [float(row[k1]), float(row[k2])]
+            if any(map(lambda x: x <= 0, values)):
+                res += 1
+                continue
+            rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
+            if rel_error > err_threshold:
+                res += 1
+        heatmap_data[k1][k2] = res / len(data)
+
+    df = pd.DataFrame(heatmap_data)
+    cmap = sns.color_palette("crest", as_cmap=True)
+
+    p = sns.heatmap(df, annot=True, fmt=".2f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=1.0)
+    plt.title(f"Ratio of blocks with a rel. error >= {err_threshold} on a set of {len(data)} blocks")
+    plt.tight_layout()
+    plt.savefig(filename)
 
 
 def main():
@@ -49,6 +83,9 @@ def main():
 
     argparser.add_argument('-n', '--num-insns', type=int, default=None, metavar="N",
             help='maximal number of instructions per sampled basic block (if no input is given)')
+
+    argparser.add_argument('--heatmap', default=None, metavar='IMGFILE',
+            help='if this is specified, just make a heatmap from the input data and safe it to the specified file')
 
     argparser.add_argument('predictors', nargs='*', metavar="PREDICTOR_ID",
             help='identifier(s) from the predictor registry of the predictors to use')
@@ -112,6 +149,13 @@ def main():
                 logger.info("a sample failed: {e}")
         logger.info(f"done sampling {args.num_experiments} experiments")
 
+    if args.heatmap is not None:
+        if args.input is None:
+            print("Error: Asking for a heatmap without input!", file=sys.stderr)
+            sys.exit(1)
+        make_heatmap(keys, data, err_threshold=0.5, filename=args.heatmap)
+        sys.exit(0)
+
     # set the predictors we need
     predman = actx.predmanager
     predman.set_predictors(args.predictors)
@@ -146,7 +190,6 @@ def main():
         writer = csv.DictWriter(f, keys)
         writer.writeheader()
         writer.writerows(data)
-
 
 
 if __name__ == "__main__":
