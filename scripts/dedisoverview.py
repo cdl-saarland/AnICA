@@ -19,7 +19,7 @@ from iwho.utils import parse_args_with_logging
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractblock import AbstractBlock
+from devidisc.abstractblock import AbstractBlock, SamplingError
 from devidisc.abstractioncontext import AbstractionContext
 from devidisc.configurable import load_json_config
 
@@ -98,6 +98,7 @@ def main():
         if args.num_experiments is None or args.num_insns is None:
             print("Error: Neither input nor number and length of blocks to sample are given!", file=sys.stderr)
             sys.exit(1)
+        logger.info(f"start sampling {args.num_experiments} experiments")
         top = AbstractBlock.make_top(actx, args.num_insns)
         x = 0
         while len(data) < args.num_experiments:
@@ -109,6 +110,7 @@ def main():
                 data.append({'bb': sample_hex})
             except SamplingError as e:
                 logger.info("a sample failed: {e}")
+        logger.info(f"done sampling {args.num_experiments} experiments")
 
     # set the predictors we need
     predman = actx.predmanager
@@ -125,13 +127,19 @@ def main():
     iwho_ctx = actx.iwho_ctx
 
     # perform the measurements
+    logger.info(f"start decoding {len(data)} experiments")
+    # TODO this decoding step is probably mostly unnecessary
     bbs = [ iwho_ctx.make_bb( iwho_ctx.decode_insns(r['bb']) ) for r in data ]
+    logger.info(f"done decoding {len(bbs)} experiments")
+
+    logger.info(f"start evaluating {len(bbs)} experiments")
     for record, (bb, result) in zip(data, predman.eval_with_all(bbs)):
         for k, v in result.items():
             tp = v.get('TP', None)
             if tp is None:
                 tp = -1.0
             record[k] = tp
+    logger.info(f"done evaluating {len(bbs)} experiments")
 
     # write the results
     with open(outname, 'w') as f:
