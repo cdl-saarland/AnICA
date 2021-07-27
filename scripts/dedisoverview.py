@@ -39,7 +39,7 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
 
     heatmap_data = defaultdict(dict)
     # for k1, k2 in itertools.product(all_keys, repeat=2):
-    for k1, k2 in itertools.combinations(all_keys, r=2):
+    for k1, k2 in itertools.combinations_with_replacement(all_keys, r=2):
         print(f"{k1}, {k2}")
         res = 0
         for row in data:
@@ -51,13 +51,18 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
             rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
             if rel_error > err_threshold:
                 res += 1
-        heatmap_data[k1][k2] = res / len(data)
+        heatmap_data[k1][k2] = 100 * res / len(data)
 
     df = pd.DataFrame(heatmap_data)
     cmap = sns.color_palette("rocket", as_cmap=True)
 
-    p = sns.heatmap(df, annot=True, fmt=".2f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=1.0)
-    plt.title(f"Ratio of blocks with a rel. error >= {err_threshold} on a set of {len(data)} blocks")
+    p = sns.heatmap(df, annot=True, fmt=".0f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=100.0, cbar_kws={'format': '%.0f%%', 'label': f"ratio of blocks with rel. deviation > {err_threshold}"})
+    # plt.title(f"Percentage of blocks with a rel. error >= {err_threshold} on a set of {len(data)} blocks")
+
+    # locs, labels = plt.xticks()
+    # plt.setp(labels, rotation=30)
+    p.set_xticklabels(p.get_xticklabels(), rotation=30, horizontalalignment='right')
+
     plt.tight_layout()
     plt.savefig(filename)
 
@@ -154,7 +159,7 @@ def main():
         if args.input is None:
             print("Error: Asking for a heatmap without input!", file=sys.stderr)
             sys.exit(1)
-        make_heatmap(keys, data, err_threshold=0.5, filename=args.heatmap)
+        make_heatmap(keys, data, err_threshold=0.2, filename=args.heatmap)
         sys.exit(0)
 
     # set the predictors we need
