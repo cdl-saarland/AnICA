@@ -16,14 +16,14 @@ TODO write this
   - [ ] add js functions to generate a running script for each test case
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
   - [ ] make `llvm-mc` findable for iwho
-  - [ ] check whether using an SMT solver for subsumption is necessary and reasonable
   - [ ] add more predictors
     - [ ] Ithemal
     - [ ] DiffTune
-    - [ ] OSACA
     - [ ] CQA?
     - [ ] measurements
+    - [X] OSACA
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
+  - [X] check whether using an SMT solver for subsumption is necessary and reasonable
   - [X] make AbstractionConfig configurable
   - [X] make iwho.Context configurable
   - [X] implement an editdistance domain for mnemonics
