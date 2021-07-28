@@ -13,7 +13,7 @@ from iwho import BasicBlock
 
 from .abstractblock import AbstractBlock
 
-def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=True):
+def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=False):
     actx = ab.actx
 
     cnf = CNFPlus()
