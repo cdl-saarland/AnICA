@@ -14,12 +14,20 @@ class IWHOAugmentation:
         self.iwho_ctx = iwho_ctx
 
     def must_alias(self, op1: iwho.OperandInstance, op2: iwho.OperandInstance):
+        if isinstance(op1, iwho.x86.MemoryOperand) and isinstance(op2, iwho.x86.MemoryOperand):
+            # we know that because of how we sample memory operands
+            return op1.base == op2.base
+
         # TODO this could use additional information about the instantiation
         # (in contrast to the iwho.Context method, which should be correct for
         # all uses)
         return self.iwho_ctx.must_alias(op1, op2)
 
     def may_alias(self, op1: iwho.OperandInstance, op2: iwho.OperandInstance):
+        if isinstance(op1, iwho.x86.MemoryOperand) and isinstance(op2, iwho.x86.MemoryOperand):
+            # we know that because of how we sample memory operands
+            return op1.base == op2.base
+
         # TODO this could use additional information about the instantiation
         # (in contrast to the iwho.Context method, which should be correct for
         # all uses)
@@ -71,18 +79,22 @@ class IWHOAugmentation:
                 return True
         return False
 
+    reserved_names = ["rbx", "r13", "r14"]
+
     def allowed_operands(self, op_scheme):
         if op_scheme.is_fixed():
             return {op_scheme.fixed_operand}
         constraint = op_scheme.operand_constraint
         if isinstance(constraint, iwho.x86.RegisterConstraint):
-            # TODO remove reserved operands?
-            return set(constraint.acceptable_operands)
+            reserved_alias_classes = [iwho.x86.all_registers[n].alias_class for n in self.reserved_names]
+            # TODO should we allow register operands to alias with memory locations?
+            return { o for o in constraint.acceptable_operands if o.alias_class not in reserved_alias_classes }
         elif isinstance(constraint, iwho.x86.MemConstraint):
-            base_reg = iwho.x86.all_registers["rbx"]
+            reg_names = ["rbx", "r13", "r14"]
+            base_regs = [iwho.x86.all_registers[n] for n in reg_names]
             displacement = 64
-            # TODO allow more, deduplicate?
-            return {iwho.x86.MemoryOperand(width=constraint.width, base=base_reg, displacement=displacement)}
+            # TODO deduplicate?
+            return {iwho.x86.MemoryOperand(width=constraint.width, base=base_reg, displacement=displacement) for base_reg in base_regs}
         elif isinstance(constraint, iwho.x86.ImmConstraint):
             return {iwho.x86.ImmediateOperand(width=constraint.width, value=42)}
         else:
