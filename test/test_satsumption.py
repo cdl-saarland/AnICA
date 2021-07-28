@@ -69,3 +69,50 @@ def test_satsumption_more_general_03(random, actx):
     bb2 = make_bb(actx, "sub rbx, rax\nvaddpd ymm1, ymm3, ymm2\nadd rax, 0x2a")
     assert check_subsumed(bb2, ab)
 
+def test_satsumption_regression_01(random):
+    config = {
+        "iwho": { "context_specifier": "x86_uops_info" },
+        "interestingness": None,
+        "measurement_db": None,
+        "predmanager": None,
+    }
+    my_actx = AbstractionContext(config)
+
+    bb = make_bb(my_actx, """
+        vfmsubadd231pd ymm5, ymm0, ymmword ptr [rbx + 0x40]
+        lock sbb byte ptr [rbx + 0x40], 0x2a
+        xor r12w, word ptr [rbx + 0x40]
+        rep cmpsw word ptr [rsi], word ptr es:[rdi]
+        or dword ptr [rbx + 0x40], 0x2a
+    """)
+
+    ab = AbstractBlock.make_top(my_actx, 1)
+    op_feature = ab.abs_insns[0].features['opschemes']
+    op_feature.val = {'R:[rsi]'}
+    print(bb.get_asm())
+    print(ab)
+    assert check_subsumed(bb, ab, print_assignment=True)
+
+def test_satsumption_regression_02(random):
+    config = {
+        "iwho": { "context_specifier": "x86_uops_info" },
+        "interestingness": None,
+        "measurement_db": None,
+        "predmanager": None,
+    }
+    my_actx = AbstractionContext(config)
+
+    bb = make_bb(my_actx, """
+        rep movsq qword ptr es:[rdi], qword ptr [rsi]
+        pcmpeqb xmm5, xmmword ptr [rbx + 0x40]
+    """)
+
+    ab = AbstractBlock.make_top(my_actx, 2)
+    ab.abs_insns[1].features['category'].val = "STRINGOP"
+    mem_feature = ab.abs_insns[1].features['memory_usage']
+    mem_feature.is_in_subfeature.val = True
+    mem_feature.subfeature.val = {'R', 'W'}
+    print(bb.get_asm())
+    print(ab)
+    assert check_subsumed(bb, ab, print_assignment=True)
+
