@@ -17,7 +17,7 @@
   },
   "discovery": {
     "discovery_batch_size": 4,
-    "discovery_max_block_len": 6,
+    "discovery_possible_block_lengths": [4, 5, 6],
     "generalization_batch_size": 4
   },
   "sampling": {

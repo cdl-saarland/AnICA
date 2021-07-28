@@ -57,9 +57,6 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
     of them triggers. If none are set, this procedure will run indefinitely.
     """
 
-    if start_point is None:
-        start_point = AbstractBlock.make_top(actx, actx.discovery_cfg.discovery_max_block_len)
-
     if out_dir is not None:
         witness_dir = out_dir / "witnesses"
         os.makedirs(witness_dir)
@@ -134,7 +131,14 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
         # sample a batch of blocks
         start_sampling_time = datetime.now()
-        concrete_bbs = sample_block_list(start_point, discovery_batch_size)
+
+        if start_point is None:
+            l = random.choice(actx.discovery_cfg.discovery_possible_block_lengths)
+            sample_universe = AbstractBlock.make_top(actx, l)
+        else:
+            sample_universe = start_point
+
+        concrete_bbs = sample_block_list(sample_universe, discovery_batch_size)
         sampling_time = ((datetime.now() - start_sampling_time) / timedelta(microseconds=1)) / 1000
         total_sampled += len(concrete_bbs)
         report['num_total_sampled'] = total_sampled

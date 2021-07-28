@@ -19,9 +19,9 @@ class DiscoveryConfig(metaclass=ConfigMeta):
         discovery_batch_size = (100,
             'the number of basic blocks to sample at a time when looking for '
             'new interesting blocks'),
-        discovery_max_block_len = (8,
-            'the maximal number of instructions in blocks sampled for '
-            'discovering fresh interesting blocks'),
+        discovery_possible_block_lengths = (list(range(3, 9)),
+            'the different options for allowed block lengths for sampling. '
+            'Duplicates are possible and increase the likelyhood.'),
         generalization_batch_size = (100,
             'the number of basic blocks to sample when validating that an '
             'abstract block is still interesting'),
