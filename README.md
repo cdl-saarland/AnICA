@@ -10,7 +10,6 @@ TODO write this
 ### Functional Extensions
   - [ ] at least for the insn part, we could rather easily sample from  gamma(new) \ gamma(old), maybe that's a good idea
   - [ ] slice witness traces without the optional instructions
-  - [ ] maybe give highest priority to the present feature and go to TOP in the absinsn once it is set to TOP
   - [ ] revisit the TODOs in the aliasing sampling
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
   - [ ] add js functions to generate a running script for each test case
@@ -23,6 +22,7 @@ TODO write this
     - [ ] measurements
     - [X] OSACA
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
+  - [X] maybe give highest priority to the present feature and go to TOP in the absinsn once it is set to TOP
   - [X] check whether using an SMT solver for subsumption is necessary and reasonable
   - [X] make AbstractionConfig configurable
   - [X] make iwho.Context configurable
