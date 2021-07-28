@@ -17,7 +17,7 @@ sys.path.append(import_path)
 
 from devidisc.abstractblock import AbstractBlock
 from devidisc.abstractioncontext import AbstractionContext
-from devidisc.discovery import discover, generalize
+from devidisc.discovery import discover, generalize, minimize
 from devidisc.predmanager import PredictorManager
 from devidisc.witness import WitnessTrace
 
@@ -174,6 +174,35 @@ def test_interestingness_03(random, actx_pred):
     bbs.append(make_bb(actx_pred, "add rbx, rax\nsub rax, 0x2a"))
 
     assert actx_pred.interestingness_metric.is_mostly_interesting(bbs)[0]
+
+def test_minimize_01(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddBadPredictor()])
+
+    bb = make_bb(actx_pred, "add rbx, rax\nsub rax, 0x2a")
+
+    min_bb = minimize(actx_pred, bb)
+
+    assert len(min_bb) == 1
+    assert min_bb.insns[0] == bb.insns[0]
+
+def test_minimize_02(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddBadPredictor()])
+
+    bb = make_bb(actx_pred, "vaddpd ymm1, ymm2, ymm3\nadd rbx, rax\nsub rax, 0x2a")
+
+    min_bb = minimize(actx_pred, bb)
+
+    assert len(min_bb) == 1
+    assert min_bb.insns[0] == bb.insns[1]
+
+def test_minimize_03(random, actx_pred):
+    add_preds(actx_pred, [CountPredictor(), AddBadPredictor()])
+
+    bb = make_bb(actx_pred, "vaddpd ymm1, ymm2, ymm3\nadd rax, 0x2a\nadd rbx, rax\nsub rax, 0x2a\nadd rbx, rax")
+
+    min_bb = minimize(actx_pred, bb)
+
+    assert len(min_bb) == 1
 
 def _check_trace_json(actx_pred, tr):
     res_ab = tr.replay(validate=True)

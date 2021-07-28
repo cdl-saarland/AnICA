@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import json
 import math
 import os
+import random
 import shutil
 import textwrap
 from pathlib import Path
@@ -207,6 +208,47 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         write_report()
 
     return discoveries
+
+def minimize(actx, concrete_bb):
+    """ Try to randomly remove instructions from the concrete basic block while
+    preserving its interestingness.
+
+    The result will be a concrete basic block of the same or shorter length.
+    """
+
+    num_insns = len(concrete_bb.insns)
+    # get a list of all indices into the bb with a random order.
+    order = list(range(num_insns))
+    random.shuffle(order)
+
+    for i in range(num_insns):
+        if len(concrete_bb) <= 1:
+            # we don't want empty blocks
+            break
+
+        curr_idx = order.pop()
+        curr_insns = concrete_bb.insns[:]
+        del curr_insns[curr_idx]
+        curr_bb = actx.iwho_ctx.make_bb(curr_insns)
+        interesting, result_ref = actx.interestingness_metric.is_mostly_interesting([curr_bb])
+        if interesting:
+            # take the updated (shorter) bb
+            concrete_bb = curr_bb
+            # Since we removed an index from the block, we need to adjust our
+            # order by decrementing all remaining indices that are larger than
+            # the current one.
+            #
+            # consider the example of the order [2, 4, 1, 3, 0] here:
+            # bb index:  0 1 2 3 4
+            # bb before: A B C D E
+            #            | |  / /
+            # bb after:  A B D E
+            # after removing C at index 2, we need to adjust the order to [3,
+            # 1, 2, 0] to refer to the same instructions
+
+            order = list(map(lambda x: x - 1 if x > curr_idx else x, order))
+
+    return concrete_bb
 
 
 def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock):
