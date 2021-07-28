@@ -156,20 +156,23 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         per_batch_entry['num_interesting_subsumed'] = num_subsumed
         # for each interesting one:
         for idx, bb in enumerate(interesting_bbs):
-            abstracted_bb = AbstractBlock(actx, bb)
-            # check if it is already subsumed by a discovery
-            # (TODO depending on what is faster, we might want to do this before checking for interestingness)
+            # First, try to prune some unnecessary instructions.
+            # doing that before subsumption checking has several benefits:
+            #   - The problem size for the subsumption checker is reduced.
+            #   - If bb has a pattern already captured by discoveries, but
+            #     additionally even more harmful patterns, there is a chance
+            #     that such a new pattern is found because the already
+            #     discovered ones are pruned away.
+            min_bb = minimize(bb)
 
+            # check if the block is already subsumed by a discovery
             stats = dict()
             per_sample_stats.append(stats)
 
             start_subsumption_time = datetime.now()
             already_found = False
             for d in discoveries:
-                if actx.discovery_cfg.use_sat_subsumption:
-                    is_subsumed = check_subsumed(bb=bb, ab=d)
-                else:
-                    is_subsumed = d.subsumes(abstracted_bb)
+                is_subsumed = check_subsumed(bb=bb, ab=d)
                 if is_subsumed:
                     logger.info("  existing discovery already subsumes the block:" + textwrap.indent(str(d), 4*' '))
                     already_found = True
@@ -183,6 +186,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             # if not: generalize
             start_generalization_time = datetime.now()
 
+            abstracted_bb = AbstractBlock(actx, min_bb)
             generalized_bb, trace = generalize(actx, abstracted_bb)
 
             generalization_time = ((datetime.now() - start_generalization_time) / timedelta(microseconds=1)) / 1000
@@ -265,6 +269,7 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock):
 
     # check if sampling from abstract_bb leads to mostly interesting blocks
     concrete_bbs = sample_block_list(abstract_bb, generalization_batch_size)
+    assert len(concrete_bbs) > 0
 
     interesting, result_ref = actx.interestingness_metric.is_mostly_interesting(concrete_bbs)
 

@@ -46,9 +46,9 @@ def main():
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
             help='seed for the rng')
 
-    argparser.add_argument('--explore', action='store_true', help='just randomly explore basic blocks')
+    argparser.add_argument('--no-minimize', action='store_true', help='do not minimize the basic block before generalization')
 
-    argparser.add_argument('-g', '--generalize', metavar='asm file', default=None, help='path to a file containing the assembly of a basic block to generalize')
+    argparser.add_argument('generalize', metavar='asm file', help='path to a file containing the assembly of a basic block to generalize')
 
     argparser.add_argument('predictors', nargs="+", metavar="PREDICTOR_ID", help='one or more identifiers of predictors specified in the config')
 
@@ -63,38 +63,26 @@ def main():
 
     iwho_ctx = actx.iwho_ctx
 
-    if args.generalize is not None:
-        with open(args.generalize, 'r') as f:
-            asm_str = f.read()
-        bb = iwho.BasicBlock(iwho_ctx, iwho_ctx.parse_asm(asm_str))
+    with open(args.generalize, 'r') as f:
+        asm_str = f.read()
+    bb = iwho.BasicBlock(iwho_ctx, iwho_ctx.parse_asm(asm_str))
 
-        abb = AbstractBlock(actx, bb)
-        res_abb, trace = discovery.generalize(actx, abb)
-        print("Generalization Result:\n" + textwrap.indent(str(res_abb), '  '))
+    if not args.no_minimize:
+        min_bb = discovery.minimize(actx, bb)
+        print("Pruned {} instructions in the minimization step:".format(len(bb) - len(min_bb)))
+        print(textwrap.indent(min_bb.get_asm(), '  '))
+        bb = min_bb
 
-        timestamp = datetime.now().replace(microsecond=0).isoformat()
-        filename = f"traces/trace_{timestamp}.json"
-        trace.dump_json(filename)
-        print(f"witness trace written to: {filename}")
+    abb = AbstractBlock(actx, bb)
+    res_abb, trace = discovery.generalize(actx, abb)
+    print("Generalization Result:\n" + textwrap.indent(str(res_abb), '  '))
 
-        sys.exit(0)
+    timestamp = datetime.now().replace(microsecond=0).isoformat()
+    filename = f"traces/trace_{timestamp}.json"
+    trace.dump_json(filename)
+    print(f"witness trace written to: {filename}")
 
-    if args.explore:
-        # only use appropriate schemes
-        schemes = iwho_ctx.filtered_insn_schemes
-
-        result_base_path = Path("./results/")
-
-        # TODO configurable?
-        num_batches = 10
-        max_num_insns = 10
-        batch_size = 10
-
-        explore(iwho_ctx, schemes, predman, result_base_path,
-                max_num_insns=max_num_insns,
-                num_batches=num_batches,
-                batch_size=batch_size)
-        sys.exit(0)
+    sys.exit(0)
 
 
 if __name__ == "__main__":

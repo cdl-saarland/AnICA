@@ -25,9 +25,6 @@ class DiscoveryConfig(metaclass=ConfigMeta):
         generalization_batch_size = (100,
             'the number of basic blocks to sample when validating that an '
             'abstract block is still interesting'),
-        use_sat_subsumption = (False,
-            'use a more elaborate sat-based subsumption checking algorithm to '
-            'find out whether discoveries have already been seen'),
     )
 
     def __init__(self, config):
