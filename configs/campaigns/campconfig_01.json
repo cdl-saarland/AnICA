@@ -3,7 +3,7 @@
         "abstraction_config_path": "../abstraction/default.json",
         "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
         "termination": {
-            "hours": "1"
+            "minutes": 20
         }
     }
 ]
