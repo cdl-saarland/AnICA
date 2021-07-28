@@ -1,8 +1,7 @@
 {
   "insn_feature_manager": {
     "features": [
-      [ "exact_scheme", "singleton" ],
-      [ "present", "singleton" ]
+      [ "exact_scheme", "singleton" ]
     ]
   },
   "iwho": {

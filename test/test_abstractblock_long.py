@@ -25,7 +25,7 @@ def test_join_everything(actx):
     ab = havoc_alias_part(AbstractBlock(actx, None))
     ab_pre = havoc_alias_part(AbstractBlock(actx, None))
 
-    for scheme in actx.iwho_ctx.insn_schemes:
+    for scheme in actx.iwho_ctx.filtered_insn_schemes:
         # create a BB with only an instruction instance of this scheme
         bb = iwho.BasicBlock(actx.iwho_ctx, [instor(scheme)])
 
@@ -52,7 +52,7 @@ def test_join_every_pair(actx):
     instor = DefaultInstantiator(actx.iwho_ctx)
 
     # only take every 50th insn, since this test takes a long time otherwise
-    reduced_schemes = actx.iwho_ctx.insn_schemes[::50]
+    reduced_schemes = actx.iwho_ctx.filtered_insn_schemes[::50]
 
     for scheme1, scheme2 in itertools.combinations(reduced_schemes, 2):
         ab = havoc_alias_part(AbstractBlock(actx, None))

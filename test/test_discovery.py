@@ -94,7 +94,6 @@ def actx_pred():
         "insn_feature_manager": {
             "features": [
                 ["exact_scheme", "singleton"],
-                ["present", "singleton"],
                 ["mnemonic", "singleton"],
                 ["opschemes", "subset"],
             ]

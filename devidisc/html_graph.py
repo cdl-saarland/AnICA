@@ -10,11 +10,7 @@ import shutil
 from .witness import WitnessTrace
 
 def prettify_absinsn(absinsn, hl_feature=None):
-    if all(map(lambda x: (x[0] == 'present' and x[1].val == False) or x[1].is_bottom(), absinsn.features.items())):
-        res = "not present"
-        if hl_feature is not None:
-            res = '<div class="highlightedcomponent">' + res + '</div>'
-    elif all(map(lambda x: x[1].is_top(), absinsn.features.items())):
+    if all(map(lambda x: x[1].is_top(), absinsn.features.items())):
         res = "TOP"
         if hl_feature is not None:
             res = '<div class="highlightedcomponent">' + res + '</div>'

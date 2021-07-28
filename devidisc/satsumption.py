@@ -35,8 +35,6 @@ def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=True):
     abs_aliasing = ab.abs_aliasing
 
     for aidx, ai in enumerate(ab.abs_insns):
-        if ai.features['present'].val != True:
-            continue
         feasible_schemes = actx.insn_feature_manager.compute_feasible_schemes(ai.features)
         for cidx, ci in enumerate(bb):
             if ci.scheme in feasible_schemes:

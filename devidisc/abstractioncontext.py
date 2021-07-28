@@ -35,11 +35,7 @@ class DiscoveryConfig(metaclass=ConfigMeta):
 
 
 class SamplingConfig(metaclass=ConfigMeta):
-    config_options = dict(
-        skip_insn_bias = (0.5,
-            'the likelyhood in [0.0, 1.0] to skip an instruction whose \'present\' result is TOP when sampling (1.0 will always skip, 0.0 will always take an instruction)'
-            ),
-    )
+    config_options = dict()
 
     def __init__(self, config):
         self.configure(config)

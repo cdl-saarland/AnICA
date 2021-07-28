@@ -28,7 +28,6 @@ def mem_access_width(opscheme):
 
 _default_features = [
         ["exact_scheme", "singleton"],
-        ["present", "singleton"],
         ["mnemonic", ["editdistance", 3]], # "singleton"
         ["opschemes", "subset"],
         ["memory_usage", "subset_or_definitely_not"],
@@ -46,7 +45,6 @@ class InsnFeatureManager(metaclass=ConfigMeta):
 
     Special feature names:
         - exact_scheme
-        - present
         - mnemonic
     """
 
@@ -57,7 +55,7 @@ class InsnFeatureManager(metaclass=ConfigMeta):
             'index lookup order and as a consequence the run time.'),
     )
 
-    not_indexed = {'exact_scheme', 'present'}
+    not_indexed = {'exact_scheme'}
 
     def __init__(self, iwho_ctx, config):
         self.configure(config)
@@ -251,14 +249,11 @@ class InsnFeatureManager(metaclass=ConfigMeta):
             index[base] = res
         return res
 
-    def extract_features(self, ischeme: Union[iwho.InsnScheme, None]):
-        if ischeme is None:
-            return {'present': False}
+    def extract_features(self, ischeme: iwho.InsnScheme):
+        assert ischeme is not None
         remaining_features = set(self.index_order)
 
         res = dict()
-        res['present'] = True
-        remaining_features.discard('present')
 
         res['exact_scheme'] = ischeme
         remaining_features.discard('exact_scheme')

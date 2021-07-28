@@ -108,30 +108,6 @@ def test_concrete_ab_multiple_insns_sample(random, actx):
     assert new_ab.subsumes(ab)
 
 
-def test_sparse_sample(random, actx):
-    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
-
-    bb2 = iwho.BasicBlock(actx.iwho_ctx)
-    bb2.append(None)
-    bb2.append(actx.iwho_ctx.parse_asm("sub rbx, rax"))
-
-    ab = AbstractBlock(actx, bb1)
-    havoc_alias_part(ab)
-    ab.join(bb2)
-
-    one_was_none = False
-    for k in range(10):
-        # it should be quite likely that at least one sample has a None insn
-        # first
-        new_bb = ab.sample()
-        one_was_none = one_was_none or new_bb.insns[0] is None
-        new_ab = AbstractBlock(actx, new_bb)
-        havoc_alias_part(new_ab)
-        assert ab.subsumes(new_ab)
-
-    assert one_was_none, "Careful, this might randomly fail!"
-
-
 def test_join_equal(random, actx):
     bb = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
     ab = AbstractBlock(actx, bb)
@@ -277,40 +253,6 @@ def test_join_equal_len_sample(random, actx):
     print(new_bb)
 
     assert len(new_bb) == len(bb1)
-
-    new_ab = havoc_alias_part(AbstractBlock(actx, new_bb))
-    assert ab.subsumes(new_ab)
-
-
-def test_join_shorter(random, actx):
-    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
-    bb2 = make_bb(actx, "add rax, 0x2a")
-    ab = havoc_alias_part(AbstractBlock(actx, bb1))
-    ab.join(bb2)
-
-    print(ab)
-    assert ab.subsumes(ab)
-    assert ab.subsumes(havoc_alias_part(AbstractBlock(actx, bb1)))
-    assert ab.subsumes(havoc_alias_part(AbstractBlock(actx, bb2)))
-
-
-def test_join_shorter_sample(random, actx):
-    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
-    bb2 = make_bb(actx, "add rax, 0x2a")
-    ab = havoc_alias_part(AbstractBlock(actx, bb1))
-    ab.join(bb2)
-
-    print(ab)
-    assert ab.subsumes(ab)
-    assert ab.subsumes(havoc_alias_part(AbstractBlock(actx, bb1)))
-    assert ab.subsumes(havoc_alias_part(AbstractBlock(actx, bb2)))
-
-    new_bb = ab.sample()
-    print(new_bb)
-
-    assert len(bb1) >= len(new_bb) >= len(bb2)
-    for new, old in zip(new_bb, bb1):
-        assert new.scheme == old.scheme
 
     new_ab = havoc_alias_part(AbstractBlock(actx, new_bb))
     assert ab.subsumes(new_ab)
@@ -507,7 +449,6 @@ def test_expand_terminates(random, actx):
 possible_block_strs =[
         ["add rax, 0x2a"],
         ["add rax, 0x2a\nsub ebx, eax"],
-        ["add rax, 0x2a\nsub ebx, eax", "add rax, 0x2a"],
         ["add rax, 0x2a\nsub ebx, eax", "add rax, 0x2a\nsub ebx, eax"],
         ["add rax, 0x2a\nsub ebx, eax", "add rax, 0x2a\nsub eax, eax"],
         ["add rax, 0x2a\nsub ebx, eax", "sub rax, 0x2a\nsub ebx, eax"],

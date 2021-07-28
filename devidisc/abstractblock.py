@@ -511,8 +511,6 @@ class AbstractInsn(Expandable):
         return res
 
     def __str__(self) -> str:
-        if all(map(lambda x: (x[0] == 'present' and x[1].val == False) or x[1].is_bottom(), self.features.items())):
-            return "not present"
         if all(map(lambda x: x[1].is_top(), self.features.items())):
             return "TOP"
         return "\n".join((f"{k}: {v}" for k, v in self.features.items()))
@@ -522,12 +520,6 @@ class AbstractInsn(Expandable):
             v.set_to_top()
 
     def compute_benefit(self, expansion):
-        if expansion == 'all_top':
-            # One could argue that this benefit should actually be large.
-            # However, adding new instructions into the mix is not really
-            # helpful for our purpose, so we give it low priority.
-            return 0
-
         absfeature_dict = { k: v for k, v in self.features.items() }
 
         replace_k, inner_expansion = expansion
@@ -540,10 +532,6 @@ class AbstractInsn(Expandable):
 
 
     def get_possible_expansions(self):
-        if self.features['present'].val == False:
-            expansion = 'all_top'
-            return [(expansion, self.compute_benefit(expansion))]
-
         if not self.features['exact_scheme'].is_top():
             # The exact scheme is more specific than the other features (it
             # implies all of them). It is therefore pointless and harmful to
@@ -568,10 +556,6 @@ class AbstractInsn(Expandable):
         return res
 
     def apply_expansion(self, expansion):
-        if expansion == 'all_top':
-            for k, v in self.features.items():
-                v.set_to_top()
-            return
         key, inner_expansion = expansion
         self.features[key].apply_expansion(inner_expansion)
 
@@ -604,14 +588,6 @@ class AbstractInsn(Expandable):
         """ Randomly choose one from the set of concrete instruction schemes
         represented by this abstract instruction.
         """
-        if self.features['present'].val == False:
-            return None
-
-        if self.features['present'].is_top():
-            skip_likelyhood = self.actx.sampling_cfg.skip_insn_bias
-            if random.uniform(0.0, 1.0) <= skip_likelyhood:
-                return None
-
         feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(self.features)
 
         if len(feasible_schemes) == 0:
@@ -815,10 +791,7 @@ class AbstractAliasInfo(Expandable):
         for (insn_op1, insn_op2), should_alias in self._aliasing_dict.items():
             iidx1, op_key1 = insn_op1
             iidx2, op_key2 = insn_op2
-            # Do not enter information for instructions and operands that are
-            # not present.
-            if insn_schemes[iidx1] is None or insn_schemes[iidx2] is None:
-                continue
+            # Do not enter information for operands that are not present.
             op_scheme1 = insn_schemes[iidx1].get_operand_scheme(op_key1)
             op_scheme2 = insn_schemes[iidx2].get_operand_scheme(op_key2)
             if (op_scheme1 is None or op_scheme2 is None):
@@ -848,8 +821,6 @@ class AbstractAliasInfo(Expandable):
         ctx = self.actx.iwho_ctx
 
         for iidx, ischeme in enumerate(insn_schemes):
-            if ischeme is None:
-                continue
             for op_key, op_scheme in ischeme.operand_keys:
                 if self.actx.iwho_augmentation.skip_for_aliasing(op_scheme) or not op_scheme.is_fixed():
                     continue
@@ -902,8 +873,6 @@ class AbstractAliasInfo(Expandable):
         ctx = self.actx.iwho_ctx
 
         for iidx, ischeme in enumerate(insn_schemes):
-            if ischeme is None:
-                continue
             for op_key, op_scheme in ischeme.operand_keys:
                 idx = (iidx, op_key)
                 # we already chose an operand here
@@ -970,9 +939,6 @@ class AbstractAliasInfo(Expandable):
         # instantiate the schemes with the chosen operands
         bb = iwho.BasicBlock(self.actx.iwho_ctx)
         for iidx, ischeme in enumerate(insn_schemes):
-            if ischeme is None:
-                bb.append(None)
-                continue
             op_map = op_maps[iidx]
             try:
                 instance = ischeme.instantiate(op_map)
@@ -1098,17 +1064,15 @@ class AbstractBlock(Expandable):
         due to over-approximation, even more basic blocks).
         """
         bb_insns = list(bb.insns)
+        assert len(bb_insns) >= len(self.abs_insns)
 
         while len(bb_insns) > len(self.abs_insns):
             self.abs_insns.append(AbstractInsn(self.actx))
 
-        while len(bb_insns) < len(self.abs_insns):
-            bb_insns.append(None)
-
         assert(len(bb_insns) == len(self.abs_insns))
 
         for a, b in zip(self.abs_insns, bb_insns):
-            scheme = None if b is None else b.scheme
+            scheme = b.scheme
             a.join(scheme)
 
         self.abs_aliasing.join(bb)
@@ -1123,7 +1087,7 @@ class AbstractBlock(Expandable):
         """
         insn_schemes = []
         for ai in self.abs_insns:
-            insn_scheme = ai.sample() # may be None
+            insn_scheme = ai.sample()
             insn_schemes.append(insn_scheme)
 
         return self.abs_aliasing.sample(insn_schemes)
