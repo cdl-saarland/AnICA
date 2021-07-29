@@ -141,7 +141,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             sample_universe = start_point
 
         concrete_bbs = sample_block_list(sample_universe, discovery_batch_size)
-        sampling_time = ((datetime.now() - start_sampling_time) / timedelta(microseconds=1)) / 1000
+        sampling_time = ((datetime.now() - start_sampling_time) / timedelta(milliseconds=1)) / 1000
         total_sampled += len(concrete_bbs)
         report['num_total_sampled'] = total_sampled
         per_batch_entry['num_sampled'] = len(concrete_bbs)
@@ -150,7 +150,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         # TODO we might want to avoid generating the result_ref here, to allow more parallelism
         start_interestingness_time = datetime.now()
         interesting_bbs, result_ref = actx.interestingness_metric.filter_interesting(concrete_bbs)
-        interestingness_time = ((datetime.now() - start_interestingness_time) / timedelta(microseconds=1)) / 1000
+        interestingness_time = ((datetime.now() - start_interestingness_time) / timedelta(milliseconds=1)) / 1000
         per_batch_entry['num_interesting'] = len(interesting_bbs)
         per_batch_entry['interestingness_time'] = interestingness_time
 
@@ -182,7 +182,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
                 if is_subsumed:
                     logger.info("  existing discovery already subsumes the block:" + textwrap.indent(str(d), 4*' '))
                     already_found = True
-            subsumption_time = ((datetime.now() - start_subsumption_time) / timedelta(microseconds=1)) / 1000
+            subsumption_time = ((datetime.now() - start_subsumption_time) / timedelta(milliseconds=1)) / 1000
             stats['subsumption_time'] = subsumption_time
             if already_found:
                 num_subsumed += 1
@@ -195,7 +195,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             abstracted_bb = AbstractBlock(actx, min_bb)
             generalized_bb, trace = generalize(actx, abstracted_bb)
 
-            generalization_time = ((datetime.now() - start_generalization_time) / timedelta(microseconds=1)) / 1000
+            generalization_time = ((datetime.now() - start_generalization_time) / timedelta(milliseconds=1)) / 1000
             stats['generalization_time'] = generalization_time
             stats['witness_len'] = len(trace)
             # TODO ab height
@@ -210,7 +210,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
             write_report()
 
-        batch_time = ((datetime.now() - batch_start_time) / timedelta(microseconds=1)) / 1000
+        batch_time = ((datetime.now() - batch_start_time) / timedelta(milliseconds=1)) / 1000
         per_batch_entry['batch_time'] = batch_time
 
         logger.info(f"  done with batch no. {curr_num_batches}")
