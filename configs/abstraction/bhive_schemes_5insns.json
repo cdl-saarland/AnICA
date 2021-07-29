@@ -1,0 +1,9 @@
+{
+  "iwho": {
+      "context_specifier": "x86_uops_info",
+      "filters": ["no_cf", "with_measurements:SKL", "whitelist:hsw_bhive_schemes.csv"]
+    },
+  "discovery": {
+      "discovery_possible_block_lengths": [5]
+    }
+}
