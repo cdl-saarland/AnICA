@@ -124,6 +124,8 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             logger.info("terminating discovery loop: time budget exceeded")
             break
 
+        logger.info(f"  starting batch no. {curr_num_batches}")
+
         per_batch_entry = dict()
         per_batch_stats.append(per_batch_entry)
 
@@ -167,7 +169,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             #     additionally even more harmful patterns, there is a chance
             #     that such a new pattern is found because the already
             #     discovered ones are pruned away.
-            min_bb = minimize(bb)
+            min_bb = minimize(actx, bb)
 
             # check if the block is already subsumed by a discovery
             stats = dict()
@@ -211,6 +213,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         batch_time = ((datetime.now() - batch_start_time) / timedelta(microseconds=1)) / 1000
         per_batch_entry['batch_time'] = batch_time
 
+        logger.info(f"  done with batch no. {curr_num_batches}")
         curr_num_batches += 1
         report['num_batches'] = curr_num_batches
         write_report()

@@ -20,9 +20,7 @@
     "discovery_possible_block_lengths": [4, 5, 6],
     "generalization_batch_size": 4
   },
-  "sampling": {
-    "skip_insn_bias": 0.5
-  },
+  "sampling": {},
   "measurement_db": {
     "db_name": "measurements.db"
   },
