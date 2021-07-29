@@ -87,9 +87,6 @@ def main():
     argparser.add_argument('-x', '--num-experiments', type=int, default=None, metavar="N",
             help='number of random experiments to sample if no input is given')
 
-    argparser.add_argument('-n', '--num-insns', type=int, default=None, metavar="N",
-            help='maximal number of instructions per sampled basic block (if no input is given)')
-
     argparser.add_argument('--heatmap', default=None, metavar='IMGFILE',
             help='if this is specified, just make a heatmap from the input data and safe it to the specified file')
 
@@ -141,7 +138,7 @@ def main():
     else:
         # sample new basic blocks
         keys = ['bb']
-        if args.num_experiments is None or args.num_insns is None:
+        if args.num_experiments is None:
             print("Error: Neither input nor number and length of blocks to sample are given!", file=sys.stderr)
             sys.exit(1)
         logger.info(f"start sampling {args.num_experiments} experiments")
