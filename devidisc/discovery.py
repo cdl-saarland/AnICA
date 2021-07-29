@@ -59,7 +59,9 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
     if out_dir is not None:
         witness_dir = out_dir / "witnesses"
+        discovery_dir = out_dir / "discoveries"
         os.makedirs(witness_dir)
+        os.makedirs(discovery_dir)
 
     discovery_batch_size = actx.discovery_cfg.discovery_batch_size
 
@@ -207,6 +209,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
             if out_dir is not None:
                 trace.dump_json(witness_dir / f'generalization_batch{curr_num_batches:03}_idx{idx:03}.json')
+                generalized_bb.dump_json(discovery_dir / f'discovery_ab_b{curr_num_batches:03}_i{idx:03}.json')
 
             write_report()
 
