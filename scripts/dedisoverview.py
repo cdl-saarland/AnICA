@@ -147,7 +147,7 @@ def main():
             assert x < 10 * args.num_experiments, "too many samples are failing!"
             x += 1
             try:
-                curr_num_insns = random.choice(actx.discovery.discovery_possible_block_lengths)
+                curr_num_insns = random.choice(actx.discovery_cfg.discovery_possible_block_lengths)
                 top = AbstractBlock.make_top(actx, curr_num_insns)
                 sample_bb = top.sample()
                 sample_hex = sample_bb.get_hex()
