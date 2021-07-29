@@ -13,7 +13,7 @@ from iwho import BasicBlock
 
 from .abstractblock import AbstractBlock
 
-def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=False):
+def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=False, precomputed_schemes=None):
     actx = ab.actx
 
     cnf = CNFPlus()
@@ -35,7 +35,10 @@ def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=False):
     abs_aliasing = ab.abs_aliasing
 
     for aidx, ai in enumerate(ab.abs_insns):
-        feasible_schemes = actx.insn_feature_manager.compute_feasible_schemes(ai.features)
+        if precomputed_schemes is not None:
+            feasible_schemes = precomputed_schemes[aidx]
+        else:
+            feasible_schemes = actx.insn_feature_manager.compute_feasible_schemes(ai.features)
         for cidx, ci in enumerate(bb):
             if ci.scheme in feasible_schemes:
                 var = fresh_var()
@@ -91,4 +94,24 @@ def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=False):
                     print(f"  {ai}: {ci}")
 
     return satisfiable
+
+
+def compute_coverage(ab, bb_sample, ratio=True):
+    actx = ab.actx
+
+    # Without this, we would compute the same feasible schemes for all concrete
+    # bbs, which is quite expensive.
+    precomputed_schemes = []
+    for ai in ab.abs_insns:
+        precomputed_schemes.append(actx.insn_feature_manager.compute_feasible_schemes(ai.features))
+
+    num_covered = 0
+    for bb in bb_sample:
+        if check_subsumed(bb, ab, precomputed_schemes=precomputed_schemes):
+            num_covered += 1
+
+    if ratio:
+        return num_covered / len(bb_sample)
+    else:
+        return num_covered
 
