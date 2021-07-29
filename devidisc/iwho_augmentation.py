@@ -90,7 +90,7 @@ class IWHOAugmentation:
             # TODO should we allow register operands to alias with memory locations?
             return { o for o in constraint.acceptable_operands if o.alias_class not in reserved_alias_classes }
         elif isinstance(constraint, iwho.x86.MemConstraint):
-            reg_names = reserved_names
+            reg_names = self.reserved_names
             base_regs = [iwho.x86.all_registers[n] for n in reg_names]
             displacement = 64
             # TODO deduplicate?
