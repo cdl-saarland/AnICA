@@ -93,6 +93,9 @@ def main():
     argparser.add_argument('--heatmap', default=None, metavar='IMGFILE',
             help='if this is specified, just make a heatmap from the input data and safe it to the specified file')
 
+    argparser.add_argument('--threshold', default=0.5, type=float, metavar='V',
+            help='if creating a heatmap, only count cases with a deviation of at least this value')
+
     argparser.add_argument('predictors', nargs='*', metavar="PREDICTOR_ID",
             help='identifier(s) from the predictor registry of the predictors to use')
 
@@ -142,12 +145,13 @@ def main():
             print("Error: Neither input nor number and length of blocks to sample are given!", file=sys.stderr)
             sys.exit(1)
         logger.info(f"start sampling {args.num_experiments} experiments")
-        top = AbstractBlock.make_top(actx, args.num_insns)
         x = 0
         while len(data) < args.num_experiments:
             assert x < 10 * args.num_experiments, "too many samples are failing!"
             x += 1
             try:
+                curr_num_insns = random.choice(actx.discovery.discovery_possible_block_lengths)
+                top = AbstractBlock.make_top(actx, curr_num_insns)
                 sample_bb = top.sample()
                 sample_hex = sample_bb.get_hex()
                 data.append({'bb': sample_hex})
@@ -159,7 +163,7 @@ def main():
         if args.input is None:
             print("Error: Asking for a heatmap without input!", file=sys.stderr)
             sys.exit(1)
-        make_heatmap(keys, data, err_threshold=0.2, filename=args.heatmap)
+        make_heatmap(keys, data, err_threshold=args.threshold, filename=args.heatmap)
         sys.exit(0)
 
     # set the predictors we need
