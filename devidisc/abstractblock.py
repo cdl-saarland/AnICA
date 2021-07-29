@@ -18,9 +18,10 @@ from typing import Optional, Union, Sequence
 import editdistance
 import iwho
 
+from .configurable import pretty_print
+
 import logging
 logger = logging.getLogger(__name__)
-
 
 class SamplingError(Exception):
     """ Something went wrong with sampling
@@ -979,6 +980,14 @@ class AbstractBlock(Expandable):
         res['abs_insns'] = [ ai.to_json_dict() for ai in self.abs_insns ]
         res['abs_aliasing'] = self.abs_aliasing.to_json_dict()
         return res
+
+    def dump_json(self, filename):
+        actx = self.actx
+        out_data = dict()
+        out_data['config'] = actx.get_config()
+        out_data['ab'] = actx.json_ref_manager.introduce_json_references(self.to_json_dict())
+        with open(filename, 'w') as f:
+            f.write(pretty_print(out_data))
 
     @staticmethod
     def from_json_dict(actx, json_dict):
