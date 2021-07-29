@@ -79,7 +79,7 @@ class IWHOAugmentation:
                 return True
         return False
 
-    reserved_names = ["rbx", "r13", "r14"]
+    reserved_names = ["rbx", "rsi", "rdi"]
 
     def allowed_operands(self, op_scheme):
         if op_scheme.is_fixed():
@@ -90,7 +90,7 @@ class IWHOAugmentation:
             # TODO should we allow register operands to alias with memory locations?
             return { o for o in constraint.acceptable_operands if o.alias_class not in reserved_alias_classes }
         elif isinstance(constraint, iwho.x86.MemConstraint):
-            reg_names = ["rbx", "r13", "r14"]
+            reg_names = reserved_names
             base_regs = [iwho.x86.all_registers[n] for n in reg_names]
             displacement = 64
             # TODO deduplicate?
