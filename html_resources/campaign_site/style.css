@@ -4,21 +4,26 @@ html, body {
     margin: 0;
 }
 
-table {
+.discovery_table {
   margin: auto;
   border-collapse: collapse;
 }
 
-table, th, td {
+.code {
+  font-family: monospace;
+  white-space: pre-line;
+}
+
+.discovery_table, .discovery_th, .discovery_td {
   border: 1px solid gray;
 }
 
-th, td {
+.discovery_th, .discovery_td {
   padding: 10px;
   text-align: left;
 }
 
-th {
+.discovery_th {
   font-weight: bold;
 }
 

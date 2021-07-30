@@ -12,27 +12,55 @@
     <div id="outermost">
 
       <div class="flexcontainer">
-        <a href="path/to/logfile">open log</a>
-      </div>
+        config
+        <h3>Tools under Investigation:</h3>
+        [[tools]]
 
-      <div class="flexcontainer">
-        report config
-        - which tools are compared?
-        - what was the termination criterion?
-        - what was the abstraction configuration?
+        <h3>Termination Criterion:</h3>
+        [[termination]]
+
+        <h3>Abstraction Config:</h3>
+        [[abstraction_config]]
       </div>
 
       <div class="flexcontainer">
         <table>
+          <tr>
+            <td>Discovery batches</td>
+            <td>[[num_discovery_batches]]</td>
+          </tr>
+          <tr>
+            <td>Total blocks sampled for discovery</td>
+            <td>[[num_total_sampled]]</td>
+          </tr>
+          <tr>
+            <td>Discoveries made</td>
+            <td>[[num_discoveries]]</td>
+          </tr>
+          <tr>
+            <td>Time spent</td>
+            <td>[[total_time]]</td>
+          </tr>
+          <tr>
+            <td>Logs</td>
+            <td><a href="log.txt" target="_blank" rel="noopener noreferrer">open raw log</a></td>
+          </tr>
+        </table>
+
+      </div>
+
+
+      <div class="flexcontainer">
+        <table class="discovery_table">
           <thead>
-            <tr>
-              <th onclick="drawTable('id')">id</th>
-              <th>Abstract Block</th>
-              <th onclick="drawTable('num_insns')">Length</th>
-              <th onclick="drawTable('coverage')">Coverage</th>
-              <th onclick="drawTable('mean_interestingness')">Interestingness</th>
-              <th onclick="drawTable('witness_length')">Witness Length</th>
-              <th>Witness</th>
+            <tr class="discovery_tr">
+              <th class="discovery_th" onclick="drawTable('id')">id</th>
+              <th class="discovery_th">Abstract Block</th>
+              <th class="discovery_th" onclick="drawTable('num_insns')">Length</th>
+              <th class="discovery_th" onclick="drawTable('coverage')">Coverage</th>
+              <th class="discovery_th" onclick="drawTable('mean_interestingness')">Interestingness</th>
+              <th class="discovery_th" onclick="drawTable('witness_length')">Witness Length</th>
+              <th class="discovery_th">Witness</th>
             </tr>
           </thead>
           <tbody id="discovery_table_body">

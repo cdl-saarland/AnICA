@@ -520,6 +520,9 @@ class AbstractInsn(Expandable):
         for k, v in self.features.items():
             v.set_to_top()
 
+    def is_top(self):
+        return all(map(lambda x: x[1].is_top(), self.features.items()))
+
     def compute_benefit(self, expansion):
         absfeature_dict = { k: v for k, v in self.features.items() }
 

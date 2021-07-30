@@ -1,8 +1,6 @@
 
-table_data = [
-    {"id": 1, "pretty_str": "foo\nbar", "num_insns": 2, "coverage": 0.002, "mean_interestingness": 42.0, "witness_link": "foo/bar", "witness_length": 17},
-    {"id": 2, "pretty_str": "foo\nbar", "num_insns": 1, "coverage": 0.012, "mean_interestingness": 8.0, "witness_link": "foo/bar", "witness_length": 23}
-];
+table_data = [[table_data]];
+
 keys = ["id", "pretty_str", "num_insns", "coverage", "mean_interestingness", "witness_length", "witness_link"];
 
 function cmp_num(a, b) {
@@ -44,8 +42,10 @@ function drawTable(sort_key) {
 
     for (const entry of table_data) {
         const new_row = document.createElement("tr");
+        new_row.className = "discovery_tr";
         for (const key of keys) {
             const new_col = document.createElement("td");
+            new_col.className = "discovery_td";
             new_col.innerHTML = entry[key];
             new_row.appendChild(new_col);
         }
