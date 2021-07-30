@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>DeviDisc Campaign Report</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+  </head>
+  <body>
+    <h1>DeviDisc Campaign Report</h1>
+
+    <div id="outermost">
+
+      <div class="flexcontainer">
+        <a href="path/to/logfile">open log</a>
+      </div>
+
+      <div class="flexcontainer">
+        report config
+        - which tools are compared?
+        - what was the termination criterion?
+        - what was the abstraction configuration?
+      </div>
+
+      <div class="flexcontainer">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="drawTable('id')">id</th>
+              <th>Abstract Block</th>
+              <th onclick="drawTable('num_insns')">Length</th>
+              <th onclick="drawTable('coverage')">Coverage</th>
+              <th onclick="drawTable('mean_interestingness')">Interestingness</th>
+              <th onclick="drawTable('witness_length')">Witness Length</th>
+              <th>Witness</th>
+            </tr>
+          </thead>
+          <tbody id="discovery_table_body">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

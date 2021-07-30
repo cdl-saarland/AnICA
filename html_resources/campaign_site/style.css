@@ -1,0 +1,36 @@
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+}
+
+table {
+  margin: auto;
+  border-collapse: collapse;
+}
+
+table, th, td {
+  border: 1px solid gray;
+}
+
+th, td {
+  padding: 10px;
+  text-align: left;
+}
+
+th {
+  font-weight: bold;
+}
+
+#outermost {
+    display: flex;
+    flex-direction: column;
+    width: 1000px;
+}
+
+.flexcontainer {
+    margin: 10px auto;
+    width: 95%;
+    padding: 10px;
+    background-color: WhiteSmoke;
+}
