@@ -8,14 +8,16 @@ TODO write this
   - [X] implement the core generalization algorithm
 
 ### Functional Extensions
+  - [ ] omit obviously blocked insns from sampling
   - [ ] at least for the insn part, we could rather easily sample from  gamma(new) \ gamma(old), maybe that's a good idea
+  - [ ] think about making the required interesiting ratio relative to the interestingness ratio of the current state (probably not a good idea, since it could lead to a decay of the result quality)
   - [ ] revisit the TODOs in the aliasing sampling
+  - [ ] maybe relax the aliasing domain to be operand-position independent?
   - [ ] add an "at most 2^k uops used (on SKL)" domain, "no info about uops used" should be right under top
+  - [ ] randomize generalization and try different randomizations per run
+  - [ ] look into whether our discoveries cover also not-interesting samples
   - [ ] add a discovery overview inspector
-  - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
-  - [ ] add js functions to generate a running script for each test case
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
-  - [ ] make `llvm-mc` findable for iwho
   - [ ] add more predictors
     - [ ] Ithemal
     - [ ] DiffTune
@@ -39,6 +41,11 @@ TODO write this
   - [X] add a way of restricting the insn schemes provided by iwho.Context
   - [X] replace the powerset domain for uop combinations with a subset domain of uops
   - [X] use "type signature" as an insn feature
+
+# Fancy Quality-of-Life Extensions
+  - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
+  - [ ] add js functions to generate a running script for each test case
+  - [ ] make `llvm-mc` findable for iwho
 
 ### Meta Features
   - [ ] make sampling deterministic (for the same seed)
