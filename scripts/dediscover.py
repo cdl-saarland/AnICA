@@ -17,7 +17,7 @@ import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
 from devidisc.abstractioncontext import AbstractionContext
-from devidisc.configurable import load_json_config
+from devidisc.configurable import load_json_config, pretty_print
 import devidisc.discovery as discovery
 
 
@@ -59,8 +59,6 @@ def main():
             timestamp = datetime.now().replace(microsecond=0).isoformat()
             curr_out_dir = outdir / f'campaign_{timestamp}'
             os.makedirs(curr_out_dir)
-            with open(curr_out_dir / 'campaign_config.json', 'w') as f:
-                json.dump(config, f, indent=4)
 
             init_logging('info', logfile=curr_out_dir / 'log.txt')
 
@@ -73,6 +71,11 @@ def main():
 
             actx = AbstractionContext(config=actx_config)
             actx.predmanager.set_predictors(predictor_keys)
+
+            with open(curr_out_dir / 'campaign_config.json', 'w') as f:
+                outdict = {**config, "abstraction_config": actx.get_config()}
+                outdict['abstraction_config']['measurement_db']['db_name'] = "./measurements.db"
+                print(pretty_print(outdict), file=f)
 
             # initialize the measurement db
             with actx.measurement_db as mdb:

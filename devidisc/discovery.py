@@ -28,7 +28,7 @@ def sample_block_list(abstract_bb, num, insn_scheme_blacklist=[]):
         try:
             concrete_bbs.append(abstract_bb.sample(insn_scheme_blacklist=insn_scheme_blacklist))
         except SamplingError as e:
-            logger.info("a sample failed: {e}")
+            logger.info(f"a sample failed: {e}")
     return concrete_bbs
 
 
@@ -154,6 +154,13 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         per_batch_entry['num_sampled'] = len(concrete_bbs)
         per_batch_entry['sampling_time'] = sampling_time
 
+        if len(concrete_bbs) == 0:
+            report['seconds_passed'] = (datetime.now() - start_time).total_seconds()
+            write_report()
+
+            logger.info("terminating discovery loop: failed to sample any concrete blocks")
+            break
+
         # TODO we might want to avoid generating the result_ref here, to allow more parallelism
         start_interestingness_time = datetime.now()
         interesting_bbs, result_ref = actx.interestingness_metric.filter_interesting(concrete_bbs)
@@ -220,8 +227,8 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
                 logger.info(f"  updated InsnScheme blacklist: now {len(insn_scheme_blacklist)} entries")
 
             if out_dir is not None:
-                trace.dump_json(witness_dir / f'generalization_batch{curr_num_batches:03}_idx{idx:03}.json')
-                generalized_bb.dump_json(discovery_dir / f'discovery_ab_b{curr_num_batches:03}_i{idx:03}.json')
+                trace.dump_json(witness_dir / f'b{curr_num_batches:03}_i{idx:03}.json')
+                generalized_bb.dump_json(discovery_dir / f'b{curr_num_batches:03}_i{idx:03}.json')
 
             write_report()
 
