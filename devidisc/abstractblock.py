@@ -823,6 +823,11 @@ class AbstractAliasInfo(Expandable):
             if (op_scheme1 is None or op_scheme2 is None):
                 continue
 
+            if (self.actx.iwho_augmentation.skip_for_aliasing(op_scheme1) or
+                    self.actx.iwho_augmentation.skip_for_aliasing(op_scheme1)):
+                # we also don't want this information if we skip the operand scheme
+                continue
+
             # if operand schemes are not compatible, this entry is ignored
             if not self.actx.iwho_augmentation.is_compatible(op_scheme1, op_scheme2):
                 continue
@@ -905,23 +910,38 @@ class AbstractAliasInfo(Expandable):
                 if chosen_operands.get(idx, None) is not None:
                     continue
 
-                # choose an operand that is not already taken in not_same:
                 allowed_operands = set(self.actx.iwho_augmentation.allowed_operands(op_scheme))
                 if not self.actx.iwho_augmentation.skip_for_aliasing(op_scheme):
-                    # remove all elements from allowed_operands that are
-                    # blocked by the not_same set
-                    for k in not_same[idx]:
-                        disallowed = chosen_operands.get(k, None)
-                        if disallowed is None:
-                            continue
-                        disallowed = ctx.adjust_operand(disallowed, op_scheme)
-                        if disallowed is not None:
-                            allowed_operands.discard(disallowed)
 
-                # TODO It might be more effective to now "intersect" (modulo
-                # aliasing operands) allowed_operands with the allowed_operands
-                # of the same set, to aviod unnecessary sampling errors in the
-                # following step.
+                    # collect all opschemes that need to have an aliasing
+                    # operand and collect all already selected operands that
+                    # are not allowed to alias
+                    same_opschemes = []
+                    notsame_operands = set()
+                    for k in itertools.chain((idx,), same[idx]):
+                        same_opschemes.append(insn_schemes[k[0]].get_operand_scheme(k[1]))
+
+                        for inner_k in not_same[k]:
+                            already_chosen = chosen_operands.get(inner_k, None)
+                            if already_chosen is not None:
+                                notsame_operands.add(already_chosen)
+
+                    # Remove operands that can't be used in all `same` operands
+                    ruled_out_by_same_constraints = []
+                    for ao in allowed_operands:
+                        for curr_opscheme in same_opschemes:
+                            ao_adjusted = ctx.adjust_operand(ao, curr_opscheme)
+                            if ao_adjusted is None:
+                                ruled_out_by_same_constraints.append(ao)
+                    allowed_operands.difference_update(ruled_out_by_same_constraints)
+
+                    # Remove operands that are already used as `notsame` operands
+                    ruled_out_by_notsame_constraints = []
+                    for ao in allowed_operands:
+                        for curr_operand in notsame_operands:
+                            if self.actx.iwho_augmentation.may_alias(ao, curr_operand):
+                                ruled_out_by_notsame_constraints.append(ao)
+                    allowed_operands.difference_update(ruled_out_by_notsame_constraints)
 
                 if len(allowed_operands) == 0:
                     raise SamplingError(f"InsnScheme {ischeme} has no allowed operands left for operand '{op_key}' ({op_scheme})")
@@ -930,12 +950,12 @@ class AbstractAliasInfo(Expandable):
                 chosen = random.choice(list(allowed_operands))
                 chosen_operands[idx] = chosen
 
-                # also choose this one for the entries in the same set
-                for k in same[idx]:
-                    chosen_operand = ctx.adjust_operand(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
-                    if chosen_operand is None:
-                        raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires incompatible operand for {k[1]}: {chosen}")
-                    chosen_operands[k] = chosen_operand
+                if not self.actx.iwho_augmentation.skip_for_aliasing(op_scheme):
+                    # also choose this one for the entries in the same set
+                    for k in same[idx]:
+                        chosen_operand = ctx.adjust_operand(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
+                        assert chosen_operand is not None, "This should have been ruled out by the above `ruled_out_by_` code!"
+                        chosen_operands[k] = chosen_operand
 
         return chosen_operands
 

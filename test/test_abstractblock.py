@@ -12,7 +12,7 @@ import iwho
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractblock import AbstractBlock
+from devidisc.abstractblock import AbstractBlock, SamplingError
 from devidisc.abstractioncontext import AbstractionContext
 
 from test_utils import *
@@ -373,6 +373,25 @@ def test_aliasing_different_widths_01_sample(random, actx):
     new_ab = AbstractBlock(actx, new_bb)
     assert ab.subsumes(new_ab)
 
+
+def check_sampling_consistent(ab, all_fail=False):
+    n = 10
+
+    successes = 0
+
+    for i in range(n):
+        try:
+            ab.sample()
+            successes += 1
+        except SamplingError:
+            pass
+
+    if all_fail:
+        return successes == 0
+    else:
+        return successes == n
+
+
 def test_aliasing_different_widths_02_sample(random, actx):
     bb1 = make_bb(actx, "add ebx, edx\nsub rdx, rbx")
     bb2 = make_bb(actx, "add eax, edx\nsub rdx, rbx")
@@ -380,8 +399,7 @@ def test_aliasing_different_widths_02_sample(random, actx):
     ab = AbstractBlock(actx, bb1)
     ab.join(bb2)
 
-    for i in range(10):
-        ab.sample()
+    assert check_sampling_consistent(ab)
 
 def test_aliasing_different_types_01_sample(random, actx):
     bb1 = make_bb(actx, "add rbx, rdx\nsub rbx, rcx")
@@ -398,8 +416,59 @@ def test_aliasing_different_types_01_sample(random, actx):
     # instruction and get a similar case that would have to be resolved
     # somehow.
 
-    for i in range(10):
-        frankensteins_ab.sample()
+    assert check_sampling_consistent(frankensteins_ab)
+
+
+def test_aliasing_complex_constraints_01(random, actx):
+    bb = make_bb(actx, "add rdx, rdx\nadd rdx, rdx\nadd rdx, rdx")
+    ab = AbstractBlock(actx, bb)
+
+    assert check_sampling_consistent(ab)
+
+    sampled_bb = ab.sample()
+    operands = set()
+    for i in bb.insns:
+        for k, op in i._operands.items():
+            operands.add(op)
+    assert len(operands) == 1
+
+
+def test_aliasing_complex_constraints_02(random, actx):
+    bb = make_bb(actx, "add rdx, rdx\nadd rdx, rdx\nadd rdx, rdx")
+    ab = AbstractBlock(actx, bb)
+
+    assert check_sampling_consistent(ab)
+
+    aliasing_items = list(ab.abs_aliasing._aliasing_dict.items())
+    (k1, k2), af1 = aliasing_items[0]
+    af1.val = True
+
+    nv = None
+    for (k3, k4), af2 in aliasing_items:
+        if (k3, k4) == (k1, k2):
+            continue
+        if k3 == k2:
+            af2.val = False
+            nv = k4
+            break
+        if k4 == k2:
+            af2.val = False
+            nv = k3
+            break
+    else:
+        assert False
+
+    af3 = ab.abs_aliasing._aliasing_dict[(k1, nv)]
+    af3.val = True
+
+    for l, v in aliasing_items:
+        if l not in [(k1, k2), (k3, k4), (k1, nv)]:
+            v.set_to_top()
+
+    print(ab)
+    print(ab.sample())
+    assert check_sampling_consistent(ab, all_fail=True)
+
 
 def test_deepcopy(random, actx):
     bb = make_bb(actx, "add rax, 0x2a\nsub ebx, eax")
