@@ -11,7 +11,6 @@ TODO write this
   - [ ] at least for the insn part, we could rather easily sample from  gamma(new) \ gamma(old), maybe that's a good idea
   - [ ] think about making the required interesiting ratio relative to the interestingness ratio of the current state (probably not a good idea, since it could lead to a decay of the result quality)
   - [ ] maybe relax the aliasing domain to be operand-position independent?
-  - [ ] add an "at most 2^k uops used (on SKL)" domain, "no info about uops used" should be right under top
   - [ ] randomize generalization and try different randomizations per run
   - [ ] look into whether our discoveries cover also not-interesting samples
   - [ ] add a discovery overview inspector
@@ -23,6 +22,7 @@ TODO write this
     - [ ] measurements
     - [X] OSACA
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
+  - [X] add an "at most 2^k uops used (on SKL)" domain, "no info about uops used" should be right under top
   - [X] revisit the TODOs in the aliasing sampling
   - [X] omit obviously blocked insns from sampling
   - [X] slice witness traces without the optional instructions
