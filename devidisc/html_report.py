@@ -10,29 +10,30 @@ from .abstractioncontext import AbstractionContext
 from .configurable import load_json_config, pretty_print
 from .html_utils import prettify_absblock
 
-def load_absblock(abfile):
+def load_absblock(abfile, actx=None):
     # TODO the actx should be shared
     with open(abfile) as f:
         json_dict = json.load(f)
 
-    config_dict = json_dict['config']
+    if actx is None:
+        config_dict = json_dict['config']
 
-    config_dict['predmanager'] = None # we don't need that one here
+        config_dict['predmanager'] = None # we don't need that one here
 
-    actx = AbstractionContext(config=config_dict)
+        actx = AbstractionContext(config=config_dict)
 
     ab_dict = actx.json_ref_manager.resolve_json_references(json_dict['ab'])
 
     ab = AbstractBlock.from_json_dict(actx, ab_dict)
     return ab
 
-def generate_table_entry(base_dir, discovery):
-    absblock = load_absblock(base_dir / 'discoveries' / discovery)
+def generate_table_entry(actx, base_dir, discovery):
+    absblock = load_absblock(base_dir / 'discoveries' / discovery, actx=actx)
 
     res = dict()
     res['id'] = discovery
     res['pretty_str'] = prettify_absblock(absblock, skip_top=True)
-    res['num_insns'] = 42
+    res['num_insns'] = len(absblock.abs_insns)
     res['coverage'] = 42
     res['mean_interestingness'] = 42
     res['witness_length'] = 42
@@ -67,6 +68,9 @@ def make_report(campaign_dir, out_dir):
     abstraction_config = campaign_config["abstraction_config"]
     replacements['abstraction_config'] = format_abstraction_config(abstraction_config)
 
+    abstraction_config['predmanager'] = None # we don't need that one here
+    actx = AbstractionContext(config=abstraction_config)
+
     # TODO this could be improved
     replacements['tools'] = ", ".join(campaign_config['predictors'])
     replacements['termination'] = json.dumps(campaign_config['termination'])
@@ -90,8 +94,8 @@ def make_report(campaign_dir, out_dir):
         f.write(html_frame)
 
     table_data = []
-    for fn in os.listdir(base_dir / 'discoveries')[:10]:
-        table_data.append(generate_table_entry(base_dir, fn))
+    for fn in os.listdir(base_dir / 'discoveries')[:50]:
+        table_data.append(generate_table_entry(actx, base_dir, fn))
 
     table_str = json.dumps(table_data, indent=2)
 

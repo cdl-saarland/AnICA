@@ -30,7 +30,11 @@ html, body {
 #outermost {
     display: flex;
     flex-direction: column;
-    width: 1000px;
+    /* width: 1000px; */
+}
+
+.featurelist {
+  margin: 5px;
 }
 
 .flexcontainer {
