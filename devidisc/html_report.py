@@ -4,8 +4,7 @@ import json
 import os
 from pathlib import Path
 import shutil
-
-from scipy.stats.mstats import gmean
+from statistics import geometric_mean
 
 from .abstractblock import AbstractBlock
 from .abstractioncontext import AbstractionContext
@@ -13,7 +12,6 @@ from .configurable import load_json_config, pretty_print
 from .html_utils import prettify_absblock
 
 def load_absblock(abfile, actx=None):
-    # TODO the actx should be shared
     with open(abfile) as f:
         json_dict = json.load(f)
 
@@ -43,7 +41,7 @@ def generate_table_entry(actx, base_dir, discovery):
             eval_res[r['predictor']] = r['result']
         ints.append(actx.interestingness_metric.compute_interestingness(eval_res))
 
-    mean_interestingness = gmean(ints)
+    mean_interestingness = geometric_mean(ints)
 
     res = dict()
     res['id'] = discovery
