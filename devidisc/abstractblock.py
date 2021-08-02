@@ -11,6 +11,7 @@ from collections import defaultdict
 from copy import deepcopy, copy
 from enum import Enum
 import itertools
+import math
 import random
 import textwrap
 from typing import Optional, Union, Sequence
@@ -189,6 +190,75 @@ class EditDistanceAbstractFeature(AbstractFeature):
             if d > self.curr_dist:
                 self.curr_dist = d
                 self._normalize()
+        return
+
+
+class LogUpperBoundAbstractFeature(AbstractFeature):
+    def __init__(self, max_ub):
+        self.val = AbstractFeature.BOTTOM
+        self.max_ub = max_ub
+
+    def __deepcopy__(self, memo):
+        new_one = LogUpperBoundAbstractFeature(max_ub=self.max_ub)
+        new_one.val = self.val
+        return new_one
+
+    def to_json_dict(self):
+        return {
+                'val': self.val,
+                'max_ub': self.max_ub,
+            }
+
+    @staticmethod
+    def from_json_dict(json_dict):
+        res = LogUpperBoundAbstractFeature(max_ub=json_dict['max_ub'])
+        res.val = json_dict['val']
+        return res
+
+    def __str__(self) -> str:
+        if self.is_top():
+            return "TOP"
+        if self.is_bottom():
+            return "BOTTOM"
+        return f"at most {2**self.val - 1}"
+
+    def get_possible_expansions(self):
+        if self.is_top():
+            return []
+        if self.is_bottom() or self.val >= self.max_ub:
+            return [(AbstractFeature.TOP, 1)]
+        return [(self.val + 1, 1)]
+
+    def apply_expansion(self, expansion):
+        self.val = expansion
+
+    def is_top(self) -> bool:
+        return self.val == AbstractFeature.TOP
+
+    def is_bottom(self) -> bool:
+        return self.val == AbstractFeature.BOTTOM
+
+    def set_to_top(self):
+        self.val = AbstractFeature.TOP
+
+    def subsumes(self, other: AbstractFeature) -> bool:
+        assert isinstance(other, LogUpperBoundAbstractFeature)
+        return self.is_top() or other.is_bottom() or (self.val >= other.val)
+
+    def subsumes_feature(self, feature) -> bool:
+        assert False, "not yet implemented"
+
+    def join(self, feature):
+        if feature is None:
+            self.set_to_top() # TODO this might be inconsistent...
+            return
+        if self.is_top():
+            return
+        log_feature = math.floor(math.log2(len(feature) + 1))
+        if self.is_bottom():
+            self.val = log_feature
+            return
+        self.val = max(self.val, log_feature)
         return
 
 

@@ -31,6 +31,7 @@ _default_features = [
         ["mnemonic", ["editdistance", 3]], # "singleton"
         ["opschemes", "subset"],
         ["memory_usage", "subset_or_definitely_not"],
+        ["uops_on_SKL", ["log_ub", 5]],
         ["category", "singleton"],
         ["extension", "singleton"],
         ["isa-set", "singleton"],
@@ -98,6 +99,11 @@ class InsnFeatureManager(metaclass=ConfigMeta):
 
                 if kind == "singleton" or kind == "editdistance":
                     curr_idx[feature_value].append(ischeme)
+                elif kind == "log_ub":
+                    v = len(feature_value)
+                    log_feature = math.floor(math.log2(v + 1))
+                    for i in range(log_feature, args[0] + 1):
+                        curr_idx[i].append(ischeme)
                 elif kind == "subset":
                     for elem in feature_value:
                         curr_idx[elem].append(ischeme)
@@ -120,6 +126,9 @@ class InsnFeatureManager(metaclass=ConfigMeta):
                 kind, *args = kind
             if kind == "singleton":
                 absval = SingletonAbstractFeature()
+            elif kind == "log_ub":
+                assert len(args) == 1, "Wrong number of arguments for editditance feature: {len(args)} (expected: 1)"
+                absval = LogUpperBoundAbstractFeature(args[0])
             elif kind == "subset":
                 absval = SubSetAbstractFeature()
             elif kind == "subset_or_definitely_not":
@@ -207,7 +216,7 @@ class InsnFeatureManager(metaclass=ConfigMeta):
                     res.intersection_update(cached_val)
             return res
 
-        elif isinstance(value, SingletonAbstractFeature):
+        elif isinstance(value, SingletonAbstractFeature) or isinstance(value, LogUpperBoundAbstractFeature):
             x = value.val
             cached_val = index.get(x, None)
             assert cached_val is not None, f"Found no cached value for '{x}' in the index for '{feature_key}'."
@@ -289,6 +298,26 @@ class InsnFeatureManager(metaclass=ConfigMeta):
             remaining_features.discard('memory_usage')
 
         from_scheme = self.iwho_ctx.get_features(ischeme)
+
+        if 'uops_on_SKL' in remaining_features:
+            if from_scheme is None or len(from_scheme) == 0:
+                res['uops_on_SKL'] = None
+            else:
+                entry = from_scheme[0]
+
+                port_str = entry['measurements'].get('SKL', None)
+                if port_str is None:
+                    res['uops_on_SKL'] = None
+                else:
+                    uops = []
+                    for u in port_str.split('+'):
+                        n, ps = u.split('*')
+                        for x in range(int(n)):
+                            uops.append(ps)
+
+                    res['uops_on_SKL'] = uops
+            remaining_features.discard('uops_on_SKL')
+
         for key in remaining_features:
             if from_scheme is None or len(from_scheme) == 0:
                 res[key] = None
