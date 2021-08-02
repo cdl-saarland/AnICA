@@ -1114,11 +1114,15 @@ class AbstractBlock(Expandable):
         res['abs_aliasing'] = self.abs_aliasing.to_json_dict()
         return res
 
-    def dump_json(self, filename):
+    def dump_json(self, filename, **kwargs):
         actx = self.actx
         out_data = dict()
         out_data['config'] = actx.get_config()
         out_data['ab'] = actx.json_ref_manager.introduce_json_references(self.to_json_dict())
+
+        for k, v in kwargs.items():
+            out_data[k] = v
+
         with open(filename, 'w') as f:
             f.write(pretty_print(out_data))
 

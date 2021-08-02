@@ -207,7 +207,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             start_generalization_time = datetime.now()
 
             abstracted_bb = AbstractBlock(actx, min_bb)
-            generalized_bb, trace = generalize(actx, abstracted_bb)
+            generalized_bb, trace, last_result_ref = generalize(actx, abstracted_bb)
 
             generalization_time = ((datetime.now() - start_generalization_time) / timedelta(milliseconds=1)) / 1000
             stats['generalization_time'] = generalization_time
@@ -228,7 +228,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
             if out_dir is not None:
                 trace.dump_json(witness_dir / f'b{curr_num_batches:03}_i{idx:03}.json')
-                generalized_bb.dump_json(discovery_dir / f'b{curr_num_batches:03}_i{idx:03}.json')
+                generalized_bb.dump_json(discovery_dir / f'b{curr_num_batches:03}_i{idx:03}.json', result_ref=last_result_ref)
 
             write_report()
 
@@ -301,11 +301,12 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock):
     assert len(concrete_bbs) > 0
 
     interesting, result_ref = actx.interestingness_metric.is_mostly_interesting(concrete_bbs)
+    last_result_ref = result_ref
 
     if not interesting:
         logger.info("  samples from the BB are not uniformly interesting!")
         trace.add_termination(comment="Samples from the starting block are not interesting!", measurements=result_ref)
-        return abstract_bb, trace
+        return abstract_bb, trace, last_result_ref
 
     # a set of expansions that we tried to apply but did not yield interesting
     # results
@@ -344,6 +345,7 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock):
         if interesting:
             logger.info(f"  samples for expanding {chosen_expansion} are interesting, adjusting BB")
             trace.add_taken_expansion(chosen_expansion, result_ref)
+            last_result_ref = result_ref
             abstract_bb = working_copy
         else:
             logger.info(f"  samples for expanding {chosen_expansion} are not interesting, discarding")
@@ -354,6 +356,6 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock):
     trace.add_termination(comment="No more expansions remain.", measurements=None)
 
     logger.info("  generalization done.")
-    return abstract_bb, trace
+    return abstract_bb, trace, last_result_ref
 
 

@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 import shutil
 
+from scipy.stats.mstats import gmean
+
 from .abstractblock import AbstractBlock
 from .abstractioncontext import AbstractionContext
 from .configurable import load_json_config, pretty_print
@@ -22,20 +24,33 @@ def load_absblock(abfile, actx=None):
 
         actx = AbstractionContext(config=config_dict)
 
+    result_ref = json_dict['result_ref']
+
     ab_dict = actx.json_ref_manager.resolve_json_references(json_dict['ab'])
 
     ab = AbstractBlock.from_json_dict(actx, ab_dict)
-    return ab
+    return ab, result_ref
 
 def generate_table_entry(actx, base_dir, discovery):
-    absblock = load_absblock(base_dir / 'discoveries' / discovery, actx=actx)
+    absblock, result_ref = load_absblock(base_dir / 'discoveries' / discovery, actx=actx)
+
+    meas_series = actx.measurement_db.get_series(result_ref)
+
+    ints = []
+    for entry in meas_series['measurements']:
+        eval_res = dict()
+        for r in entry['predictor_runs']:
+            eval_res[r['predictor']] = r['result']
+        ints.append(actx.interestingness_metric.compute_interestingness(eval_res))
+
+    mean_interestingness = gmean(ints)
 
     res = dict()
     res['id'] = discovery
     res['pretty_str'] = prettify_absblock(absblock, skip_top=True)
     res['num_insns'] = len(absblock.abs_insns)
     res['coverage'] = 42
-    res['mean_interestingness'] = 42
+    res['mean_interestingness'] = mean_interestingness
     res['witness_length'] = 42
     res['witness_link'] = "foo"
     return res
