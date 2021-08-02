@@ -962,6 +962,8 @@ class AbstractAliasInfo(Expandable):
 
                 if not self.actx.iwho_augmentation.skip_for_aliasing(op_scheme):
                     # also choose this one for the entries in the same set
+                    # If the same/not_same sets do not describe a valid
+                    # partition, this could ignore an inconsistent constraint.
                     for k in same[idx]:
                         chosen_operand = ctx.adjust_operand(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
                         assert chosen_operand is not None, "This should have been ruled out by the above `ruled_out_by_` code!"
