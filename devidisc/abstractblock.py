@@ -777,6 +777,9 @@ class AbstractAliasInfo(Expandable):
         # components could have gone to TOP, we don't need them in the dict
         self.do_compaction()
 
+    def is_top(self):
+        return (not self.is_bot) and all(map(lambda x: x[1].is_top(), self._aliasing_dict.items()))
+
     def havoc(self):
         """Clear all constraints."""
         self.is_bot = False

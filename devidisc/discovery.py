@@ -18,7 +18,7 @@ from .witness import WitnessTrace
 import logging
 logger = logging.getLogger(__name__)
 
-def sample_block_list(abstract_bb, num):
+def sample_block_list(abstract_bb, num, insn_scheme_blacklist=[]):
     """Try to sample `num` samples from abstract_bb
 
     If samples fail, the result will have fewer entries.
@@ -26,7 +26,7 @@ def sample_block_list(abstract_bb, num):
     concrete_bbs = []
     for x in range(num):
         try:
-            concrete_bbs.append(abstract_bb.sample())
+            concrete_bbs.append(abstract_bb.sample(insn_scheme_blacklist=insn_scheme_blacklist))
         except SamplingError as e:
             logger.info("a sample failed: {e}")
     return concrete_bbs
@@ -107,6 +107,11 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             with open(report_file, 'w') as f:
                 json.dump(report, f, indent=2)
 
+    # A set of InsnSchemes for which we already have discoveries that subsume
+    # any block containing one of them. We can avoid sampling boring blocks
+    # by omitting those from sampling in the discovery phase.
+    insn_scheme_blacklist = set()
+
     logger.info("starting discovery loop")
     while True:
         # check if we should terminate for some reason
@@ -142,7 +147,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         else:
             sample_universe = start_point
 
-        concrete_bbs = sample_block_list(sample_universe, discovery_batch_size)
+        concrete_bbs = sample_block_list(sample_universe, discovery_batch_size, insn_scheme_blacklist=insn_scheme_blacklist)
         sampling_time = ((datetime.now() - start_sampling_time) / timedelta(milliseconds=1)) / 1000
         total_sampled += len(concrete_bbs)
         report['num_total_sampled'] = total_sampled
@@ -206,6 +211,13 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             discoveries.append(generalized_bb)
             curr_num_discoveries += 1
             report['num_discoveries'] = curr_num_discoveries
+
+            if len(generalized_bb.abs_insns) == 1 and generalized_bb.abs_aliasing.is_top():
+                # this discovery subsumes all blocks containing one of the
+                # InsnSchemes represented by its singular abstract instruction
+                ai = generalized_bb.abs_insns[0]
+                insn_scheme_blacklist.update(actx.insn_feature_manager.compute_feasible_schemes(ai.features))
+                logger.info(f"  updated InsnScheme blacklist: now {len(insn_scheme_blacklist)} entries")
 
             if out_dir is not None:
                 trace.dump_json(witness_dir / f'generalization_batch{curr_num_batches:03}_idx{idx:03}.json')
