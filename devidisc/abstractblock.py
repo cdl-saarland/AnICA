@@ -34,7 +34,11 @@ class SamplingError(Exception):
 # and acfg.resolve_json_references should be used
 
 class Expandable(ABC):
-    """TODO document"""
+    """Abstract base class for objects representing an element of a partially
+    ordered set with methods to expand the object, i.e. to change it to an
+    element that is larger.
+    """
+
     @abstractmethod
     def get_possible_expansions(self):
         """ Return a list of possible expansions for `apply_expansion()`.
@@ -52,9 +56,14 @@ class Expandable(ABC):
         pass
 
 class AbstractFeature(Expandable, ABC):
-    """ TODO document
+    """ Abstract base class for the most atomic abstraction component.
+
+    Several of these are used to abstract instructions and aliasing relations.
     """
     class SpecialValue(Enum):
+        """ Special values for minimal and maximal values that may be used in
+        implementations of this interface.
+        """
         BOTTOM=0
         TOP=1
 
@@ -164,8 +173,7 @@ class EditDistanceAbstractFeature(AbstractFeature):
                 and self.curr_dist >= other.curr_dist)
 
     def subsumes_feature(self, feature) -> bool:
-        # TODO implement?
-        assert False, "TODO implement?"
+        assert False, "not yet implemented"
 
     def join(self, feature):
         if feature is None:
@@ -610,7 +618,9 @@ def _lists2tuples(obj):
 
 
 class AbstractAliasInfo(Expandable):
-    """ TODO document """
+    """ An object of this class represents the aliasing relationships between
+    (operands of) instructions of a basic block.
+    """
 
     def __init__(self, actx):
         self.actx = actx
@@ -673,7 +683,10 @@ class AbstractAliasInfo(Expandable):
         av.apply_expansion(inner_expansion)
 
     def get_component(self, idx1, idx2):
-        """ TODO document """
+        """ Obtain (and create if necessary) an AbstractFeature for the given
+        pair of instruction/operand indices. The order of idx1 and idx2 does
+        not matter.
+        """
         key = tuple(sorted((idx1, idx2)))
         res = self._aliasing_dict.get(key, None)
         if res is None and self.is_bot:
@@ -710,7 +723,9 @@ class AbstractAliasInfo(Expandable):
         return "\n".join(entries)
 
     def subsumes(self, other: "AbstractAliasInfo") -> bool:
-        """ TODO document """
+        """ Check whether self subsumes all aliasing relationships represented
+        by other.
+        """
 
         if other.is_bot:
             return True
@@ -925,7 +940,13 @@ class AbstractAliasInfo(Expandable):
         return chosen_operands
 
     def sample(self, insn_schemes: Sequence[iwho.InsnScheme]) -> iwho.BasicBlock:
-        """ TODO document """
+        """ Instantiate the given list of InsnSchemes with operands such that
+        the aliasing constraints represented by self are not violated.
+
+        Raises a SamplingError if this fails (which might happen due to
+        contradicting constraints or because this implementation does not
+        backtrack wrong sampling decisions).
+        """
         if self.is_bot:
             raise SamplingError(f"Trying to sample a basic block with BOTTOM as aliasing information")
 
