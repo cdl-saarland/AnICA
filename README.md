@@ -8,7 +8,6 @@ TODO write this
   - [X] implement the core generalization algorithm
 
 ### Functional Extensions
-  - [ ] omit obviously blocked insns from sampling
   - [ ] at least for the insn part, we could rather easily sample from  gamma(new) \ gamma(old), maybe that's a good idea
   - [ ] think about making the required interesiting ratio relative to the interestingness ratio of the current state (probably not a good idea, since it could lead to a decay of the result quality)
   - [ ] revisit the TODOs in the aliasing sampling
@@ -25,6 +24,7 @@ TODO write this
     - [ ] measurements
     - [X] OSACA
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
+  - [X] omit obviously blocked insns from sampling
   - [X] slice witness traces without the optional instructions
   - [X] maybe give highest priority to the present feature and go to TOP in the absinsn once it is set to TOP
   - [X] check whether using an SMT solver for subsumption is necessary and reasonable
