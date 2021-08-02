@@ -886,9 +886,19 @@ class AbstractAliasInfo(Expandable):
                     if prev_choice is not None and not self.actx.iwho_augmentation.must_alias(prev_choice, adjusted_fixed_op):
                         raise SamplingError(f"InsnScheme {insn_schemes[k[0]]} requires different operands for {k[1]} from aliasing with fixed operands: {prev_choice} and {adjusted_fixed_op}")
 
-                    # TODO technically, we would still need to validate that we
-                    # don't violate a must-not-alias constraint, here or later
                     chosen_operands[k] = adjusted_fixed_op
+
+        # Validate that we don't violate a must-not-alias constraint.
+        # If we did, those InsnSchemes are not suitable for sampling with this
+        # aliasing info.
+        for k, v in chosen_operands.items():
+            for nk in not_same[k]:
+                nv = chosen_operands.get(nk)
+                if nv is None:
+                    continue
+                if self.actx.iwho_augmentation.may_alias(v, nv):
+                    raise SamplingError(f"Fixed operand requirements violate an aliasing constraint: operand {k[1]} of {insn_schemes[k[0]]} and operand {nk[1]} of {insn_schemes[nk[0]]} may not alias.")
+
         return chosen_operands
 
     def _choose_remaining_operands(self, chosen_operands, insn_schemes, same, not_same):

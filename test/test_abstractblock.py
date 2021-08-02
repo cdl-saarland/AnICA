@@ -383,8 +383,8 @@ def check_sampling_consistent(ab, all_fail=False):
         try:
             ab.sample()
             successes += 1
-        except SamplingError:
-            pass
+        except SamplingError as e:
+            print(e)
 
     if all_fail:
         return successes == 0
@@ -465,10 +465,27 @@ def test_aliasing_complex_constraints_02(random, actx):
         if l not in [(k1, k2), (k3, k4), (k1, nv)]:
             v.set_to_top()
 
-    print(ab)
-    print(ab.sample())
+    try:
+        print(ab)
+        print(ab.sample())
+    except:
+        pass
     assert check_sampling_consistent(ab, all_fail=True)
 
+def test_aliasing_complex_constraints_03(random, actx):
+    bb = make_bb(actx, "add rax, 0x2a\nadd rax, 0x2a")
+    ab = AbstractBlock(actx, bb)
+
+    assert check_sampling_consistent(ab)
+
+    for k, af in ab.abs_aliasing._aliasing_dict.items():
+        if af.val == True:
+            af.val = False
+            break
+
+    # The "add rax, IMM" instructions have an InsnScheme where rax is a fixed
+    # operand (because they have a special encoding).
+    assert check_sampling_consistent(ab, all_fail=True)
 
 def test_deepcopy(random, actx):
     bb = make_bb(actx, "add rax, 0x2a\nsub ebx, eax")
