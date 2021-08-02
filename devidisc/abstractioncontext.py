@@ -64,6 +64,9 @@ class IWHOConfig(metaclass=ConfigMeta):
                             and uarch_name in ctx.get_features(scheme)[0]["measurements"])
                     iwho_ctx.push_filter(uarch_filter)
                 continue
+            if key == 'only_mnemonics':
+                iwho_ctx.push_filter(iwho.Filters.only_mnemonics(args))
+                continue
             if key == 'whitelist':
                 iwho_ctx.push_filter(iwho.Filters.whitelist(args[0]))
                 continue

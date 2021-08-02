@@ -479,3 +479,43 @@ def test_json(actx, block_strs):
     assert str(original_ab) == str(json_decoded_ab)
 
 
+def test_sample_blacklist(random):
+    config = {
+        "insn_feature_manager": {
+            "features": [
+                ["exact_scheme", "singleton"],
+                ["mnemonic", "singleton"],
+                ["opschemes", "subset"],
+            ]
+        },
+        "iwho": { "context_specifier": "x86_uops_info",
+            "filters": ["no_cf", "only_mnemonics:add:sub"]
+            },
+        "interestingness": None,
+        "measurement_db": None,
+        "predmanager": None,
+    }
+
+    actx = AbstractionContext(config)
+
+    ab = AbstractBlock.make_top(actx, 1)
+
+    def check_mnemonics(ab, intended_mnemonics, sample_args={}):
+        used_mnemonics = set()
+        for i in range(10):
+            bb = ab.sample(**sample_args)
+            used_mnemonics.add(actx.iwho_ctx.extract_mnemonic(bb.insns[0]))
+
+        return used_mnemonics == set(intended_mnemonics)
+
+    assert check_mnemonics(ab, {"add", "sub"})
+    assert not check_mnemonics(ab, {"add"})
+    assert not check_mnemonics(ab, {"sub"})
+
+    bl = []
+    for ischeme in actx.iwho_ctx.filtered_insn_schemes:
+        if actx.iwho_ctx.extract_mnemonic(ischeme) == 'sub':
+            bl.append(ischeme)
+
+    assert check_mnemonics(ab, {"add"}, sample_args={"insn_scheme_blacklist": bl})
+

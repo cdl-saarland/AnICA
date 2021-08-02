@@ -588,15 +588,19 @@ class AbstractInsn(Expandable):
         for k, v in insn_features.items():
             self.features[k].join(v)
 
-    def sample(self) -> iwho.InsnScheme:
+    def sample(self, insn_scheme_blacklist: Sequence[iwho.InsnScheme]=[]) -> iwho.InsnScheme:
         """ Randomly choose one from the set of concrete instruction schemes
         represented by this abstract instruction.
+
+        No scheme from the insn_scheme_blacklist will be chosen.
         """
         feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(self.features)
 
+        feasible_schemes.difference_update(insn_scheme_blacklist)
+
         if len(feasible_schemes) == 0:
             raise SamplingError(f"No InsnScheme is feasible for AbstractInsn {self}")
-        return random.choice(feasible_schemes)
+        return random.choice(tuple(feasible_schemes))
 
 
 def _lists2tuples(obj):
@@ -1089,8 +1093,10 @@ class AbstractBlock(Expandable):
 
         self.abs_aliasing.join(bb)
 
-    def sample(self) -> iwho.BasicBlock:
+    def sample(self, insn_scheme_blacklist: Sequence[iwho.InsnScheme]=[]) -> iwho.BasicBlock:
         """ Randomly sample a basic block that is represented by self.
+
+        No scheme from the insn_scheme_blacklist will be chosen.
 
         May throw a SamplingError in case sampling is not possible. This could
         be because the constraints are actually contradictory (rather uncommon)
@@ -1099,7 +1105,7 @@ class AbstractBlock(Expandable):
         """
         insn_schemes = []
         for ai in self.abs_insns:
-            insn_scheme = ai.sample()
+            insn_scheme = ai.sample(insn_scheme_blacklist=insn_scheme_blacklist)
             insn_schemes.append(insn_scheme)
 
         return self.abs_aliasing.sample(insn_schemes)
