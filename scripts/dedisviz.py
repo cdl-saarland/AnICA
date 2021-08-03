@@ -24,7 +24,7 @@ def main():
     # TODO mode of operation: dot, html, end result, ...
     argparser.add_argument('tracefile', metavar='TRACEFILE', help='path to a witness trace file in json format')
 
-    args = parse_args_with_logging(argparser, "info")
+    args = parse_args_with_logging(argparser, "warning")
 
     with open(args.tracefile) as f:
         json_dict = json.load(f)

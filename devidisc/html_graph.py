@@ -1,5 +1,6 @@
 
 from copy import deepcopy
+from datetime import datetime, timedelta
 import json
 from multiprocessing import Pool
 from pathlib import Path
@@ -11,7 +12,11 @@ from .witness import WitnessTrace
 
 from .html_utils import prettify_absblock
 
+import logging
+logger = logging.getLogger(__name__)
+
 def trace_to_html_graph(witness: WitnessTrace, actx, measurement_db=None):
+    logger.info("start creating an html graph for the trace...")
     g = HTMLGraph("DeviDisc Visualization", actx=actx)
 
     abb = deepcopy(witness.start)
@@ -19,10 +24,13 @@ def trace_to_html_graph(witness: WitnessTrace, actx, measurement_db=None):
     parent = g.add_block(text=prettify_absblock(abb), link="empty_witness.html", kind="start")
     g.new_row()
 
+    mdb_time_passed = timedelta(0)
     for witness in witness.trace:
         meas_id = witness.measurements
         if meas_id is not None and measurement_db is not None:
+            start_time = datetime.now()
             measdict = measurement_db.get_series(meas_id)
+            mdb_time_passed += (datetime.now() - start_time)
             link = g.add_measurement_site(meas_id, measdict)
         else:
             link = "empty_witness.html"
@@ -47,6 +55,8 @@ def trace_to_html_graph(witness: WitnessTrace, actx, measurement_db=None):
             new_node = g.add_block(text=prettify_absblock(tmp_abb, witness.expansion), link=link, kind="notinteresting")
             g.add_edge(parent, new_node)
     g.new_row()
+    seconds_passed = mdb_time_passed.total_seconds()
+    logger.info(f"done creating an html graph for the trace. Spent {seconds_passed} seconds with measurementdb queries.")
 
     return g
 
@@ -232,7 +242,10 @@ class HTMLGraph:
         return link
 
     def generate(self, dest):
+        logger.info(f"start generating html graph to '{dest}'...")
         dest_path = Path(dest)
+
+        logger.info(f"setting up directories and copying files...")
 
         # make sure that the directory exists and is empty
         shutil.rmtree(dest_path, ignore_errors=True)
@@ -242,6 +255,8 @@ class HTMLGraph:
         shutil.copy(self.html_resources_path / "style.css", dest_path)
         shutil.copy(self.html_resources_path / "meas_style.css", dest_path)
         shutil.copy(self.html_resources_path / "empty_witness.html", dest_path)
+
+        logger.info(f"computing the grid contents...")
 
         # compute the grid components
         grid_content = ""
@@ -254,6 +269,8 @@ class HTMLGraph:
                 grid_content += textwrap.indent('</div>\n', 18*' ')
             grid_content += textwrap.indent('</div>\n', 16*' ')
 
+        logger.info(f"filling in the html template...")
+
         # load the html frame
         with open(self.html_resources_path / "frame.html", 'r') as f:
             frame = f.read()
@@ -263,12 +280,15 @@ class HTMLGraph:
         with open(dest_path / "index.html", "w") as f:
             f.write(html_text)
 
+        logger.info(f"computing connectors...")
         # arrows go to the script file
         connectors = []
         for src, dst in self.edges:
             connectors.append(f'drawConnector("{src}", "{dst}");')
         connector_str = "\n".join(connectors)
         connector_str = textwrap.indent(connector_str, 4*' ')
+
+        logger.info(f"filling in the js template...")
 
         with open(self.html_resources_path / "script.js", 'r') as f:
             script_frame = f.read()
@@ -281,6 +301,7 @@ class HTMLGraph:
         print("Only generating measurement sites remaining, feel free to open the site already.")
 
         if len(self.measurement_sites) > 0:
+            logger.info(f"start generating measurement sites")
             add_asm_to_measdicts(self.actx, [measdict for link, measdict in self.measurement_sites])
 
             meas_dir = dest_path / "measurements"
@@ -292,3 +313,6 @@ class HTMLGraph:
                 site_str = _generate_measurement_site(self.actx, meas_frame_str, measdict)
                 with open(dest_path / link, "w") as f:
                     f.write(site_str)
+            logger.info(f"done generating measurement sites")
+
+        logger.info(f"done generating html graph to '{dest}'")
