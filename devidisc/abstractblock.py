@@ -113,6 +113,14 @@ class EditDistanceAbstractFeature(AbstractFeature):
         self.curr_dist = 0
         self.max_dist = max_dist
 
+    def __eq__(self, other):
+        if not isinstance(other, EditDistanceAbstractFeature):
+            return False
+        return self.top == other.top and self.base == other.base and self.curr_dist == other.curr_dist
+
+    def __hash__(self):
+        return hash((self.top, self.base, self.curr_dist))
+
     def _normalize(self):
         if not self.top and self.curr_dist > self.max_dist:
             self.set_to_top()
@@ -198,6 +206,14 @@ class LogUpperBoundAbstractFeature(AbstractFeature):
         self.val = AbstractFeature.BOTTOM
         self.max_ub = max_ub
 
+    def __eq__(self, other):
+        if not isinstance(other, LogUpperBoundAbstractFeature):
+            return False
+        return self.val == other.val
+
+    def __hash__(self):
+        return hash(self.val)
+
     def __deepcopy__(self, memo):
         new_one = LogUpperBoundAbstractFeature(max_ub=self.max_ub)
         new_one.val = self.val
@@ -265,6 +281,14 @@ class LogUpperBoundAbstractFeature(AbstractFeature):
 class SingletonAbstractFeature(AbstractFeature):
     def __init__(self):
         self.val = AbstractFeature.BOTTOM
+
+    def __eq__(self, other):
+        if not isinstance(other, SingletonAbstractFeature):
+            return False
+        return self.val == other.val
+
+    def __hash__(self):
+        return hash(self.val)
 
     def __deepcopy__(self, memo):
         new_one = SingletonAbstractFeature()
@@ -340,6 +364,17 @@ class SubSetAbstractFeature(AbstractFeature):
     """
     def __init__(self):
         self.val = AbstractFeature.BOTTOM
+
+    def __eq__(self, other):
+        if not isinstance(other, SubSetAbstractFeature):
+            return False
+        return self.val == other.val
+
+    def __hash__(self):
+        if isinstance(self.val, set):
+            return hash(frozenset(self.val))
+        else:
+            return hash(self.val)
 
     def __deepcopy__(self, memo):
         new_one = SubSetAbstractFeature()
@@ -459,6 +494,14 @@ class SubSetOrDefinitelyNotAbstractFeature(AbstractFeature):
 
         self.is_in_subfeature = SingletonAbstractFeature()
 
+    def __eq__(self, other):
+        if not isinstance(other, SubSetOrDefinitelyNotAbstractFeature):
+            return False
+        return self.subfeature == other.subfeature and self.is_in_subfeature == other.is_in_subfeature
+
+    def __hash__(self):
+        return hash((self.subfeature, self.is_in_subfeature))
+
     def __deepcopy__(self, memo):
         new_one = self.__class__()
         new_one.subfeature = deepcopy(self.subfeature, memo)
@@ -565,6 +608,14 @@ class AbstractInsn(Expandable):
     def __init__(self, actx: "AbstractionContext"):
         self.actx = actx
         self.features = actx.insn_feature_manager.init_abstract_features()
+
+    def __eq__(self, other):
+        if not isinstance(other, AbstractInsn):
+            return False
+        return self.features == other.features
+
+    def __hash__(self):
+        return hash(frozenset(self.features.items()))
 
     def __deepcopy__(self, memo):
         new_one = AbstractInsn(self.actx)
@@ -711,6 +762,14 @@ class AbstractAliasInfo(Expandable):
         # In a valid state, an object of this class with entries in the
         # _aliasing_dict will have is_bot set to False.
         self.is_bot = True
+
+    def __eq__(self, other):
+        if not isinstance(other, AbstractAliasInfo):
+            return False
+        return self.is_bot == other.is_bot and self._aliasing_dict == other._aliasing_dict
+
+    def __hash__(self):
+        return hash((self.is_bot, frozenset(self._aliasing_dict.items())))
 
     def to_json_dict(self):
         res = dict()
@@ -1097,6 +1156,14 @@ class AbstractBlock(Expandable):
 
         if bb is not None:
             self.join(bb)
+
+    def __eq__(self, other):
+        if not isinstance(other, AbstractBlock):
+            return False
+        return self.abs_insns == other.abs_insns and self.abs_aliasing == other.abs_aliasing
+
+    def __hash__(self):
+        return hash((tuple(self.abs_insns), self.abs_aliasing))
 
     @staticmethod
     def make_top(actx, num_insns):
