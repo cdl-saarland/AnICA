@@ -204,33 +204,55 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
                 continue
 
             # if not: generalize
-            start_generalization_time = datetime.now()
-
             abstracted_bb = AbstractBlock(actx, min_bb)
-            generalized_bb, trace, last_result_ref = generalize(actx, abstracted_bb)
 
-            generalization_time = ((datetime.now() - start_generalization_time) / timedelta(milliseconds=1)) / 1000
-            stats['generalization_time'] = generalization_time
-            stats['witness_len'] = len(trace)
-            # TODO ab height
+            gen_stats = []
+            stats['per_generalization_stats'] = gen_stats
 
-            logger.info("  adding new discovery:" + textwrap.indent(str(generalized_bb), 4*' '))
-            discoveries.append(generalized_bb)
-            curr_num_discoveries += 1
-            report['num_discoveries'] = curr_num_discoveries
+            previous_generalizations = set()
+            for gen_idx in range(0, actx.discovery_cfg.generalization_attempts):
+                generalization_id = f'b{curr_num_batches:03}_i{idx:03}_g{gen_idx:03}'
 
-            if len(generalized_bb.abs_insns) == 1 and generalized_bb.abs_aliasing.is_top():
-                # this discovery subsumes all blocks containing one of the
-                # InsnSchemes represented by its singular abstract instruction
-                ai = generalized_bb.abs_insns[0]
-                insn_scheme_blacklist.update(actx.insn_feature_manager.compute_feasible_schemes(ai.features))
-                logger.info(f"  updated InsnScheme blacklist: now {len(insn_scheme_blacklist)} entries")
+                logger.info(f'  performing generalization {generalization_id}')
 
-            if out_dir is not None:
-                trace.dump_json(witness_dir / f'b{curr_num_batches:03}_i{idx:03}.json')
-                generalized_bb.dump_json(discovery_dir / f'b{curr_num_batches:03}_i{idx:03}.json', result_ref=last_result_ref)
+                gen_stat_entry = dict()
+                gen_stats.append(gen_stat_entry)
 
-            write_report()
+                gen_stat_entry['id'] = generalization_id
+
+                working_bb = deepcopy(abstracted_bb)
+
+                start_generalization_time = datetime.now()
+                generalized_bb, trace, last_result_ref = generalize(actx, working_bb)
+
+                generalization_time = ((datetime.now() - start_generalization_time) / timedelta(milliseconds=1)) / 1000
+                gen_stat_entry['generalization_time'] = generalization_time
+                gen_stat_entry['witness_len'] = len(trace)
+
+                if generalized_bb in previous_generalizations:
+                    logger.info('  generalized to the same abstract block as before')
+                    gen_stat_entry['already_found'] = True
+                    continue
+                previous_generalizations.add(generalized_bb)
+                gen_stat_entry['already_found'] = False
+
+                logger.info("  adding new discovery:" + textwrap.indent(str(generalized_bb), 4*' '))
+                discoveries.append(generalized_bb)
+                curr_num_discoveries += 1
+                report['num_discoveries'] = curr_num_discoveries
+
+                if len(generalized_bb.abs_insns) == 1 and generalized_bb.abs_aliasing.is_top():
+                    # this discovery subsumes all blocks containing one of the
+                    # InsnSchemes represented by its singular abstract instruction
+                    ai = generalized_bb.abs_insns[0]
+                    insn_scheme_blacklist.update(actx.insn_feature_manager.compute_feasible_schemes(ai.features))
+                    logger.info(f"  updated InsnScheme blacklist: now {len(insn_scheme_blacklist)} entries")
+
+                if out_dir is not None:
+                    trace.dump_json(witness_dir / f'{generalization_id}.json')
+                    generalized_bb.dump_json(discovery_dir / f'{generalization_id}.json', result_ref=last_result_ref)
+
+                write_report()
 
         batch_time = ((datetime.now() - batch_start_time) / timedelta(milliseconds=1)) / 1000
         per_batch_entry['batch_time'] = batch_time
@@ -327,10 +349,16 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock):
             logger.info("  no more component left for expansion")
             break
 
-        # choose the expansion that maximizes sampling freedom
-        expansions.sort(key=lambda x: x[1], reverse=True)
+        strategy = actx.discovery_cfg.generalization_strategy
+        if strategy == "max_benefit":
+            # choose the expansion that maximizes sampling freedom
+            expansions.sort(key=lambda x: x[1], reverse=True)
+            chosen_expansion, benefit = expansions[0]
+        elif strategy == "random":
+            chosen_expansion, benefit = random.choice(expansions)
+        else:
+            assert False, f"unknown generalization strategy: {strategy}"
 
-        chosen_expansion, benefit = expansions[0]
         working_copy.apply_expansion(chosen_expansion)
 
         logger.info(f"  evaluating samples for expanding {chosen_expansion} (benefit: {benefit})")

@@ -25,6 +25,11 @@ class DiscoveryConfig(metaclass=ConfigMeta):
         generalization_batch_size = (100,
             'the number of basic blocks to sample when validating that an '
             'abstract block is still interesting'),
+        generalization_attempts = (3,
+            'the number of randomized attempts to generalize each discovery'),
+        generalization_strategy = ("random",
+            'the strategy to use for selecting expansions during generalization. '
+            'Options are: "random", "max_benefit"'),
     )
 
     def __init__(self, config):
