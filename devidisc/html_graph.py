@@ -213,7 +213,7 @@ class HTMLGraph:
 
         self.edges = []
 
-        self.html_resources_path = Path(__file__).parent.parent / "html_resources"
+        self.html_resources_path = Path(__file__).parent.parent / "html_resources" / "witness_site"
 
         self.measurement_sites = []
 
