@@ -6,7 +6,7 @@ from .configurable import ConfigMeta
 class MeasurementDB(metaclass=ConfigMeta):
     """TODO document"""
     config_options = dict(
-        db_name = ('measurements.db',
+        db_path = ('measurements.db',
             'path and file name of the sqlite3 database to use'),
     )
 
@@ -17,7 +17,7 @@ class MeasurementDB(metaclass=ConfigMeta):
         self.nesting_level = 0 # for making the ContextManager re-entrant
 
     def _init_con(self):
-        self.con = sqlite3.connect(self.db_name)
+        self.con = sqlite3.connect(self.db_path)
         self.con.row_factory = sqlite3.Row
 
     def _deinit_con(self):

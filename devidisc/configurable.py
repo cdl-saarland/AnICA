@@ -33,7 +33,7 @@ def _make_paths_absolute(basepath, obj):
             new_value = None
             if key.endswith('_path') and isinstance(value, str):
                 path = Path(value)
-                if str(path).startswith('.'):
+                if value.startswith('.'):
                     path = basepath.joinpath(path)
                 new_value = str(path)
             else:

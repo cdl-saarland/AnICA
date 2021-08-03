@@ -67,14 +67,14 @@ def main():
             predictor_keys = config['predictors']
 
             # set the db path
-            actx_config['measurement_db'] = {"db_name": str(curr_out_dir / 'measurements.db')}
+            actx_config['measurement_db'] = {"db_path": str(curr_out_dir / 'measurements.db')}
 
             actx = AbstractionContext(config=actx_config)
             actx.predmanager.set_predictors(predictor_keys)
 
             with open(curr_out_dir / 'campaign_config.json', 'w') as f:
                 outdict = {**config, "abstraction_config": actx.get_config()}
-                outdict['abstraction_config']['measurement_db']['db_name'] = "./measurements.db"
+                outdict['abstraction_config']['measurement_db']['db_path'] = "./measurements.db"
                 print(pretty_print(outdict), file=f)
 
             # initialize the measurement db

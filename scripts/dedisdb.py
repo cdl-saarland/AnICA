@@ -35,7 +35,7 @@ def main():
         return 1
 
 
-    with MeasurementDB({"db_name": db_name}) as dbman:
+    with MeasurementDB({"db_path": db_name}) as dbman:
         if args.create:
             dbman.create_tables()
         elif args.measurements is not None:

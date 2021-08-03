@@ -23,7 +23,7 @@
   },
   "sampling": {},
   "measurement_db": {
-    "db_name": "measurements.db"
+    "db_path": "measurements.db"
   },
   "predmanager": {
     "registry_path": "../predictors/pred_registry.json",
