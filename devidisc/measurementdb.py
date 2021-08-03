@@ -121,6 +121,12 @@ class MeasurementDB(metaclass=ConfigMeta):
                 remark TEXT
             )""")
 
+        # create an index to dramatically speed up `get_series()` queries
+        cur.execute("""
+            CREATE INDEX IF NOT EXISTS predictor_runs_idx ON
+                predictor_runs(measurement_id)
+            """)
+
         cur.execute("""
             CREATE TABLE IF NOT EXISTS uarchs (
                 uarch_id INTEGER NOT NULL PRIMARY KEY,
