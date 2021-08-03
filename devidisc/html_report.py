@@ -45,10 +45,36 @@ def load_witness(trfile, actx=None):
 
 
 def format_abstraction_config(abstraction_config):
-    res = "<div class=\"code\">"
-    res += pretty_print(abstraction_config, filter_doc=True)
+    res = "<div class='absconfig'>\n"
+
+    res += "<ul class='absconfig_ul'>\n"
+
+    for k, v in abstraction_config.items():
+        if k in ('measurement_db', 'predmanager'):
+            continue
+        res += "  <li class='absconfig_li'>"
+        res += f"{k}:\n"
+        res += "    <ul class='absconfig_ul_inner'>\n"
+        for ki, vi in v.items():
+            if ki.endswith(".doc"):
+                continue
+            doc = v.get(f'{ki}.doc', None)
+            res += "      <li class='absconfig_li_inner'>"
+            entry_str = f"{ki}: {json.dumps(vi)}"
+
+            if doc is not None:
+                entry_str = "<div class='tooltip'>" + entry_str + "<span class='tooltiptext'>" + doc + "</span></div>"
+
+            res += entry_str
+            res += "</li>\n"
+        res += "    </ul>\n"
+        res += "  </li>\n"
+
+    res += "</ul>\n"
+
+    # res += pretty_print(abstraction_config, filter_doc=True)
     # TODO this could be improved with a proper structure and using the docs for mouseover hints
-    res += "</div>"
+    res += "</div>\n"
     return res
 
 def make_report(campaign_dir, out_dir):
