@@ -4,6 +4,10 @@ html, body {
     margin: 0;
 }
 
+#title {
+    margin: 10px;
+}
+
 .discovery_table {
   margin: auto;
   border-collapse: collapse;

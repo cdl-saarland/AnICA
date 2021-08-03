@@ -10,7 +10,7 @@ import shutil
 
 from .witness import WitnessTrace
 
-from .html_utils import prettify_absblock
+from .html_utils import prettify_absblock, make_link
 
 import logging
 logger = logging.getLogger(__name__)
@@ -149,7 +149,6 @@ def _generate_measurement_site(actx, frame_str, measdict):
 def _asm_decode_fun(task):
     return (task[0], task[1], task[3].hex2asm(task[2]))
 
-link_frame = '<a href="https://{url}" target="_blank" rel="noopener noreferrer">{caption}</a>'
 
 def add_asm_to_measdicts(actx, series_dicts):
     iwho_ctx = actx.iwho_ctx
@@ -177,10 +176,10 @@ def add_asm_to_measdicts(actx, series_dicts):
                     general_features = features[0]
                     ref_url = general_features.get("ref_url", None)
                     if ref_url is not None:
-                        annotations.append(link_frame.format(url=ref_url, caption="ref"))
+                        annotations.append(make_link(url=ref_url, caption="ref"))
                     uops_info_url = general_features.get("uops_info_url", None)
                     if uops_info_url is not None:
-                        annotations.append(link_frame.format(url=uops_info_url, caption="uops.info"))
+                        annotations.append(make_link(url=uops_info_url, caption="uops.info"))
                 if len(annotations) > 0:
                     ann = ",".join(annotations)
                     ann_insn_str += f'<span class="asm_comment">  ; [{ann}]</span>'

@@ -7,11 +7,29 @@ function cmp_num(a, b) {
     return a - b;
 }
 
+function cmp_str(a, b) {
+    return a < b ? -1 : 1;
+}
+
+function cmp_num_str(a, b) {
+    if (a == "inf") {
+        a = Infinity;
+    } else {
+        a = parseFloat(a);
+    }
+    if (b == "inf") {
+        b = Infinity;
+    } else {
+        b = parseFloat(b);
+    }
+    return a - b;
+}
+
 const sort_funs = {
-    "id": cmp_num,
+    "id": cmp_str,
     "num_insns": cmp_num,
     "coverage": cmp_num,
-    "mean_interestingness": cmp_num,
+    "mean_interestingness": cmp_num_str,
     "witness_length": cmp_num
 };
 

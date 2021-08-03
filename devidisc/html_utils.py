@@ -1,4 +1,12 @@
+""" TODO document """
 
+
+def make_link(url, caption, is_relative=False):
+    prefix = ""
+    if not is_relative:
+        prefix = "https://"
+    link_frame = '<a href="{prefix}{url}" target="_blank" rel="noopener noreferrer">{caption}</a>'
+    return link_frame.format(prefix=prefix, url=url, caption=caption)
 
 
 def prettify_absinsn(absinsn, hl_feature=None, skip_top=False):
