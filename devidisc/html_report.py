@@ -146,6 +146,10 @@ class HTMLReporter:
         with open(out_dir / 'script.js', 'w') as f:
             f.write(js_frame)
 
+        print("Only witness sites remain")
+        for fn in os.listdir(base_dir / 'discoveries'):
+            self._generate_trace_site(actx, fn)
+
 
     def _generate_table_entry(self, actx, discovery):
         base_dir = self.base_dir
@@ -168,11 +172,7 @@ class HTMLReporter:
 
         mean_interestingness = geometric_mean(ints)
 
-        witness = load_witness(base_dir / 'witnesses' / f'{discovery}.json', actx=actx)
-        with actx.measurement_db as mdb:
-            g = hg.trace_to_html_graph(witness, actx=actx, measurement_db=mdb)
-            g.generate(out_dir / "witness_traces" / f"{discovery}")
-            witness_link = f"./witness_traces/{discovery}/index.html"
+        witness_link = f"./witness_traces/{discovery}/index.html"
 
         res = dict()
         res['id'] = discovery
@@ -180,7 +180,20 @@ class HTMLReporter:
         res['num_insns'] = len(absblock.abs_insns)
         res['coverage'] = 42 # TODO
         res['mean_interestingness'] = f"{mean_interestingness:.3f}"
-        res['witness_length'] = len(witness)
+        res['witness_length'] = 42
+        # res['witness_length'] = len(witness)
         res['witness_link'] = make_link(url=witness_link, caption="link", is_relative=True)
         return res
+
+    def _generate_trace_site(self, actx, discovery):
+        base_dir = self.base_dir
+        out_dir = self.out_dir
+
+        discovery, ext = os.path.splitext(discovery)
+        assert ext == '.json'
+
+        witness = load_witness(base_dir / 'witnesses' / f'{discovery}.json', actx=actx)
+        with actx.measurement_db as mdb:
+            g = hg.trace_to_html_graph(witness, actx=actx, measurement_db=mdb)
+            g.generate(out_dir / "witness_traces" / f"{discovery}")
 
