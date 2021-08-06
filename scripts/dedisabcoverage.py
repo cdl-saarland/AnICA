@@ -15,7 +15,7 @@ sys.path.append(import_path)
 
 from devidisc.abstractioncontext import AbstractionContext
 from devidisc.abstractblock import AbstractBlock
-from devidisc.satsumption import compute_coverage
+from devidisc.satsumption import ab_coverage
 
 
 def main():
@@ -38,15 +38,7 @@ def main():
 
     ab = AbstractBlock.from_json_dict(actx, ab_dict)
 
-    concrete_bbs = []
-    sample_universe = AbstractBlock.make_top(actx, 5)
-    for x in range(10000):
-        try:
-            concrete_bbs.append(sample_universe.sample())
-        except SamplingError as e:
-            logger.info("a sample failed: {e}")
-
-    coverage_ratio = compute_coverage(ab, concrete_bbs)
+    coverage_ratio = ab_coverage(ab, num_samples=10000)
     print(f"coverage ratio: {coverage_ratio}")
 
 if __name__ == "__main__":
