@@ -30,7 +30,7 @@ class Timer:
 
     parent_stack = []
 
-    enabled = True
+    enabled = False
 
     def __init__(self, identifier, log=True, register_parent=True, accumulate=False):
         self.identifier = identifier
@@ -92,7 +92,7 @@ class Timer:
         if self.register_parent:
             self.parent_stack.pop()
 
-        if self.accumulate:
+        if self.accumulate and len(self.parent_stack) > 0:
             self.parent_stack[-1]._add_sub_result(key=self.identifier, time=secs, sub_sub_results=self.sub_results)
 
     def _add_sub_result(self, key, time, sub_sub_results):
