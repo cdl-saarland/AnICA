@@ -5,6 +5,7 @@ from typing import Optional
 from graphviz import Digraph
 
 from .abstractblock import AbstractBlock
+from .configurable import store_json_config
 
 class WitnessTrace:
     class Witness:
@@ -105,8 +106,7 @@ class WitnessTrace:
         out_data = dict()
         out_data['config'] = actx.get_config()
         out_data['trace'] = actx.json_ref_manager.introduce_json_references(self.to_json_dict())
-        with open(filename, 'w') as f:
-            json.dump(out_data, f, indent=2)
+        store_json_config(out_data, filename)
 
     def to_dot(self):
         g = Digraph()

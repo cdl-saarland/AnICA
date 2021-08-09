@@ -1,7 +1,8 @@
 """ TODO document"""
 
-from pathlib import Path
 import json
+import os
+from pathlib import Path
 import textwrap
 
 def load_json_config(path):
@@ -42,6 +43,45 @@ def _make_paths_absolute(basepath, obj):
         return res
     elif isinstance(obj, list) or isinstance(obj, tuple):
         return tuple(( _make_paths_absolute(basepath, x) for x in obj))
+    else:
+        return obj
+
+def store_json_config(json_dict, path):
+    """ Store the given dict as a pretty json file at the location specified by
+    `path`. Path fields whose key ends with `_path` are made relative to
+    `path`.
+    """
+
+    path = Path(path)
+
+    basepath = path.parent.resolve()
+    res = _make_paths_relative(basepath, json_dict)
+
+    with open(path, 'w') as f:
+        f.write(pretty_print(res))
+
+
+def _make_paths_relative(basepath, obj):
+    """ Recursive helper method for `store_json_config`, to make paths
+    relative.
+    """
+    if isinstance(obj, dict):
+        res = dict()
+        for key, value in obj.items():
+            new_value = None
+            if key.endswith('_path') and isinstance(value, str):
+                path = Path(value)
+                path = path.resolve()
+                path = os.path.relpath(path, start=basepath)
+                new_value = str(path)
+                if not new_value[0] == '.':
+                    new_value = './' + new_value
+            else:
+                new_value = _make_paths_relative(basepath, value)
+            res[key] = new_value
+        return res
+    elif isinstance(obj, list) or isinstance(obj, tuple):
+        return tuple(( _make_paths_relative(basepath, x) for x in obj))
     else:
         return obj
 

@@ -5,7 +5,6 @@
 
 import argparse
 from datetime import datetime
-import json
 from pathlib import Path
 import random
 import os
@@ -17,7 +16,7 @@ import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
 from devidisc.abstractioncontext import AbstractionContext
-from devidisc.configurable import load_json_config, pretty_print
+from devidisc.configurable import load_json_config, store_json_config
 import devidisc.discovery as discovery
 
 
@@ -72,10 +71,8 @@ def main():
             actx = AbstractionContext(config=actx_config)
             actx.predmanager.set_predictors(predictor_keys)
 
-            with open(curr_out_dir / 'campaign_config.json', 'w') as f:
-                outdict = {**config, "abstraction_config": actx.get_config()}
-                outdict['abstraction_config']['measurement_db']['db_path'] = "./measurements.db"
-                print(pretty_print(outdict), file=f)
+            outdict = {**config, "abstraction_config": actx.get_config()}
+            store_json_config(outdict, curr_out_dir / 'campaign_config.json')
 
             # initialize the measurement db
             with actx.measurement_db as mdb:

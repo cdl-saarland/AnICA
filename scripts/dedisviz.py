@@ -14,6 +14,7 @@ import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
 from devidisc.abstractioncontext import AbstractionContext
+from devidisc.configurable import load_json_config
 from devidisc.discovery import WitnessTrace
 from devidisc.html_graph import trace_to_html_graph
 
@@ -26,8 +27,7 @@ def main():
 
     args = parse_args_with_logging(argparser, "warning")
 
-    with open(args.tracefile) as f:
-        json_dict = json.load(f)
+    json_dict = load_json_config(args.tracefile)
 
     config_dict = json_dict['config']
 

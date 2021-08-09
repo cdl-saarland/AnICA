@@ -2,7 +2,6 @@
 from typing import Optional, Sequence
 from copy import deepcopy
 from datetime import datetime, timedelta
-import json
 import math
 import os
 import random
@@ -12,6 +11,7 @@ from pathlib import Path
 
 from .abstractblock import AbstractBlock, SamplingError
 from .abstractioncontext import AbstractionContext
+from .configurable import store_json_config
 from .satsumption import check_subsumed
 from .witness import WitnessTrace
 
@@ -104,8 +104,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             if report_file.exists():
                 # backup previous version, for safety
                 shutil.copy(report_file, out_dir / 'report.bak.json')
-            with open(report_file, 'w') as f:
-                json.dump(report, f, indent=2)
+            store_json_config(report, report_file)
 
     # A set of InsnSchemes for which we already have discoveries that subsume
     # any block containing one of them. We can avoid sampling boring blocks

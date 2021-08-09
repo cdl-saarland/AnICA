@@ -19,7 +19,7 @@ from typing import Optional, Union, Sequence
 import editdistance
 import iwho
 
-from .configurable import pretty_print
+from .configurable import store_json_config
 
 import logging
 logger = logging.getLogger(__name__)
@@ -1190,8 +1190,7 @@ class AbstractBlock(Expandable):
         for k, v in kwargs.items():
             out_data[k] = v
 
-        with open(filename, 'w') as f:
-            f.write(pretty_print(out_data))
+        store_json_config(out_data, filename)
 
     @staticmethod
     def from_json_dict(actx, json_dict):
