@@ -100,7 +100,7 @@ def _generate_measurement_site(actx, frame_str, measdict):
     for m in measdict["measurements"]:
         meas_id = m.get("measurement_id", "N")
         hexblock = m["input"]
-        asmblock = m["asm_str"]
+        asmblock = m.get("asm_str", "ASM not available")
         predictor_run_texts = []
         for r in m["predictor_runs"]:
             predictor_text = ", ".join(r["predictor"]) + ", " + r["uarch"]
