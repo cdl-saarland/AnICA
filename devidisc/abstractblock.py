@@ -158,7 +158,7 @@ class EditDistanceAbstractFeature(AbstractFeature):
     def get_possible_expansions(self):
         if self.is_top():
             return []
-        return [(self.curr_dist + 1, 1)]
+        return [(self.curr_dist + 1, 0)]
 
     def apply_expansion(self, expansion):
         self.curr_dist = expansion
@@ -242,8 +242,8 @@ class LogUpperBoundAbstractFeature(AbstractFeature):
         if self.is_top():
             return []
         if self.is_bottom() or self.val >= self.max_ub:
-            return [(AbstractFeature.TOP, 1)]
-        return [(self.val + 1, 1)]
+            return [(AbstractFeature.TOP, 0)]
+        return [(self.val + 1, 0)]
 
     def apply_expansion(self, expansion):
         self.val = expansion
@@ -310,7 +310,7 @@ class SingletonAbstractFeature(AbstractFeature):
     def get_possible_expansions(self):
         if self.is_top():
             return []
-        return [(AbstractFeature.TOP, 1)]
+        return [(AbstractFeature.TOP, 0)]
 
     def apply_expansion(self, expansion):
         self.val = expansion
@@ -400,7 +400,7 @@ class SubSetAbstractFeature(AbstractFeature):
         if self.is_top():
             return []
         if self.is_bottom():
-            return [(AbstractFeature.TOP, 1)]
+            return [(AbstractFeature.TOP, 0)]
         res = []
         for v in self.val:
             res.append((v, 1))
@@ -525,7 +525,7 @@ class SubSetOrDefinitelyNotAbstractFeature(AbstractFeature):
         if self.is_top():
             return []
         if self.is_bottom() or self.is_in_subfeature.val == False or self.subfeature.is_top():
-            return [(AbstractFeature.TOP, 1)]
+            return [(AbstractFeature.TOP, 0)]
 
         return self.subfeature.get_possible_expansions()
 
@@ -653,6 +653,16 @@ class AbstractInsn(Expandable):
         return all(map(lambda x: x[1].is_top(), self.features.items()))
 
     def compute_benefit(self, expansion):
+        """ Compute the increase in fitting insn schemes if we would apply this
+        `expansion` (as a ratio (len(fitting_after) / len(fitting_before))).
+
+        This should always be >= 1 (since expansions should only expand, i.e.
+        allow for more insn schemes).
+        """
+        num_prev_feasible_schemes = len(self.actx.insn_feature_manager.compute_feasible_schemes(self.features))
+
+        assert num_prev_feasible_schemes > 0, "Computing benefit for an AbstractInsn without feasible schemes!"
+
         absfeature_dict = { k: v for k, v in self.features.items() }
 
         replace_k, inner_expansion = expansion
@@ -661,8 +671,7 @@ class AbstractInsn(Expandable):
         absfeature_dict[replace_k] = replace_feature
 
         feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(absfeature_dict)
-        return len(feasible_schemes)
-
+        return len(feasible_schemes) / num_prev_feasible_schemes
 
     def get_possible_expansions(self):
         if not self.features['exact_scheme'].is_top():
