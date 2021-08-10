@@ -212,9 +212,8 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             previous_generalizations = set()
             for curr_strategy, num_attempts in actx.discovery_cfg.generalization_strategy:
                 for x in range(num_attempts):
-                    gen_idx += 1
-
                     generalization_id = f'b{curr_num_batches:03}_i{idx:03}_g{gen_idx:03}'
+                    gen_idx += 1
 
                     logger.info(f'  performing generalization {generalization_id} (strategy: {curr_strategy})')
 
