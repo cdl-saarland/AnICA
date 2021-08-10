@@ -74,7 +74,8 @@ def main():
         bb = min_bb
 
     abb = AbstractBlock(actx, bb)
-    res_abb, trace, result_ref = discovery.generalize(actx, abb)
+    strategy = actx.discovery_cfg.generalization_strategy[0][0]
+    res_abb, trace, result_ref = discovery.generalize(actx, abb, strategy=strategy)
     print("Generalization Result:\n" + textwrap.indent(str(res_abb), '  '))
 
     timestamp = datetime.now().replace(microsecond=0).isoformat()

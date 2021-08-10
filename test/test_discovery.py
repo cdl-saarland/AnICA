@@ -244,7 +244,7 @@ def test_generalize_01(random, actx_pred):
 
     abb = AbstractBlock(actx_pred, bb)
 
-    gen_abb, trace, ref = generalize(actx_pred, abb)
+    gen_abb, trace, ref = generalize(actx_pred, abb, strategy='max_benefit')
 
     # print(trace)
 
@@ -265,7 +265,7 @@ def test_generalize_02(random, actx_pred):
 
     abb = AbstractBlock(actx_pred, bb)
 
-    gen_abb, trace, ref = generalize(actx_pred, abb)
+    gen_abb, trace, ref = generalize(actx_pred, abb, strategy='max_benefit')
 
     # print(trace)
 
@@ -285,7 +285,7 @@ def test_generalize_03(random, actx_pred):
 
     abb = AbstractBlock(actx_pred, bb)
 
-    gen_abb, trace, ref = generalize(actx_pred, abb)
+    gen_abb, trace, ref = generalize(actx_pred, abb, strategy='max_benefit')
 
     # print(trace)
 
@@ -306,7 +306,7 @@ def test_generalize_aliasing_01(random, actx_pred):
 
     abb = AbstractBlock(actx_pred, bb)
 
-    gen_abb, trace, ref = generalize(actx_pred, abb)
+    gen_abb, trace, ref = generalize(actx_pred, abb, strategy='max_benefit')
 
     # print(trace)
 
