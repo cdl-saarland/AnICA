@@ -1,5 +1,6 @@
 """TODO document"""
 
+from collections import defaultdict
 import json
 import os
 from pathlib import Path
@@ -146,10 +147,43 @@ class HTMLReporter:
         with open(out_dir / 'script.js', 'w') as f:
             f.write(js_frame)
 
+        self._generate_per_scheme_view(actx)
+
         print("Only witness sites remain")
         for fn in os.listdir(base_dir / 'discoveries'):
             self._generate_trace_site(actx, fn)
 
+
+    def _generate_per_scheme_view(self, actx):
+        all_discoveries = []
+
+        for fn in os.listdir(self.base_dir / 'discoveries'):
+            absblock, result_ref = load_absblock(self.base_dir / 'discoveries' / fn, actx=actx)
+            all_discoveries.append(absblock)
+
+        per_scheme = defaultdict(list)
+
+        for ab in all_discoveries:
+            for ai in ab.abs_insns:
+                for ci in actx.insn_feature_manager.compute_feasible_schemes(ai.features):
+                    per_scheme[ci].append(ab)
+
+        table_data = []
+        for k, vs in per_scheme.items():
+            table_data.append({'scheme': str(k), 'num_discoveries': len(vs)})
+
+        table_str = json.dumps(table_data, indent=2)
+
+        per_scheme_path = self.html_resources_path.parent / "per_scheme_site"
+        shutil.copy(per_scheme_path / "style.css", self.out_dir / "per_insnscheme_style.css")
+        shutil.copy(per_scheme_path / "frame.html", self.out_dir / "per_insnscheme.html")
+
+        with open(per_scheme_path / "script.js", 'r') as f:
+            js_frame = f.read()
+        js_frame = js_frame.replace('[[table_data]]', table_str, 1)
+
+        with open(self.out_dir / 'per_insnscheme_script.js', 'w') as f:
+            f.write(js_frame)
 
     def _generate_table_entry(self, actx, discovery):
         base_dir = self.base_dir
@@ -194,6 +228,7 @@ class HTMLReporter:
 
         witness = load_witness(base_dir / 'witnesses' / f'{discovery}.json', actx=actx)
         with actx.measurement_db as mdb:
-            g = hg.trace_to_html_graph(witness, actx=actx, measurement_db=mdb)
+            # g = hg.trace_to_html_graph(witness, actx=actx, measurement_db=mdb) # TODO
+            g = hg.trace_to_html_graph(witness, actx=actx, measurement_db=None)
             g.generate(out_dir / "witness_traces" / f"{discovery}")
 

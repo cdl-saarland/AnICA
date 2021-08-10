@@ -1,0 +1,47 @@
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+}
+
+#title {
+    margin: 10px;
+}
+
+.per_scheme_table {
+  margin: auto;
+  border-collapse: collapse;
+}
+
+.code {
+  font-family: monospace;
+  white-space: pre-line;
+}
+
+.per_scheme_table, .per_scheme_th, .per_scheme_td {
+  border: 1px solid gray;
+}
+
+.per_scheme_th, .per_scheme_td {
+  padding: 10px;
+  text-align: left;
+}
+
+.per_scheme_th {
+  font-weight: bold;
+}
+
+#outermost {
+    display: flex;
+    flex-direction: column;
+    /* width: 1000px; */
+}
+
+.flexcontainer {
+    margin: 10px auto;
+    width: 95%;
+    padding: 10px;
+    background-color: WhiteSmoke;
+}
+
+

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>DeviDisc Per InsnScheme View</title>
+    <link rel="stylesheet" href="per_insnscheme_style.css">
+    <script src="per_insnscheme_script.js"></script>
+  </head>
+  <body>
+    <div id="title">
+    <h1>Per InsnScheme View</h1>
+    </div>
+
+    <div id="outermost">
+      <div class="flexcontainer">
+        <table class="per_scheme_table">
+          <thead>
+            <tr class="per_scheme_tr">
+              <th class="per_scheme_th" onclick="drawTable('scheme')">Instruction Scheme</th>
+              <th class="per_scheme_th" onclick="drawTable('num_discoveries')">Number of Discoveries</th>
+            </tr>
+          </thead>
+          <tbody id="per_scheme_table_body">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+
