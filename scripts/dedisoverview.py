@@ -189,6 +189,8 @@ def main():
             tp = v.get('TP', None)
             if tp is None:
                 tp = -1.0
+            if tp <= 0.0:
+                logger.warning(f"prediction error for block '{bb}' with {k}: {v}")
             record[k] = tp
     logger.info(f"done evaluating {len(bbs)} experiments")
 
