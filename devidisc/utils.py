@@ -42,6 +42,7 @@ class Timer:
         self.accumulate = accumulate
 
         self.start = None
+        self.seconds_passed = None
 
         self.sub_results = defaultdict(_init_sub_results)
 
@@ -78,6 +79,7 @@ class Timer:
 
         end = time.perf_counter()
         secs = (end - self.start)
+        self.seconds_passed = secs
 
         if self.log:
             logger = logging.getLogger(self.logger_name)
