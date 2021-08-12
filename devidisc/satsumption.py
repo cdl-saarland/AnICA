@@ -12,7 +12,6 @@ from pysat.solvers import Solver
 from iwho import BasicBlock
 
 from .abstractblock import AbstractBlock, SamplingError
-from .utils import Timer
 
 def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=False, precomputed_schemes=None):
     actx = ab.actx
@@ -131,15 +130,14 @@ def ab_coverage(ab, num_samples, bb_len=None):
 
     concrete_bbs = []
     sample_universe = AbstractBlock.make_top(actx, bb_len)
-    with Timer("sampling"):
-        for x in range(num_samples):
-            try:
-                concrete_bbs.append(sample_universe.sample())
-            except SamplingError as e:
-                logger.info("a sample failed: {e}")
+    sampler = sample_universe.precompute_sampler()
+    for x in range(num_samples):
+        try:
+            concrete_bbs.append(sampler.sample())
+        except SamplingError as e:
+            logger.info("a sample failed: {e}")
 
-    with Timer("coverage"):
-        coverage_ratio = compute_coverage(ab, concrete_bbs, ratio=True)
+    coverage_ratio = compute_coverage(ab, concrete_bbs, ratio=True)
     return coverage_ratio
 
 

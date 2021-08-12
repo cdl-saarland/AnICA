@@ -23,10 +23,11 @@ def sample_block_list(abstract_bb, num, insn_scheme_blacklist=[]):
 
     If samples fail, the result will have fewer entries.
     """
+    sampler = abstract_bb.precompute_sampler(insn_scheme_blacklist=insn_scheme_blacklist)
     concrete_bbs = []
     for x in range(num):
         try:
-            concrete_bbs.append(abstract_bb.sample(insn_scheme_blacklist=insn_scheme_blacklist))
+            concrete_bbs.append(sampler.sample())
         except SamplingError as e:
             logger.info(f"a sample failed: {e}")
     return concrete_bbs

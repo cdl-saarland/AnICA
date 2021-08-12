@@ -740,6 +740,13 @@ class AbstractInsn(Expandable):
             raise SamplingError(f"No InsnScheme is feasible for AbstractInsn {self}")
         return random.choice(tuple(feasible_schemes))
 
+    def precompute_sampler(self, insn_scheme_blacklist: Sequence[iwho.InsnScheme]=[]):
+        feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(self.features)
+        feasible_schemes.difference_update(insn_scheme_blacklist)
+
+        if len(feasible_schemes) == 0:
+            raise SamplingError(f"No InsnScheme is feasible for AbstractInsn {self}")
+        return PrecomputedSamplerAbsInsn(feasible_schemes)
 
 def _lists2tuples(obj):
     if isinstance(obj, list) or isinstance(obj, tuple):
@@ -1315,3 +1322,22 @@ class AbstractBlock(Expandable):
 
         return self.abs_aliasing.sample(insn_schemes)
 
+    def precompute_sampler(self, insn_scheme_blacklist: Sequence[iwho.InsnScheme]=[]):
+        res = AbstractBlock(self.actx, bb=None)
+
+        sampler_absinsns = []
+        for ai in self.abs_insns:
+            sampler_absinsns.append(ai.precompute_sampler(insn_scheme_blacklist))
+
+        res.abs_insns = sampler_absinsns
+        res.abs_aliasing = self.abs_aliasing
+
+        return res
+
+
+class PrecomputedSamplerAbsInsn:
+    def __init__(self, allowed_schemes):
+        self.allowed_schemes = tuple(allowed_schemes)
+
+    def sample(self, **kwargs) -> iwho.InsnScheme:
+        return random.choice(self.allowed_schemes)
