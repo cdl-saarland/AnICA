@@ -72,12 +72,16 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
     max_num_batches = math.inf
     max_num_discoveries = math.inf
     max_seconds_passed = math.inf
+    max_same_num_discoveries = math.inf
 
     if 'num_batches' in termination.keys():
         max_num_batches = termination['num_batches']
 
     if 'num_discoveries' in termination.keys():
         max_num_discoveries = termination['num_discoveries']
+
+    if 'same_num_discoveries' in termination.keys():
+        max_same_num_discoveries = termination['same_num_discoveries']
 
     if any(map(lambda x: x in termination.keys(), ['hours', 'minutes', 'seconds'])):
         max_seconds_passed = termination.get('hours', 0) * 3600
@@ -88,6 +92,9 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
     curr_num_discoveries = 0
     start_time = datetime.now()
     curr_seconds_passed = 0
+
+    prev_num_discoveries = -1
+    same_num_discoveries_counter = 0
 
     total_sampled = 0
     per_batch_stats = []
@@ -125,6 +132,16 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
         if curr_num_discoveries >= max_num_discoveries:
             logger.info("terminating discovery loop: maximal number of discoveries found")
+            break
+
+        if curr_num_discoveries == prev_num_discoveries:
+            same_num_discoveries_counter += 1
+        else:
+            same_num_discoveries_counter = 0
+            prev_num_discoveries = curr_num_discoveries
+
+        if same_num_discoveries_counter >= max_same_num_discoveries:
+            logger.info("terminating discovery loop: number of discoveries stagnated")
             break
 
         if curr_seconds_passed >= max_seconds_passed:
