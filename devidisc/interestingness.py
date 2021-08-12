@@ -17,6 +17,10 @@ class InterestingnessMetric(metaclass=ConfigMeta):
         mostly_interesting_ratio = (0.97,
             'at least this ratio of a batch of experiments must be interesting '
             'for it to be considered mostly interesting.'),
+        invert_interestingness = (False,
+            'if this is true, consider exactly those cases interesting that '
+            'would not be interesting with the other settings.'
+            )
     )
 
     def __init__(self, config):
@@ -37,7 +41,12 @@ class InterestingnessMetric(metaclass=ConfigMeta):
         return rel_error
 
     def is_interesting(self, eval_res) -> bool:
-        return self.compute_interestingness(eval_res) >= self.min_interestingness
+        normally_interesting = (self.compute_interestingness(eval_res) >= self.min_interestingness)
+
+        if self.invert_interestingness:
+            return not normally_interesting
+
+        return normally_interesting
 
     def filter_interesting(self, bbs: Sequence[iwho.BasicBlock]) -> Sequence[iwho.BasicBlock]:
         """ Given a list of concrete BasicBlocks, evaluate their
