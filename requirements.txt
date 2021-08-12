@@ -2,6 +2,7 @@ pytest
 
 graphviz
 editdistance
+rpyc
 
 python-sat
 
