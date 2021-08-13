@@ -6,6 +6,7 @@ import math
 import os
 import random
 import shutil
+import socket
 import textwrap
 from pathlib import Path
 
@@ -100,6 +101,8 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
     per_batch_stats = []
 
     report = dict()
+    report['host_pc'] = socket.gethostname()
+    report['start_date'] = start_time.isoformat()
     report['num_batches'] = curr_num_batches
     report['num_total_sampled'] = total_sampled
     report['num_discoveries'] = curr_num_discoveries
