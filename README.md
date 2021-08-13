@@ -15,10 +15,10 @@ TODO write this
   - [ ] add a discovery overview inspector
   - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
   - [ ] add more predictors
-    - [ ] Ithemal
     - [ ] DiffTune
     - [ ] CQA?
     - [ ] measurements
+    - [X] Ithemal
     - [X] OSACA
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
   - [X] randomize generalization and try different randomizations per run
