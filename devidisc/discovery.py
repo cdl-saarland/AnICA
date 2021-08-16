@@ -13,7 +13,7 @@ from pathlib import Path
 from .abstractblock import AbstractBlock, SamplingError
 from .abstractioncontext import AbstractionContext
 from .configurable import store_json_config
-from .satsumption import check_subsumed
+from .satsumption import check_subsumed, check_subsumed_aa
 from .witness import WitnessTrace
 
 import logging
@@ -230,7 +230,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             stats['per_generalization_stats'] = gen_stats
 
             gen_idx = 0
-            previous_generalizations = set()
+            previous_generalizations = list()
             for curr_strategy, num_attempts in actx.discovery_cfg.generalization_strategy:
                 for x in range(num_attempts):
                     generalization_id = f'b{curr_num_batches:03}_i{idx:03}_g{gen_idx:03}'
@@ -252,12 +252,31 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
                     gen_stat_entry['generalization_time'] = generalization_time
                     gen_stat_entry['witness_len'] = len(trace)
 
-                    if generalized_bb in previous_generalizations:
-                        logger.info('  generalized to the same abstract block as before')
-                        gen_stat_entry['already_found'] = True
+                    already_found = False
+                    subsumes = []
+
+                    for prev_id, prev_gen in previous_generalizations:
+                        if generalized_bb == prev_gen:
+                            logger.info(f'  generalized to the same abstract block as {prev_id}')
+                            already_found = True
+                            break
+                        elif check_subsumed_aa(generalized_bb, prev_gen):
+                            # the old one is at least as general
+                            logger.info(f'  generalized to a block subsumed by {prev_id}')
+                            already_found = True
+                            break
+                        elif check_subsumed_aa(prev_gen, generalized_bb):
+                            # the new one is more general
+                            logger.info(f'  generalized to a block that subsumes {prev_id}')
+                            already_found = subsumes.append(prev_id)
+
+                    gen_stat_entry['already_found'] = already_found
+                    gen_stat_entry['subsumes'] = subsumes
+
+                    if already_found:
                         continue
-                    previous_generalizations.add(generalized_bb)
-                    gen_stat_entry['already_found'] = False
+
+                    previous_generalizations.append((generalization_id, generalized_bb))
 
                     logger.info("  adding new discovery:" + textwrap.indent(str(generalized_bb), 4*' '))
                     discoveries.append(generalized_bb)
