@@ -4,6 +4,7 @@ solver.
 """
 
 from collections import defaultdict
+import itertools
 
 from pysat.formula import CNFPlus, IDPool
 from pysat.card import CardEnc, EncType
@@ -12,6 +13,105 @@ from pysat.solvers import Solver
 from iwho import BasicBlock
 
 from .abstractblock import AbstractBlock, SamplingError
+
+def check_subsumed_aa(ab1, ab2, print_assignment=False):
+    """ Check whether ab2 represents all concrete blocks that ab1 represents
+    (wrt the abstraction context).
+
+    Both blocks must have the same abstraction context.
+    """
+
+    actx = ab1.actx
+
+    assert len(ab1.abs_insns) == len(ab2.abs_insns)
+
+    next_id = 1
+    def fresh_var():
+        nonlocal next_id
+        res = next_id
+        next_id += 1
+        return res
+
+    both_feasible_sets = []
+    for ab in (ab1, ab2):
+        feasible_sets = []
+        for ai in ab.abs_insns:
+            fs = actx.insn_feature_manager.compute_feasible_schemes(ai.features)
+            feasible_sets.append(fs)
+        both_feasible_sets.append(feasible_sets)
+
+
+    map_vars = dict()
+    map_b1_vars = defaultdict(list)
+    map_b1_idxs = defaultdict(list)
+    map_b2_vars = defaultdict(list)
+    map_b2_idxs = defaultdict(list)
+    map_var_to_idx = dict()
+
+    for (idx_b1, fs_b1), (idx_b2, fs_b2) in itertools.product(*map(enumerate, both_feasible_sets)):
+        if fs_b1.issubset(fs_b2):
+            # they could be mapped
+            var = fresh_var()
+            map_vars[(idx_b1, idx_b2)] = var
+            map_b1_vars[idx_b1].append(var)
+            map_b1_idxs[idx_b1].append(idx_b2)
+            map_b2_vars[idx_b2].append(var)
+            map_b2_idxs[idx_b2].append(idx_b1)
+            map_var_to_idx[var] = (idx_b1, idx_b2)
+
+    cnf = CNFPlus()
+
+    for idx_b1 in range(len(ab1.abs_insns)):
+        vs = map_b1_vars[idx_b1]
+        # We don't just iterate over the map_b1_vars.items() because those
+        # wouldn't contain empty entries.
+        if len(vs) == 0:
+            # there is no fitting AbsInsn for this one
+            return False
+        # for every AbsInsn in ab1, there should be exactly one in ab2
+        cnf.extend(CardEnc.equals(lits=vs, bound=1))
+
+    for idx_b2 in range(len(ab2.abs_insns)):
+        vs = map_b1_vars[idx_b2]
+        # We don't just iterate over the map_b2_vars.items() because those
+        # wouldn't contain empty entries.
+        if len(vs) == 0:
+            # there is no fitting AbsInsn for this one
+            return False
+        # for every AbsInsn in ab2, there should be exactly one in ab1
+        cnf.extend(CardEnc.equals(lits=vs, bound=1))
+
+
+    for ((idx1_b2, op_idx1), (idx2_b2, op_idx2)), abs_feature_b2 in ab2.abs_aliasing._aliasing_dict.items():
+        if abs_feature_b2.is_top():
+            # this component of b2 subsumes everything anyway, no constraint needed
+            continue
+
+        for idx1_b1, idx2_b1 in itertools.product(map_b2_idxs[idx1_b2], map_b2_idxs[idx2_b2]):
+            abs_feature_b1 = ab1.abs_aliasing.get_component((idx1_b1, op_idx1), (idx2_b1, op_idx2))
+            if (abs_feature_b1 is None # None means TOP here
+                    or not abs_feature_b2.subsumes(abs_feature_b1)):
+                # this means that in this component, ab2 does not subsume ab1,
+                # so we need to add a constraint to disallow mapping those
+                # pairs together.
+                # i.e. assert(not (map_vars[idx1_b1, idx1_2] and map_vars[idx2_b1, idx2_2]))
+                cnf.append([
+                        -map_vars[(idx1_b1, idx1_b2)], -map_vars[(idx2_b1, idx2_b2)]
+                    ])
+
+    with Solver(bootstrap_with=cnf) as s:
+        satisfiable = s.solve()
+
+        if satisfiable and print_assignment:
+            print("insn_assignment:")
+            model = s.get_model()
+            for v in model:
+                if v > 0:
+                    i1, i2 = map_var_to_idx[abs(v)]
+                    print(f"  {i1}: {i2}")
+
+    return satisfiable
+
 
 def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=False, precomputed_schemes=None):
     actx = ab.actx

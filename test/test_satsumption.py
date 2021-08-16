@@ -2,6 +2,7 @@
 
 import pytest
 
+from copy import deepcopy
 import os
 import sys
 
@@ -13,7 +14,7 @@ sys.path.append(import_path)
 from devidisc.abstractblock import AbstractBlock
 from devidisc.abstractioncontext import AbstractionContext
 
-from devidisc.satsumption import check_subsumed
+from devidisc.satsumption import check_subsumed, check_subsumed_aa
 
 from test_utils import *
 
@@ -115,4 +116,47 @@ def test_satsumption_regression_02(random):
     print(bb.get_asm())
     print(ab)
     assert check_subsumed(bb, ab, print_assignment=True)
+
+def test_satsumption_aa_01(random, actx):
+    # Every block should subsume itself.
+    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
+    ab = AbstractBlock(actx, bb1)
+    assert check_subsumed_aa(ab, ab)
+
+def test_satsumption_aa_02(random, actx):
+    # Every block should subsume itself.
+    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
+    ab = AbstractBlock(actx, bb1)
+
+    ab_exp = deepcopy(ab)
+    ab_exp.apply_expansion(ab_exp.get_possible_expansions()[0][0])
+
+    # expanding the subsumer should preserve the subsumption
+    assert check_subsumed_aa(ab, ab_exp)
+
+    # maybe not in the first step, but eventually we should have expanded
+    # ab_exp enough that it represents strictly more basic blocks
+    while check_subsumed_aa(ab_exp, ab):
+        possible_expansions = ab_exp.get_possible_expansions()
+        if len(possible_expansions) == 0:
+            print(ab)
+            print(ab_exp)
+        assert len(possible_expansions) > 0
+        ab_exp.apply_expansion(possible_expansions[0][0])
+        # all the time, the original subsumption should not be violated
+        assert check_subsumed_aa(ab, ab_exp)
+    # if we leave the loop, we managed to get a sufficiently expanded ab_exp.
+
+def test_satsumption_aa_03(random, actx):
+    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
+    ab = AbstractBlock(actx, bb1)
+
+    ab_exp = deepcopy(ab)
+
+    alias = ab_exp.abs_aliasing
+    alias_expansions = alias.get_possible_expansions()
+    alias.apply_expansion(alias_expansions[0][0])
+
+    assert check_subsumed_aa(ab, ab_exp)
+    assert not check_subsumed_aa(ab_exp, ab)
 
