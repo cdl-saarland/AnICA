@@ -8,6 +8,7 @@ TODO write this
   - [X] implement the core generalization algorithm
 
 ### Functional Extensions
+  - [ ] add a satsumption implementation for comparing two abstract blocks (rather than a concrete and an abstract one)
   - [ ] at least for the insn part, we could rather easily sample from  gamma(new) \ gamma(old), maybe that's a good idea
   - [ ] think about making the required interesiting ratio relative to the interestingness ratio of the current state (probably not a good idea, since it could lead to a decay of the result quality)
   - [ ] maybe relax the aliasing domain to be operand-position independent?
