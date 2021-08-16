@@ -230,7 +230,8 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             stats['per_generalization_stats'] = gen_stats
 
             gen_idx = 0
-            previous_generalizations = list()
+            good_generalizations = dict()
+
             for curr_strategy, num_attempts in actx.discovery_cfg.generalization_strategy:
                 for x in range(num_attempts):
                     generalization_id = f'b{curr_num_batches:03}_i{idx:03}_g{gen_idx:03}'
@@ -255,7 +256,8 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
                     already_found = False
                     subsumes = []
 
-                    for prev_id, prev_gen in previous_generalizations:
+                    for prev_id, prev_gen_data in good_generalizations.items():
+                        prev_gen = prev_gen_data['absblock']
                         if generalized_bb == prev_gen:
                             logger.info(f'  generalized to the same abstract block as {prev_id}')
                             already_found = True
@@ -268,33 +270,53 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
                         elif check_subsumed_aa(prev_gen, generalized_bb):
                             # the new one is more general
                             logger.info(f'  generalized to a block that subsumes {prev_id}')
-                            already_found = subsumes.append(prev_id)
+                            subsumes.append(prev_id)
 
                     gen_stat_entry['already_found'] = already_found
                     gen_stat_entry['subsumes'] = subsumes
 
                     if already_found:
+                        assert len(subsumes) == 0, ("A generalization has already been found, but subsumes other generalizations!")
+                        # This should not be possible, since the previous
+                        # instance should either have caused the subsumed one
+                        # to be deleted or avoided adding it in the first
+                        # place.
                         continue
 
-                    previous_generalizations.append((generalization_id, generalized_bb))
+                    # remove all the generalizations that this one makes obsolete
+                    for prev_id in subsumes:
+                        del good_generalizations[prev_id]
 
-                    logger.info("  adding new discovery:" + textwrap.indent(str(generalized_bb), 4*' '))
-                    discoveries.append(generalized_bb)
-                    curr_num_discoveries += 1
-                    report['num_discoveries'] = curr_num_discoveries
+                    good_generalizations[generalization_id] = {
+                            'absblock': generalized_bb,
+                            'trace': trace,
+                            'last_result_ref': last_result_ref,
+                        }
 
-                    if len(generalized_bb.abs_insns) == 1 and generalized_bb.abs_aliasing.is_top():
-                        # this discovery subsumes all blocks containing one of the
-                        # InsnSchemes represented by its singular abstract instruction
-                        ai = generalized_bb.abs_insns[0]
-                        insn_scheme_blacklist.update(actx.insn_feature_manager.compute_feasible_schemes(ai.features))
-                        logger.info(f"  updated InsnScheme blacklist: now {len(insn_scheme_blacklist)} entries")
+            # take all the generalizations that were not subsumed by others and
+            # report them as discoveries
+            for generalization_id, gen_data in good_generalizations.items():
+                generalized_bb = gen_data['absblock']
+                trace = gen_data['trace']
+                last_result_ref = gen_data['last_result_ref']
 
-                    if out_dir is not None:
-                        trace.dump_json(witness_dir / f'{generalization_id}.json')
-                        generalized_bb.dump_json(discovery_dir / f'{generalization_id}.json', result_ref=last_result_ref)
+                logger.info("  adding new discovery:\n" + textwrap.indent(str(generalized_bb), 4*' '))
+                discoveries.append(generalized_bb)
+                curr_num_discoveries += 1
+                report['num_discoveries'] = curr_num_discoveries
 
-                    write_report()
+                if len(generalized_bb.abs_insns) == 1 and generalized_bb.abs_aliasing.is_top():
+                    # this discovery subsumes all blocks containing one of the
+                    # InsnSchemes represented by its singular abstract instruction
+                    ai = generalized_bb.abs_insns[0]
+                    insn_scheme_blacklist.update(actx.insn_feature_manager.compute_feasible_schemes(ai.features))
+                    logger.info(f"  updated InsnScheme blacklist: now {len(insn_scheme_blacklist)} entries")
+
+                if out_dir is not None:
+                    trace.dump_json(witness_dir / f'{generalization_id}.json')
+                    generalized_bb.dump_json(discovery_dir / f'{generalization_id}.json', result_ref=last_result_ref)
+
+                write_report()
 
         batch_time = ((datetime.now() - batch_start_time) / timedelta(milliseconds=1)) / 1000
         per_batch_entry['batch_time'] = batch_time
