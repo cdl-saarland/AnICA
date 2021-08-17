@@ -71,13 +71,18 @@ def main():
 
             num_prediction_errors = 0
             all_results = dict()
+            had_error = False
             for bb, r in zip(sampled_bbs, results):
                 cycles = r.get('TP', None)
                 if cycles is None or cycles <= 0:
                     num_prediction_errors += 1
-                    error_schemes.append(ischeme)
+                    had_error = True
+                    logger.debug(f"error for '{str(bb).strip()}':\n{r}")
                 else:
                     all_results[cycles] = str(bb).strip()
+
+            if had_error:
+                error_schemes.append(ischeme)
 
             logger.info(f"sampling errors: {num_sampling_errors}")
             logger.info(f"prediction errors: {num_prediction_errors} (in {len(sampled_bbs)} samples)")
