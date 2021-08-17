@@ -173,6 +173,12 @@ class PredictorManager(metaclass=ConfigMeta):
         If lazy is false, return a complete list of predictions (awaiting all
         results).
         """
+
+        if isinstance(pred, str):
+            pred_entry = self.pred_registry[pred]
+            pred_config = pred_entry['config']
+            pred = Predictor.get(pred_config)
+
         tasks = map(lambda x: LightBBWrapper(x), bbs)
         if self.pool is None:
             results = map(partial(evaluate_bb, pred=pred), tasks)
