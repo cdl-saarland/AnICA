@@ -10,7 +10,7 @@ import random
 import os
 import sys
 
-from iwho.utils import init_logging
+from iwho.utils import init_logging, update_logfile
 
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
@@ -52,6 +52,8 @@ def main():
 
     outdir = Path(args.outdir).resolve()
 
+    init_logging('info')
+
     while True:
         for config in campaign_config:
             # create a campaign directory
@@ -59,7 +61,7 @@ def main():
             curr_out_dir = outdir / f'campaign_{timestamp}'
             os.makedirs(curr_out_dir)
 
-            init_logging('info', logfile=curr_out_dir / 'log.txt')
+            update_logfile(logfile=curr_out_dir / 'log.txt')
 
             actx_config = load_json_config(config['abstraction_config_path'])
             termination_criterion = config['termination']
