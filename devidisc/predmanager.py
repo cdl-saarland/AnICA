@@ -14,6 +14,13 @@ from iwho.predictors import Predictor
 
 from .configurable import ConfigMeta, load_json_config
 
+class UnknownPredictorError(Exception):
+    """ We don't know this predictor.
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+
 def evaluate_bb(bb, pred):
     try:
         result = pred.evaluate(bb, disable_logging=True)
@@ -140,10 +147,14 @@ class PredictorManager(metaclass=ConfigMeta):
                 actual_keys.append(key)
             else:
                 pat = re.compile(key)
+                found = False
                 for k in self.pred_registry.keys():
                     if pat.fullmatch(k):
                         actual_keys.append(k)
-                # TODO we should warn if none of them match
+                        found = True
+
+                if not found:
+                    raise UnknownPredictorError(f"unknown predictor key/pattern: {key}")
 
         for key in actual_keys:
             if key in self.predictor_map:
