@@ -47,8 +47,8 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
     `termination` is expected to be a dictionary that may have some of the
     following keys set:
-        - hours, minutes, seconds: if any of those are set, they are added
-          together and considered as a soft timeout (i.e. once a batch is
+        - days, hours, minutes, seconds: if any of those are set, they are
+          added together and considered as a soft timeout (i.e. once a batch is
           complete and at least as much time has passed since the start of the
           campaign, terminate).
         - num_batches: if this is set to an int N, at most N discovery batches
@@ -84,8 +84,9 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
     if 'same_num_discoveries' in termination.keys():
         max_same_num_discoveries = termination['same_num_discoveries']
 
-    if any(map(lambda x: x in termination.keys(), ['hours', 'minutes', 'seconds'])):
-        max_seconds_passed = termination.get('hours', 0) * 3600
+    if any(map(lambda x: x in termination.keys(), ['days', 'hours', 'minutes', 'seconds'])):
+        max_seconds_passed = termination.get('days', 0) * 3600 * 24
+        max_seconds_passed += termination.get('hours', 0) * 3600
         max_seconds_passed += termination.get('minutes', 0) * 60
         max_seconds_passed += termination.get('seconds', 0)
 
