@@ -75,6 +75,9 @@ class IWHOConfig(metaclass=ConfigMeta):
             if key == 'whitelist':
                 iwho_ctx.push_filter(iwho.Filters.whitelist(args[0]))
                 continue
+            if key == 'blacklist':
+                iwho_ctx.push_filter(iwho.Filters.blacklist(args[0]))
+                continue
 
         return iwho_ctx
 
