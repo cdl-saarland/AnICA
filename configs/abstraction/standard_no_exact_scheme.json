@@ -1,0 +1,27 @@
+{
+  "insn_feature_manager": {
+    "features": [
+      [ "mnemonic", [ "editdistance", 3 ] ],
+      [ "opschemes", "subset" ],
+      [ "memory_usage", "subset_or_definitely_not" ],
+      [ "uops_on_SKL", ["log_ub", 5] ],
+      [ "category", "singleton" ],
+      [ "extension", "singleton" ],
+      [ "isa-set", "singleton" ]
+    ]
+  },
+  "interestingness_metric": {
+    "min_interestingness": 0.5,
+    "mostly_interesting_ratio": 0.99
+  },
+  "iwho": {
+    "context_specifier": "x86_uops_info",
+    "filters": ["no_cf", "with_measurements:SKL", "whitelist:hsw_bhive_schemes.csv"]
+  },
+  "discovery": {
+    "discovery_batch_size": 100,
+    "discovery_possible_block_lengths": [3, 4, 5, 6, 7, 8],
+    "generalization_batch_size": 100,
+    "generalization_strategy": [["max_benefit", 1], ["random", 4]]
+  }
+}
