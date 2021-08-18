@@ -5,6 +5,7 @@
 
 import argparse
 from datetime import datetime
+import math
 from pathlib import Path
 import random
 import os
@@ -38,6 +39,8 @@ def main():
 
     argparser.add_argument('--loop', action='store_true', help='if set, loop through the campaign config indefinitely')
 
+    argparser.add_argument('--check-config', action='store_true', help='if set, do not do any real discovery, only check that the configuration is plausible')
+
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
             help='seed for the rng')
 
@@ -45,6 +48,8 @@ def main():
             help='output directory for reports and results')
 
     args = argparser.parse_args()
+
+    check_config = args.check_config
 
     random.seed(args.seed)
 
@@ -54,11 +59,14 @@ def main():
 
     init_logging('info')
 
+    if check_config:
+        total_seconds = 0
+
     while True:
-        for config in campaign_config:
+        for idx, config in enumerate(campaign_config):
             # create a campaign directory
             timestamp = datetime.now().replace(microsecond=0).isoformat()
-            curr_out_dir = outdir / f'campaign_{timestamp}'
+            curr_out_dir = outdir / f'campaign_{idx}_{timestamp}'
             os.makedirs(curr_out_dir)
 
             update_logfile(logfile=curr_out_dir / 'log.txt')
@@ -80,12 +88,36 @@ def main():
             with actx.measurement_db as mdb:
                 mdb.create_tables()
 
+            if check_config:
+                termination = termination_criterion
+                if any(map(lambda x: x in termination.keys(), ['days', 'hours', 'minutes', 'seconds'])):
+                    max_seconds_passed = termination.get('days', 0) * 3600 * 24
+                    max_seconds_passed += termination.get('hours', 0) * 3600
+                    max_seconds_passed += termination.get('minutes', 0) * 60
+                    max_seconds_passed += termination.get('seconds', 0)
+                    total_seconds += max_seconds_passed
+                else:
+                    total_seconds = math.inf
+                continue
+
             discoveries = discovery.discover(actx, termination=termination_criterion, out_dir=curr_out_dir)
 
             # TODO store those
 
         if (not args.loop):
             break
+
+    if check_config:
+        days = total_seconds // (3600 * 24)
+        total_seconds %= 3600 * 24
+        hours = total_seconds // 3600
+        total_seconds %= 3600
+        minutes = total_seconds // 60
+        total_seconds %= 60
+        seconds = total_seconds
+        print(f"estimated total time: {days} days, {hours} hours, {minutes} minutes, {seconds} seconds")
+
+
 
 
 if __name__ == "__main__":
