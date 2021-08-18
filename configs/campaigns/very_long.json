@@ -1,0 +1,87 @@
+[
+    {
+        "abstraction_config_path": "../abstraction/standard.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "days": 2, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_ithemal_filter.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "days": 2, "same_num_discoveries": 10 }
+    },
+
+
+    {
+        "abstraction_config_path": "../abstraction/standard.json",
+        "predictors": ["llvm-mca.12-dbg.hsw", "iaca.hsw"],
+        "termination": { "days": 2, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_ithemal_filter.json",
+        "predictors": ["llvm-mca.12-dbg.hsw", "iaca.hsw"],
+        "termination": { "days": 2, "same_num_discoveries": 10 }
+    },
+
+
+    {
+        "abstraction_config_path": "../abstraction/standard_ithemal_filter.json",
+        "predictors": ["ithemal.bhive.skl", "iaca.skl"],
+        "termination": { "days": 2, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_ithemal_filter.json",
+        "predictors": ["ithemal.bhive.hsw", "iaca.hsw"],
+        "termination": { "days": 2, "same_num_discoveries": 10 }
+    },
+
+
+
+    {
+        "abstraction_config_path": "../abstraction/standard.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "hours": 12, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_ithemal_filter.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "hours": 12, "same_num_discoveries": 10 }
+    },
+
+
+    {
+        "abstraction_config_path": "../abstraction/standard_no_cat.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "hours": 12, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_no_ext.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "hours": 12, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_no_isa.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "hours": 12, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_no_cat_ext_isa.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "hours": 12, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_larger_uop_bnd.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "hours": 12, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_larger_ed.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "hours": 12, "same_num_discoveries": 10 }
+    },
+    {
+        "abstraction_config_path": "../abstraction/standard_no_ed.json",
+        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "termination": { "hours": 12, "same_num_discoveries": 10 }
+    }
+
+]
