@@ -674,7 +674,8 @@ class AbstractInsn(Expandable):
         return len(feasible_schemes) / num_prev_feasible_schemes
 
     def get_possible_expansions(self):
-        if not self.features['exact_scheme'].is_top():
+        exact_scheme_entry = self.features.get('exact_scheme', None)
+        if exact_scheme_entry is not None and not exact_scheme_entry.is_top():
             # The exact scheme is more specific than the other features (it
             # implies all of them). It is therefore pointless and harmful to
             # expand another feature first, as it will not affect the sampling

@@ -150,12 +150,16 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         `absfeature_dict` is a dict mapping feature names to instances of
         `AbstractFeature`, like it is found in `AbstractInsn`.
         """
-        scheme = absfeature_dict['exact_scheme'].get_val()
-        if scheme is not None:
-            # we could validate that the other features don't exclude this
-            # scheme, but that cannot be an issue as long as we only go up in
-            # the lattice
-            return {scheme}
+        exact_scheme_entry = absfeature_dict.get('exact_scheme', None)
+        if exact_scheme_entry is not None:
+            # special handling for thsi one, because there is only one feasible
+            # scheme that is trivially known
+            scheme = exact_scheme_entry.get_val()
+            if scheme is not None:
+                # we could validate that the other features don't exclude this
+                # scheme, but that cannot be an issue as long as we only go up in
+                # the lattice
+                return {scheme}
 
         feasible_schemes = None
 
@@ -265,8 +269,9 @@ class InsnFeatureManager(metaclass=ConfigMeta):
 
         res = dict()
 
-        res['exact_scheme'] = ischeme
-        remaining_features.discard('exact_scheme')
+        if 'exact_scheme' in self.features:
+            res['exact_scheme'] = ischeme
+            remaining_features.discard('exact_scheme')
 
         if 'mnemonic' in remaining_features:
             res['mnemonic'] = self.iwho_ctx.extract_mnemonic(ischeme)
