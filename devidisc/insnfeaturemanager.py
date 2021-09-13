@@ -269,7 +269,7 @@ class InsnFeatureManager(metaclass=ConfigMeta):
 
         res = dict()
 
-        if 'exact_scheme' in self.features:
+        if any(map(lambda x: x[0] == 'exact_scheme', self.features)):
             res['exact_scheme'] = ischeme
             remaining_features.discard('exact_scheme')
 

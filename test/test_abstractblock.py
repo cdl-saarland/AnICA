@@ -27,6 +27,12 @@ def test_concrete_ab_single_insn(random, actx):
     assert ab.subsumes(ab)
 
 
+def test_concrete_ab_single_insn_not_bottom(random, actx):
+    bb = make_bb(actx, "add rax, 0x2a")
+    ab = AbstractBlock(actx, bb)
+    assert not ab.abs_insns[0].features['exact_scheme'].is_bottom()
+
+
 def test_concrete_ab_single_insn_sample(random, actx):
     bb = make_bb(actx, "add rax, 0x2a")
     ab = AbstractBlock(actx, bb)
