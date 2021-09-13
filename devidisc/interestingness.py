@@ -36,7 +36,11 @@ class InterestingnessMetric(metaclass=ConfigMeta):
             # errors are always interesting
             return math.inf
         values = [v['TP'] for k, v in eval_res.items()]
-        rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
+        divisor = sum(values)) * len(values)
+        if divisor <= 0.001:
+            # divisions by zero here are suspicious
+            return math.inf
+        rel_error = ((max(values) - min(values)) / divisor
         # TODO think about this metric?
         return rel_error
 
