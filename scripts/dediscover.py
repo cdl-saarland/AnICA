@@ -66,7 +66,7 @@ def main():
         for idx, config in enumerate(campaign_config):
             # create a campaign directory
             timestamp = datetime.now().replace(microsecond=0).isoformat()
-            curr_out_dir = outdir / f'campaign_{idx}_{timestamp}'
+            curr_out_dir = outdir / f'campaign_{idx:03d}_{timestamp}'
             os.makedirs(curr_out_dir)
 
             update_logfile(logfile=curr_out_dir / 'log.txt')
