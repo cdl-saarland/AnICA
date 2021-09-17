@@ -85,7 +85,6 @@ def _make_paths_relative(basepath, obj):
     else:
         return obj
 
-
 def pretty_print(obj, filter_doc=False):
     """ A prettier alternative to just json-dumping a config dict.
     If filter_doc is True, keys that are considered documentation (because of
@@ -99,7 +98,7 @@ def pretty_print(obj, filter_doc=False):
 
         entries = []
         for key, value in obj.items():
-            if filter_doc and any(map(lambda suffix: key.endswith(suffix), ConfigurableImpl._comment_suffixes)):
+            if filter_doc and ConfigurableImpl.is_doc_key(key):
                 continue
 
             value_str = pretty_print(value, filter_doc=filter_doc)
@@ -145,6 +144,10 @@ class ConfigurableImpl:
 
     _comment_suffixes = ['.doc', '.comment', '.info', '.c']
 
+    @classmethod
+    def is_doc_key(cls, key):
+        return any(map(lambda suffix: key.endswith(suffix), cls._comment_suffixes))
+
     def configure(self, partial_config):
         """ Use the specified config to initialize the fields specified as
         config_options in the subclass.
@@ -155,7 +158,7 @@ class ConfigurableImpl:
         """
         for key in partial_config.keys():
             if key not in self._config_defaults.keys():
-                if any(map(lambda suffix: key.endswith(suffix), self._comment_suffixes)):
+                if self.is_doc_key(key):
                     continue
                 raise ConfigError(
                         "Unknown config key for configurable class '{}': '{}'".format(
@@ -164,7 +167,7 @@ class ConfigurableImpl:
             val = partial_config.get(key, default_val)
             setattr(self, key, val)
 
-    def get_config(self):
+    def get_config(self, skip_doc=False):
         """ Produce a json-printable dictionary containing the config of this
         object.
 
@@ -173,7 +176,8 @@ class ConfigurableImpl:
         res = dict()
         for key in self._config_defaults.keys():
             res[key] = getattr(self, key)
-            res[f'{key}.doc'] = self._config_docs[key]
+            if not skip_doc:
+                res[f'{key}.doc'] = self._config_docs[key]
         return res
 
     @classmethod
@@ -187,6 +191,47 @@ class ConfigurableImpl:
             res[f'{key}.doc'] = cls._config_docs[key]
         return res
 
+def tuplify(ls):
+    if isinstance(ls, list) or isinstance(ls, tuple):
+        return tuple(map(tuplify, ls))
+    else:
+        return ls
+
+def config_diff(base, comp_obj):
+    """ Get the config options in which the comp_obj differs from the base.
+    """
+    if isinstance(base, dict):
+        base_cfg = base
+    else:
+        base_cfg = base.get_config(skip_doc=True)
+    if isinstance(comp_obj, dict):
+        comp_cfg = comp_obj
+    else:
+        comp_cfg = comp_obj.get_config(skip_doc=True)
+
+    res = []
+    for k, v in base_cfg.items():
+        if ConfigurableImpl.is_doc_key(k):
+            continue
+        other_v = comp_cfg[k]
+        if isinstance(v, dict):
+            inner_res = config_diff(v, other_v)
+            for (inner_ks, x) in inner_res:
+                res.append(((k,) + inner_ks, x))
+        elif isinstance(v, list) or isinstance(v, tuple):
+            vtup = set(tuplify(v))
+            other_vtup = set(tuplify(other_v))
+            subtracted = tuple(sorted(vtup - other_vtup))
+            added = tuple(sorted(other_vtup - vtup))
+            for x in added:
+                res.append(((k,), f'+{x}'))
+            for x in subtracted:
+                res.append(((k,), f'-{x}'))
+        else:
+            if v != other_v:
+                res.append(((k,), other_v))
+
+    return res
 
 class ConfigMeta(type):
     """ Meta class to use for classes whose instances should contain
