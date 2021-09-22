@@ -73,6 +73,14 @@ class Timer:
 
         return "\n".join(res)
 
+    def get_result(self):
+        assert self.seconds_passed is not None
+        res = "time for '{}': {} s".format(self.identifier, self.seconds_passed)
+        for l in _str_sub_results(self.sub_results).split('\n'):
+            if len(l) > 0:
+                res += '\n' + l
+        return res
+
     def __exit__(self, exc_type, exc_value, trace):
         if not self.enabled:
             return
