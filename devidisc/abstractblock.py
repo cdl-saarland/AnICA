@@ -1335,6 +1335,29 @@ class AbstractBlock(Expandable):
 
         return res
 
+    def minimize(self):
+        """ Compute an equivalent AbstractBlock where the instruction features
+        are as specific as possible without changing the set of represented
+        InsnSchemes.
+        """
+
+        actx = self.actx
+
+        new_one = AbstractBlock(self.actx, bb=None)
+
+        new_ais = []
+        for ai in self.abs_insns:
+            feasible_schemes = actx.insn_feature_manager.compute_feasible_schemes(ai.features)
+            new_ai = AbstractInsn(actx)
+            for s in feasible_schemes:
+                new_ai.join(s)
+            new_ais.append(new_ai)
+
+        new_one.abs_insns = new_ais
+        new_one.abs_aliasing = deepcopy(self.abs_aliasing)
+
+        return new_one
+
 
 class PrecomputedSamplerAbsInsn:
     def __init__(self, allowed_schemes):

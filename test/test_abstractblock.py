@@ -26,6 +26,14 @@ def test_concrete_ab_single_insn(random, actx):
     print(ab)
     assert ab.subsumes(ab)
 
+def test_concrete_ab_single_insn_minimize(random, actx):
+    bb = make_bb(actx, "add rax, 0x2a")
+    ab = AbstractBlock(actx, bb)
+    havoc_alias_part(ab)
+
+    mab = ab.minimize()
+
+    assert ab.subsumes(mab)
 
 def test_concrete_ab_single_insn_not_bottom(random, actx):
     bb = make_bb(actx, "add rax, 0x2a")
