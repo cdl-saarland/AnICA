@@ -45,6 +45,9 @@ class MeasurementDB(metaclass=ConfigMeta):
         cur.execute("SELECT source_computer, timestamp FROM series WHERE series_id=?", (series_id,))
         result = cur.fetchone()
 
+        if result is None:
+            return None
+
         series_dict["series_date"] = datetime.fromtimestamp(result["timestamp"]).isoformat()
         series_dict["source_computer"] = result["source_computer"]
 
