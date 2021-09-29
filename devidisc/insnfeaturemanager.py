@@ -46,7 +46,6 @@ class InsnFeatureManager(metaclass=ConfigMeta):
 
     Special feature names:
         - exact_scheme
-        - mnemonic
     """
 
     config_options = dict(
@@ -75,10 +74,8 @@ class InsnFeatureManager(metaclass=ConfigMeta):
     def _build_index(self):
         # add indices for all the relevant features
         for key, kind in self.features:
-            if key in self.not_indexed or key == "mnemonic":
-                # No index needed, either because we don't use one or, in
-                # the case of the mnemonic, because it is already indexed
-                # in the iwho_ctx.
+            if key in self.not_indexed:
+                # No index needed (applies for exact_scheme)
                 continue
             self.feature_indices[key] = defaultdict(list)
 
@@ -86,7 +83,7 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         for ischeme in self.iwho_ctx.filtered_insn_schemes:
             insn_features = self.extract_features(ischeme)
             for key, kind in self.features:
-                if key in self.not_indexed or key == "mnemonic":
+                if key in self.not_indexed:
                     continue
                 curr_idx = self.feature_indices[key]
 
@@ -188,12 +185,7 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         """
         assert not value.is_top() and not value.is_bottom()
 
-        if feature_key == 'mnemonic':
-            # We don't need to cache that, since the iwho context already does
-            # that.
-            index = self.iwho_ctx.mnemonic_to_insn_schemes
-        else:
-            index = self.feature_indices[feature_key]
+        index = self.feature_indices[feature_key]
 
         if isinstance(value, SubSetAbstractFeature) or isinstance(value, SubSetOrDefinitelyNotAbstractFeature):
             if isinstance(value, SubSetOrDefinitelyNotAbstractFeature):
@@ -253,10 +245,7 @@ class InsnFeatureManager(metaclass=ConfigMeta):
             # create a list of (concrete feature, edit distance) pairs for the
             # base and sort it by ascending edit distance
             res = []
-            if feature_key == 'mnemonic':
-                scheme_index = self.iwho_ctx.mnemonic_to_insn_schemes
-            else:
-                scheme_index = self.feature_indices[feature_key]
+            scheme_index = self.feature_indices[feature_key]
             for k in scheme_index.keys():
                 res.append((k, editdistance.eval(base, k)))
             res.sort(key=lambda x: x[1])

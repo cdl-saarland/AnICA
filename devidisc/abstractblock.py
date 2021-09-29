@@ -1351,7 +1351,12 @@ class AbstractBlock(Expandable):
             new_ai = AbstractInsn(actx)
             for s in feasible_schemes:
                 new_ai.join(s)
+
+            # new_feasible_schemes = actx.insn_feature_manager.compute_feasible_schemes(new_ai.features)
+            # assert len(new_feasible_schemes) == len(feasible_schemes)
+
             new_ais.append(new_ai)
+
 
         new_one.abs_insns = new_ais
         new_one.abs_aliasing = deepcopy(self.abs_aliasing)
