@@ -172,7 +172,6 @@ class EditDistanceAbstractFeature(AbstractFeature):
 
     def set_to_top(self):
         self.top = True
-        self.base = None
         self.curr_dist = None
 
     def subsumes(self, other: AbstractFeature) -> bool:
@@ -1349,11 +1348,18 @@ class AbstractBlock(Expandable):
         for ai in self.abs_insns:
             feasible_schemes = actx.insn_feature_manager.compute_feasible_schemes(ai.features)
             new_ai = AbstractInsn(actx)
+            for k, f in new_ai.features.items():
+                if isinstance(f, EditDistanceAbstractFeature):
+                    # those are not commutative/associative: The feature of the
+                    # first insn scheme is used as a base. To rule out that
+                    # this gives us less accurate results, we make sure that we
+                    # use the same base as the original block.
+                    old_f = ai.features[k]
+                    assert isinstance(old_f, EditDistanceAbstractFeature)
+                    f.base = old_f.base
+
             for s in feasible_schemes:
                 new_ai.join(s)
-
-            # new_feasible_schemes = actx.insn_feature_manager.compute_feasible_schemes(new_ai.features)
-            # assert len(new_feasible_schemes) == len(feasible_schemes)
 
             new_ais.append(new_ai)
 

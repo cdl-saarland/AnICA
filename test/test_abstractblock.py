@@ -96,6 +96,48 @@ def test_div_minimize():
 
     # assert False
 
+def test_pause_minimize():
+    config_dict = {
+        "insn_feature_manager": {
+            "features": [
+                    ["exact_scheme", "singleton"],
+                    ["mnemonic", ["editdistance", 3]],
+                ]
+            },
+        "iwho": {
+            "context_specifier": "x86_uops_info",
+            "filters": ["no_cf", "with_measurements:SKL", "whitelist:hsw_bhive_schemes.csv"]
+        },
+        "interestingness_metric": { },
+        "discovery": { },
+        "sampling": {},
+        "measurement_db": None,
+        "predmanager": None,
+    }
+
+    absblock_dict = {
+            "abs_insns": [
+                    {
+                        "exact_scheme": "$SV:TOP",
+                        "mnemonic": {"top": False, "base": "pause", "curr_dist": 2, "max_dist": 3},
+                    }
+                ],
+            "abs_aliasing": {"aliasing_dict": [], "is_bot": False}
+        }
+
+    actx = AbstractionContext(config_dict)
+    absblock_dict = actx.json_ref_manager.resolve_json_references(absblock_dict)
+    absblock = AbstractBlock.from_json_dict(actx, absblock_dict)
+
+    pre_min_features = actx.insn_feature_manager.compute_feasible_schemes(absblock.abs_insns[0].features)
+
+    min_absblock = absblock.minimize()
+
+    post_min_features = actx.insn_feature_manager.compute_feasible_schemes(min_absblock.abs_insns[0].features)
+
+    assert len(pre_min_features) == len(post_min_features)
+
+
 def test_concrete_ab_single_insn_not_bottom(random, actx):
     bb = make_bb(actx, "add rax, 0x2a")
     ab = AbstractBlock(actx, bb)
