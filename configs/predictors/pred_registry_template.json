@@ -21,6 +21,139 @@
             "timeout": 1.0
         }
 },
+"llvm-mca.9-rel.skl": {
+    "tool": "llvm-mca",
+    "version": "9.0.1-rel+assert",
+    "uarch": "SKL",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca 9 binary",
+            "llvmmca_opts": ["-mcpu", "skylake"],
+            "timeout": 1.0
+        }
+},
+"osaca.0.4.5.skx": {
+    "tool": "osaca",
+    "version": "0.4.5",
+    "uarch": "SKX",
+    "config": {
+            "kind": "osaca",
+            "osaca_path": "osaca",
+            "osaca_opts": ["--ignore-unknown", "--arch", "SKX"],
+            "llvmmc_path": "llvm-mc",
+            "timeout": 3.0
+        }
+},
+
+"uica.skl": {
+    "tool": "uica",
+    "version": "master",
+    "uarch": "SKL",
+    "config": {
+            "kind": "uica",
+            "uica_path": "TODO: add path of uica executable",
+            "uica_opts": ["-arch", "SKL"],
+            "timeout": 1.0
+        }
+},
+
+"nanobench.skl": {
+    "tool": "nanobench",
+    "version": "master",
+    "uarch": "SKL",
+    "config": {
+            "kind": "nanobench",
+            "nanobench_path": "TODO: add path of nanobench executable",
+            "nanobench_opts": ["-config", "${BASE}/configs/cfg_Skylake_common.txt"],
+            "timeout": 1.0
+        }
+},
+
+
+"uica.hsw": {
+    "tool": "uica",
+    "version": "master",
+    "uarch": "HSW",
+    "config": {
+            "kind": "uica",
+            "uica_path": "TODO: add path of uica executable",
+            "uica_opts": ["-arch", "HSW"],
+            "timeout": 1.0
+        }
+},
+
+
+"iaca.hsw": {
+    "tool": "iaca",
+    "version": "v3.0-28-g1ba2cbb",
+    "uarch": "HSW",
+    "config": {
+            "kind": "iaca",
+            "iaca_path": "TODO: add path of iaca executable",
+            "iaca_opts": ["-arch", "HSW"],
+            "timeout": 1.0
+        }
+},
+"llvm-mca.12-dbg.hsw": {
+    "tool": "llvm-mca",
+    "version": "12-dbg",
+    "uarch": "HSW",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
+            "llvmmca_opts": ["-mcpu", "haswell"],
+            "timeout": 1.0
+        }
+},
+"llvm-mca.9-rel.hsw": {
+    "tool": "llvm-mca",
+    "version": "9.0.1-rel+assert",
+    "uarch": "HSW",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
+            "llvmmca_opts": ["-mcpu", "haswell"],
+            "timeout": 1.0
+        }
+},
+"osaca.0.4.5.hsw": {
+    "tool": "osaca",
+    "version": "0.4.5",
+    "uarch": "HSW",
+    "config": {
+            "kind": "osaca",
+            "osaca_path": "osaca",
+            "osaca_opts": ["--ignore-unknown", "--arch", "HSW"],
+            "llvmmc_path": "llvm-mc",
+            "timeout": 3.0
+        }
+},
+"ithemal.bhive.hsw": {
+    "tool": "ithemal",
+    "version": "bhive",
+    "uarch": "HSW",
+    "config": {
+            "kind": "ithemal_docker",
+            "host": "127.0.0.1",
+            "port": "42010",
+            "ssl_path": "TODO: add ssl_path",
+            "model": "bhive/hsw",
+            "timeout": 10.0
+        }
+},
+"ithemal.bhive.skl": {
+    "tool": "ithemal",
+    "version": "bhive",
+    "uarch": "SKL",
+    "config": {
+            "kind": "ithemal_docker",
+            "host": "127.0.0.1",
+            "port": "42010",
+            "ssl_path": "TODO: add ssl_path",
+            "model": "bhive/skl",
+            "timeout": 10.0
+        }
+},
 "test.all_1": {
     "tool": "testpredictor",
     "version": "all_1",
