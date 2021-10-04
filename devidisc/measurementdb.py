@@ -16,6 +16,9 @@ class MeasurementDB(metaclass=ConfigMeta):
         self.con = None
         self.nesting_level = 0 # for making the ContextManager re-entrant
 
+        self.uarch_cache = None
+        self.predictor_cache = None
+
     def _init_con(self):
         self.con = sqlite3.connect(self.db_path)
         self.con.row_factory = sqlite3.Row
@@ -35,6 +38,31 @@ class MeasurementDB(metaclass=ConfigMeta):
         if self.nesting_level == 0:
             self._deinit_con()
 
+    def invalidate_caches(self):
+        self.uarch_cache = None
+        self.predictor_cache = None
+
+    def get_caches(self):
+        con = self.con
+        assert con is not None
+        cur = con.cursor()
+
+        if self.predictor_cache is None:
+            predictor_cache = dict()
+            cur.execute("SELECT predictor_id, toolname, version FROM predictors")
+            for r in cur.fetchall():
+                predictor_cache[r["predictor_id"]] = (r["toolname"], r["version"])
+            self.predictor_cache = predictor_cache
+
+        if self.uarch_cache is None:
+            uarch_cache = dict()
+            cur.execute("SELECT uarch_id, uarch_name FROM uarchs")
+            for r in cur.fetchall():
+                uarch_cache[r["uarch_id"]] = r["uarch_name"]
+            self.uarch_cache = uarch_cache
+
+        return self.predictor_cache, self.uarch_cache
+
     def get_series(self, series_id):
         con = self.con
         assert con is not None
@@ -51,40 +79,36 @@ class MeasurementDB(metaclass=ConfigMeta):
         series_dict["series_date"] = datetime.fromtimestamp(result["timestamp"]).isoformat()
         series_dict["source_computer"] = result["source_computer"]
 
-        predictor_cache = dict()
-        cur.execute("SELECT predictor_id, toolname, version FROM predictors")
-        for r in cur.fetchall():
-            predictor_cache[r["predictor_id"]] = (r["toolname"], r["version"])
+        predictor_cache, uarch_cache = self.get_caches()
 
-        uarch_cache = dict()
-        cur.execute("SELECT uarch_id, uarch_name FROM uarchs")
-        for r in cur.fetchall():
-            uarch_cache[r["uarch_id"]] = r["uarch_name"]
+        # cur.execute("SELECT measurements.measurement_id, input, predictor_id, uarch_id, result, remark FROM measurements INNER JOIN predictor_runs ON measurements.measurement_id = predictor_runs.measurement_id WHERE series_id=?", (series_id,))
+        # cur.execute("SELECT measurements.measurement_id, input, predictor_id, uarch_id, result, remark FROM measurements INNER JOIN predictor_runs ON measurements.series_id=? AND measurements.measurement_id = predictor_runs.measurement_id", (series_id,))
 
-        measurements = []
+        cur.execute("""
+                SELECT mmnts.measurement_id, input, predictor_id, uarch_id, result, remark
+                FROM (SELECT * FROM measurements WHERE series_id=?) AS mmnts
+                INNER JOIN predictor_runs ON mmnts.measurement_id = predictor_runs.measurement_id""",
+            (series_id,))
 
-        cur.execute("SELECT measurement_id, input FROM measurements WHERE series_id=?", (series_id,))
+        meas_dicts = dict()
+
         for r in cur.fetchall():
+            pred_run = dict()
+            pred_run["result"] = r["result"]
+            pred_run["remark"] = r["remark"]
+            pred_run["predictor"] = predictor_cache[r["predictor_id"]]
+            pred_run["uarch"] = uarch_cache[r["uarch_id"]]
             meas_id = r['measurement_id']
-            meas_dict = dict(measurement_id=meas_id)
-            meas_dict["input"] = r['input']
+            md = meas_dicts.get(meas_id, None)
+            if md is None:
+                md = dict()
+                md['measurement_id'] = meas_id
+                md['input'] = r['input']
+                md["predictor_runs"] = []
+                meas_dicts[meas_id] = md
+            md["predictor_runs"].append(pred_run)
 
-            pred_runs = []
-
-            cur.execute("SELECT predictor_id, uarch_id, result, remark FROM predictor_runs WHERE measurement_id=?", (meas_id,))
-            for r in cur.fetchall():
-                pred_run = dict()
-                pred_run["result"] = r["result"]
-                pred_run["remark"] = r["remark"]
-                pred_run["predictor"] = predictor_cache[r["predictor_id"]]
-                pred_run["uarch"] = uarch_cache[r["uarch_id"]]
-                pred_runs.append(pred_run)
-
-            meas_dict["predictor_runs"] = pred_runs
-
-            measurements.append(meas_dict)
-
-        series_dict["measurements"] = measurements
+        series_dict["measurements"] = [v for k, v in meas_dicts.items()]
         return series_dict
 
     def create_tables(self):
@@ -200,6 +224,7 @@ class MeasurementDB(metaclass=ConfigMeta):
 
                 predictor_id = predictor_ids.get(predictor, None)
                 if predictor_id is None:
+                    self.invalidate_caches()
                     toolname, version = predictor
                     cur.execute("SELECT predictor_id FROM predictors WHERE toolname=? and version=?", (toolname, version))
                     result = cur.fetchone()
@@ -214,6 +239,7 @@ class MeasurementDB(metaclass=ConfigMeta):
                 # it would be nicer to deduplicate this with the predictor code
                 uarch_id = uarch_ids.get(uarch, None)
                 if uarch_id is None:
+                    self.invalidate_caches()
                     cur.execute("SELECT uarch_id FROM uarchs WHERE uarch_name=?", (uarch,))
                     result = cur.fetchone()
                     if result is None:

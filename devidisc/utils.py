@@ -64,15 +64,6 @@ class Timer:
         self.start = time.perf_counter()
         return self
 
-    def str_sub_results(self):
-        res = []
-        for k, v in self.sub_results.items():
-            secs = sum(v)
-            num = len(v)
-            res.append("  - acc time for '{}' ({} execuctions): {} s".format(k, num, secs))
-
-        return "\n".join(res)
-
     def get_result(self):
         assert self.seconds_passed is not None
         res = "time for '{}': {} s".format(self.identifier, self.seconds_passed)
