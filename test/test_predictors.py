@@ -24,6 +24,10 @@ def test_all():
 
         test_bb = make_bb(actx, "add rax, 0x2a\nsub [rbx + 0x8], rcx")
 
+    actx.predmanager.pool = None
+
+    actx.predmanager.get_sudo_if_necessary(actx.predmanager.pred_registry.keys())
+
     errors = 0
     for key in actx.predmanager.pred_registry.keys():
         actx.predmanager.set_predictors([key])

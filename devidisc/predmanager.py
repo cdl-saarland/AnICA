@@ -10,7 +10,7 @@ import os
 import re
 import socket
 
-from iwho.predictors import Predictor
+from iwho.predictors import Predictor, get_sudo
 
 from .configurable import ConfigMeta, load_json_config
 
@@ -134,13 +134,20 @@ class PredictorManager(metaclass=ConfigMeta):
         """
         self.dbman = dbmanager
 
-    def set_predictors(self, keys):
-        """ Set the group of predictors to use.
 
-        `keys` is expected to be a list of keys into the predictor registry
-        with which the PredictorManager has been configured.
+    def get_sudo_if_necessary(self, keys):
+        """ Ask for the sudo password if any of the predictors specified by
+        keys needs it and it is not yet available.
         """
-        self.predictor_map.clear()
+        actual_keys = self.resolve_key_patterns(keys)
+        for k in actual_keys:
+            pred_config = self.pred_registry[k]['config']
+            pred = Predictor.get(pred_config)
+            if pred.requires_sudo():
+                get_sudo()
+                break
+
+    def resolve_key_patterns(self, keys):
         actual_keys = []
         for key in keys:
             if key in self.pred_registry:
@@ -155,6 +162,16 @@ class PredictorManager(metaclass=ConfigMeta):
 
                 if not found:
                     raise UnknownPredictorError(f"unknown predictor key/pattern: {key}")
+        return actual_keys
+
+    def set_predictors(self, keys):
+        """ Set the group of predictors to use.
+
+        `keys` is expected to be a list of keys into the predictor registry
+        with which the PredictorManager has been configured.
+        """
+        self.predictor_map.clear()
+        actual_keys = self.resolve_key_patterns(keys)
 
         for key in actual_keys:
             if key in self.predictor_map:
