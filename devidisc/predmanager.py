@@ -170,6 +170,9 @@ class PredictorManager(metaclass=ConfigMeta):
         `keys` is expected to be a list of keys into the predictor registry
         with which the PredictorManager has been configured.
         """
+
+        self.get_sudo_if_necessary(keys)
+
         self.predictor_map.clear()
         actual_keys = self.resolve_key_patterns(keys)
 

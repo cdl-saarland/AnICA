@@ -55,6 +55,8 @@ def main():
         # if none are given, take them all
         pred_keys = actx.predmanager.resolve_key_patterns(['.*'])
 
+    actx.predmanager.get_sudo_if_necessary(pred_keys)
+
     for pred_key in pred_keys:
         error_schemes = []
         logger.info(f"checking predictor '{pred_key}'")
