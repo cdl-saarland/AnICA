@@ -32,6 +32,10 @@ class InterestingnessMetric(metaclass=ConfigMeta):
         self.predmanager = predmanager
 
     def compute_interestingness(self, eval_res):
+        """ Compute a (symmetric) relative difference between the throughputs.
+        If it would be impossible to compute this, return infinity to indicate
+        maximally interesting results.
+        """
         if any((v.get('TP', None) is None or v.get('TP', -1.0) < 0 for k, v in eval_res.items())):
             # errors are always interesting
             return math.inf
@@ -41,7 +45,8 @@ class InterestingnessMetric(metaclass=ConfigMeta):
             # divisions by zero here are suspicious
             return math.inf
         rel_error = ((max(values) - min(values)) / divisor) * len(values)
-        # TODO think about this metric?
+        # This is the difference between minimum and maximum, divided by the
+        # average.
         return rel_error
 
     def is_interesting(self, eval_res) -> bool:
