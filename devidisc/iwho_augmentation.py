@@ -16,7 +16,7 @@ class IWHOAugmentation:
     def must_alias(self, op1: iwho.OperandInstance, op2: iwho.OperandInstance):
         if isinstance(op1, iwho.x86.MemoryOperand) and isinstance(op2, iwho.x86.MemoryOperand):
             # we know that because of how we sample memory operands
-            return op1.base == op2.base
+            return op1.base == op2.base and op1.displacement == op2.displacement
 
         # TODO this could use additional information about the instantiation
         # (in contrast to the iwho.Context method, which should be correct for
@@ -26,7 +26,7 @@ class IWHOAugmentation:
     def may_alias(self, op1: iwho.OperandInstance, op2: iwho.OperandInstance):
         if isinstance(op1, iwho.x86.MemoryOperand) and isinstance(op2, iwho.x86.MemoryOperand):
             # we know that because of how we sample memory operands
-            return op1.base == op2.base
+            return op1.base == op2.base and op1.displacement == op2.displacement
 
         # TODO this could use additional information about the instantiation
         # (in contrast to the iwho.Context method, which should be correct for
@@ -79,7 +79,14 @@ class IWHOAugmentation:
                 return True
         return False
 
-    reserved_names = ["rbx", "rsi", "rdi"]
+    reserved_names = ["rbp", "rsi", "rdi"]
+    # To produce valid inputs for nanoBench, we need to use only registers as
+    # base pointers that get a memory allocation there. A natural choice of
+    # those would be r14 rather than rbp (because rbp cannot be used as base
+    # pointer without displacement). However, r14 is an extended register, i.e.
+    # using it requires a REX prefix, which can break instruction schemes that
+    # do not want a REX prefix. Since we use a displacement anyway, using rbp
+    # should be fine as well.
 
     def allowed_operands(self, op_scheme):
         if op_scheme.is_fixed():
@@ -92,9 +99,9 @@ class IWHOAugmentation:
         elif isinstance(constraint, iwho.x86.MemConstraint):
             reg_names = self.reserved_names
             base_regs = [iwho.x86.all_registers[n] for n in reg_names]
-            displacement = 64
+            displacements = [64, 128]
             # TODO deduplicate?
-            return {iwho.x86.MemoryOperand(width=constraint.width, base=base_reg, displacement=displacement) for base_reg in base_regs}
+            return {iwho.x86.MemoryOperand(width=constraint.width, base=base_reg, displacement=displacement) for base_reg in base_regs for displacement in displacements}
         elif isinstance(constraint, iwho.x86.ImmConstraint):
             return {iwho.x86.ImmediateOperand(width=constraint.width, value=42)}
         else:
