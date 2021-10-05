@@ -33,7 +33,7 @@ def main():
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
             help='seed for the rng')
 
-    argparser.add_argument('predictors', nargs='+', metavar="PREDICTOR_ID",
+    argparser.add_argument('predictors', nargs='*', metavar="PREDICTOR_ID",
             help='ids of predictor(s) to test')
 
     args = parse_args_with_logging(argparser, "info")
@@ -47,11 +47,15 @@ def main():
 
     actx = AbstractionContext(config=config)
 
-    batch_size = 10
+    batch_size = 5
     # batch_size = actx.discovery_cfg.generalization_batch_size
 
+    pred_keys = actx.predmanager.resolve_key_patterns(args.predictors)
+    if len(pred_keys) == 0:
+        # if none are given, take them all
+        pred_keys = actx.predmanager.resolve_key_patterns(['.*'])
 
-    for pred_key in args.predictors:
+    for pred_key in pred_keys:
         error_schemes = []
         logger.info(f"checking predictor '{pred_key}'")
         for ischeme in actx.iwho_ctx.filtered_insn_schemes:
