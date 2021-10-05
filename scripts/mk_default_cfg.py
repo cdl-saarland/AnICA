@@ -20,13 +20,16 @@ def main():
 
     argparser.add_argument('-f', '--filter-doc', action='store_true', help='do not emit documentation entries')
 
-    argparser.add_argument('resultfile', metavar='FILENAME', help='path where the config in json format should be saved')
+    argparser.add_argument('-o', '--outfile', metavar='FILENAME', help='path where the config in json format should be saved')
 
     args = argparser.parse_args()
 
-    with open(args.resultfile, 'w') as f:
-        default_cfg = AbstractionContext.get_default_config()
-        print(pretty_print(default_cfg, filter_doc=args.filter_doc), file=f)
+    default_cfg = AbstractionContext.get_default_config()
+    if args.outfile is not None:
+        with open(args.outfile, 'w') as f:
+            print(pretty_print(default_cfg, filter_doc=args.filter_doc), file=f)
+    else:
+        print(pretty_print(default_cfg, filter_doc=args.filter_doc))
 
 if __name__ == "__main__":
     main()
