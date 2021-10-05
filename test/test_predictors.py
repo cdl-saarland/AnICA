@@ -22,7 +22,7 @@ def test_all():
     with Timer('startup', log=False):
         actx = AbstractionContext(config={})
 
-        test_bb = make_bb(actx, "add rax, 0x2a\nsub [rbx + 0x8], rcx")
+        test_bb = make_bb(actx, "add rax, 0x2a\nsub [rbp + 0x8], rcx")
 
     actx.predmanager.pool = None
 
