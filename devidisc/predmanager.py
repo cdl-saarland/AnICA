@@ -211,7 +211,7 @@ class PredictorManager(metaclass=ConfigMeta):
             pred = Predictor.get(pred_config)
 
         tasks = map(lambda x: LightBBWrapper(x), bbs)
-        if self.pool is None:
+        if self.pool is None or pred.needs_to_run_alone():
             results = map(partial(evaluate_bb, pred=pred), tasks)
         else:
             results = self.pool.imap(partial(evaluate_bb, pred=pred), tasks)
@@ -221,11 +221,27 @@ class PredictorManager(metaclass=ConfigMeta):
 
     def eval_with_all(self, bbs):
         """TODO document"""
-        tasks = map(lambda x: LightBBWrapper(x), bbs)
+        # Some predictors want to run alone (e.g. because they do actual
+        # measurements that should not be too noisy), we run those first.
+        run_alone = []
+        run_parallel = []
+        for k, p in self.predictors:
+            if p.needs_to_run_alone():
+                run_alone.append((k, p))
+            else:
+                run_parallel.append((k, p))
+
+        tasks = list(map(lambda x: LightBBWrapper(x), bbs))
+
+        alone_results = list(map(partial(evaluate_multiple, preds=run_alone), tasks))
+
         if self.pool is None:
-            results = map(partial(evaluate_multiple, preds=self.predictors), tasks)
+            parallel_results = list(map(partial(evaluate_multiple, preds=run_parallel), tasks))
         else:
-            results = self.pool.imap(partial(evaluate_multiple, preds=self.predictors), tasks)
+            parallel_results = self.pool.imap(partial(evaluate_multiple, preds=run_parallel), tasks)
+        results = alone_results
+        for r1, r2 in zip(results, parallel_results):
+            r1.update(r2)
         return zip(bbs, results)
 
     def eval_with_all_and_report(self, bbs):
