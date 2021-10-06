@@ -10,9 +10,9 @@
             "timeout": 1.0
         }
 },
-"llvm-mca.12-dbg.skl": {
+"llvm-mca.13-r+a.skl": {
     "tool": "llvm-mca",
-    "version": "12-dbg",
+    "version": "13-r+a",
     "uarch": "SKL",
     "config": {
             "kind": "llvmmca",
@@ -21,9 +21,9 @@
             "timeout": 1.0
         }
 },
-"llvm-mca.9-rel.skl": {
+"llvm-mca.9-r+a.skl": {
     "tool": "llvm-mca",
-    "version": "9.0.1-rel+assert",
+    "version": "9.0.1-r+a",
     "uarch": "SKL",
     "config": {
             "kind": "llvmmca",
@@ -94,9 +94,9 @@
             "timeout": 1.0
         }
 },
-"llvm-mca.12-dbg.hsw": {
+"llvm-mca.13-r+a.hsw": {
     "tool": "llvm-mca",
-    "version": "12-dbg",
+    "version": "13-r+a",
     "uarch": "HSW",
     "config": {
             "kind": "llvmmca",
@@ -105,9 +105,9 @@
             "timeout": 1.0
         }
 },
-"llvm-mca.9-rel.hsw": {
+"llvm-mca.9-r+a.hsw": {
     "tool": "llvm-mca",
-    "version": "9.0.1-rel+assert",
+    "version": "9.0.1-r+a",
     "uarch": "HSW",
     "config": {
             "kind": "llvmmca",

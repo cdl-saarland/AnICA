@@ -1,7 +1,7 @@
 [
     {
         "abstraction_config_path": "../abstraction/tiny.json",
-        "predictors": ["llvm-mca.12-dbg.skl", "iaca.skl"],
+        "predictors": ["llvm-mca.13-r+a.skl", "iaca.skl"],
         "termination": {
             "num_batches": 2
         }
