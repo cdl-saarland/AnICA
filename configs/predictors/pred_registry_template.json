@@ -70,7 +70,8 @@
                 "-warm_up_count", "10",
                 "-loop", "100"
             ],
-            "timeout": 1.0
+            "timeout": 1.0,
+            "num_samples": 3
         }
 },
 
