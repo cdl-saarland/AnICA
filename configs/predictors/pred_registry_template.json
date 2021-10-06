@@ -64,7 +64,12 @@
     "config": {
             "kind": "nanobench",
             "nanobench_path": "TODO: add path of nanobench executable",
-            "nanobench_opts": ["-config", "${BASE}/configs/cfg_Skylake_common.txt"],
+            "nanobench_opts": [
+                "-config", "${BASE}/configs/cfg_Skylake_common.txt",
+                "-unroll", "20",
+                "-warm_up_count", "10",
+                "-loop", "100"
+            ],
             "timeout": 1.0
         }
 },
