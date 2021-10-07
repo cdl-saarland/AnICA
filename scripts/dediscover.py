@@ -62,6 +62,17 @@ def main():
     if check_config:
         total_seconds = 0
 
+    # to not require interactivity: query for the sudo password once, in the
+    # beginning if necessary
+    for idx, config in enumerate(campaign_config):
+        actx_config = load_json_config(config['abstraction_config_path'])
+        predictor_keys = config['predictors']
+        actx = AbstractionContext(config=actx_config)
+        actx.predmanager.set_predictors(predictor_keys) # this will query for the password if necessary
+        del actx
+        del actx_config
+        del predictor_keys
+
     while True:
         for idx, config in enumerate(campaign_config):
             # create a campaign directory
