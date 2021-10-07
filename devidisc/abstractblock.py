@@ -201,8 +201,13 @@ class EditDistanceAbstractFeature(AbstractFeature):
 
 
 class LogUpperBoundAbstractFeature(AbstractFeature):
+    """ An abstract feature that constrains the represented insn schemes with
+    an upper bound on the number of entries in the concrete feature.
+    Upper bounds are restricted to powers of two until some fixed maximum.
+    """
     def __init__(self, max_ub):
         self.val = AbstractFeature.BOTTOM
+        # the upper bound is `self.val**2 - 1` (inclusively)
         self.max_ub = max_ub
 
     def __eq__(self, other):
@@ -269,11 +274,13 @@ class LogUpperBoundAbstractFeature(AbstractFeature):
             return
         if self.is_top():
             return
-        log_feature = math.floor(math.log2(len(feature) + 1))
+        log_feature = math.floor(math.log2(len(feature)) + 1)
         if self.is_bottom():
             self.val = log_feature
-            return
-        self.val = max(self.val, log_feature)
+        else:
+            self.val = max(self.val, log_feature)
+        if self.val > self.max_ub:
+            self.set_to_top()
         return
 
 

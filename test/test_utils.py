@@ -35,6 +35,25 @@ def actx():
     }
     return AbstractionContext(config)
 
+@pytest.fixture(scope="module")
+def actx_complex():
+    config = {
+        "insn_feature_manager": {
+            "features": [
+                ["exact_scheme", "singleton"],
+                ["mnemonic", "singleton"],
+                ["opschemes", "subset"],
+                ["memory_usage", "subset_or_definitely_not"],
+                ["uops_on_SKL", ["log_ub", 5]],
+            ]
+        },
+        "iwho": { "context_specifier": "x86_uops_info" },
+        "interestingness": None,
+        "measurement_db": None,
+        "predmanager": None,
+    }
+    return AbstractionContext(config)
+
 def havoc_alias_part(absblock):
     # this sets the aliasing part of the abstract block to top
     absblock.abs_aliasing.havoc()

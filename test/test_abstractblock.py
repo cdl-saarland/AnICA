@@ -725,3 +725,25 @@ def test_sample_blacklist(random):
 
     assert check_mnemonics(ab, {"add"}, sample_args={"insn_scheme_blacklist": bl})
 
+
+def test_log_ub_feature(actx_complex):
+    # This test checks whether the join of the log domain respects the upper
+    # bound to go to top.
+    actx = actx_complex
+
+    bb = make_bb(actx, 'CPUID')
+    ab = AbstractBlock(actx, bb)
+
+    features = actx.insn_feature_manager.extract_features(bb.insns[0].scheme)
+    num_uops = len(features['uops_on_SKL'])
+
+    ai = ab.abs_insns[0]
+
+    assert ai.features['uops_on_SKL'].is_top(), "The CPUID instruction has more than 31 uops on SKL, namely {}".format(num_uops)
+
+    ai.features['exact_scheme'].set_to_top()
+
+    print(ab)
+
+    ab.sample()
+
