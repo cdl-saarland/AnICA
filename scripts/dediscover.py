@@ -89,7 +89,14 @@ def main():
             # set the db path
             actx_config['measurement_db'] = {"db_path": str(curr_out_dir / 'measurements.db')}
 
-            actx = AbstractionContext(config=actx_config)
+            restrict_to_supported_insns = config['restrict_to_supported_insns']
+
+            if restrict_to_supported_insns:
+                rest_keys = predictor_keys
+            else:
+                rest_keys = None
+
+            actx = AbstractionContext(config=actx_config, restrict_to_insns_for=rest_keys)
             actx.predmanager.set_predictors(predictor_keys)
 
             outdict = {**config, "abstraction_config": actx.get_config()}
@@ -112,8 +119,6 @@ def main():
                 continue
 
             discoveries = discovery.discover(actx, termination=termination_criterion, out_dir=curr_out_dir)
-
-            # TODO store those
 
         if (not args.loop):
             break

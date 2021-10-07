@@ -87,29 +87,24 @@ class AbstractionContext:
     objects for performing a deviation discovery campaign.
     """
 
-    def __init__(self, config):
-
-        self.iwho_cfg = IWHOConfig(config.get('iwho', {}))
-        iwho_ctx = self.iwho_cfg.create_context()
-        self.iwho_ctx = iwho_ctx
-
-        self.iwho_augmentation = IWHOAugmentation(self.iwho_ctx)
-        self.json_ref_manager = JSONReferenceManager(self.iwho_ctx)
-
-
-        ifm_config = config.get('insn_feature_manager', {})
-        self.insn_feature_manager = InsnFeatureManager(self.iwho_ctx, ifm_config)
-
-        self.interestingness_metric = None
-        interestingness_config = config.get('interestingness_metric', {})
-        if interestingness_config is not None:
-            self.interestingness_metric = InterestingnessMetric(interestingness_config)
+    def __init__(self, config, restrict_to_insns_for=None):
+        """
+        restrict_to_insns_for: If a list of predictor keys is provided, the
+        iwho context will be restricted to instructions that are supported by
+        all of these predictors (additionally to restrictions specified in the
+        iwho config).
+        """
 
         discovery_config = config.get('discovery', {})
         self.discovery_cfg = DiscoveryConfig(discovery_config)
 
         sampling_config = config.get('sampling', {})
         self.sampling_cfg = SamplingConfig(sampling_config)
+
+        self.interestingness_metric = None
+        interestingness_config = config.get('interestingness_metric', {})
+        if interestingness_config is not None:
+            self.interestingness_metric = InterestingnessMetric(interestingness_config)
 
         self.measurement_db = None
         measurementdb_config = config.get('measurement_db', {})
@@ -123,6 +118,25 @@ class AbstractionContext:
             self.interestingness_metric.set_predmanager(self.predmanager)
             if self.measurement_db is not None:
                 self.predmanager.set_measurement_db(self.measurement_db)
+
+        self.iwho_cfg = IWHOConfig(config.get('iwho', {}))
+        iwho_ctx = self.iwho_cfg.create_context()
+        self.iwho_ctx = iwho_ctx
+
+        if restrict_to_insns_for is not None:
+            # We need to do this exactly here, because we need to add the
+            # filters before we create the insn_feature_manager. Creation of
+            # that will already include all insn schemes that are currently not
+            # filtered away for building its indices.
+            for f in self.predmanager.get_insn_filter_files(restrict_to_insns_for):
+                self.iwho_ctx.push_filter(iwho.Filters.blacklist(f))
+
+        self.iwho_augmentation = IWHOAugmentation(self.iwho_ctx)
+        self.json_ref_manager = JSONReferenceManager(self.iwho_ctx)
+
+
+        ifm_config = config.get('insn_feature_manager', {})
+        self.insn_feature_manager = InsnFeatureManager(self.iwho_ctx, ifm_config)
 
     @staticmethod
     def get_default_config():

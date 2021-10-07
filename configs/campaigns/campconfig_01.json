@@ -2,6 +2,7 @@
     {
         "abstraction_config_path": "../abstraction/default.json",
         "predictors": ["llvm-mca.13-r+a.skl", "iaca.skl"],
+        "restrict_to_supported_insns": true,
         "termination": {
             "minutes": 20
         }

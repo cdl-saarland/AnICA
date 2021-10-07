@@ -120,7 +120,9 @@ class PredictorManager(metaclass=ConfigMeta):
 
     def __exit__(self, exc_type, exc_value, trace):
         self.close()
-        self.pool = None
+
+    def __del__(self):
+        self.close()
 
     def close(self):
         """ This method should be called at the end of the lifetime of the
@@ -128,6 +130,7 @@ class PredictorManager(metaclass=ConfigMeta):
         """
         if self.pool is not None:
             self.pool.close()
+            self.pool = None
 
     def set_measurement_db(self, dbmanager):
         """ Set a database manager to be used for storing measurements.
@@ -163,6 +166,18 @@ class PredictorManager(metaclass=ConfigMeta):
                 if not found:
                     raise UnknownPredictorError(f"unknown predictor key/pattern: {key}")
         return actual_keys
+
+    def get_insn_filter_files(self, keys):
+        """Get a list of file names that include lists of instruction schemes
+        that are not supported by some the predictors referenced by `keys`. """
+        actual_keys = self.resolve_key_patterns(keys)
+        res = []
+        for key in actual_keys:
+            filter_file = self.pred_registry[key].get('unsupported_insns_path', None)
+            if filter_file is not None:
+                filter_file = filter_file.format(KEY=key)
+                res.append(filter_file)
+        return res
 
     def set_predictors(self, keys):
         """ Set the group of predictors to use.

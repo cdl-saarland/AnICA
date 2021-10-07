@@ -1,0 +1,6 @@
+rdrand W:GPR:16
+rdrand W:GPR:32
+rdrand W:GPR:64
+rdseed W:GPR:16
+rdseed W:GPR:32
+rdseed W:GPR:64
