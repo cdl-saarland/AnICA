@@ -79,7 +79,7 @@ class IWHOAugmentation:
                 return True
         return False
 
-    reserved_names = ["rbp", "rsi", "rdi"]
+    mem_base_names = ["rbp", "rsi", "rdi"]
     # To produce valid inputs for nanoBench, we need to use only registers as
     # base pointers that get a memory allocation there. A natural choice of
     # those would be r14 rather than rbp (because rbp cannot be used as base
@@ -87,6 +87,9 @@ class IWHOAugmentation:
     # using it requires a REX prefix, which can break instruction schemes that
     # do not want a REX prefix. Since we use a displacement anyway, using rbp
     # should be fine as well.
+
+    reserved_names = ["r15", "rsp"] + mem_base_names
+    # nanoBench requires an unused r15 for the loop counter
 
     def allowed_operands(self, op_scheme):
         if op_scheme.is_fixed():
@@ -97,7 +100,7 @@ class IWHOAugmentation:
             # TODO should we allow register operands to alias with memory locations?
             return { o for o in constraint.acceptable_operands if o.alias_class not in reserved_alias_classes }
         elif isinstance(constraint, iwho.x86.MemConstraint):
-            reg_names = self.reserved_names
+            reg_names = self.mem_base_names
             base_regs = [iwho.x86.all_registers[n] for n in reg_names]
             displacements = [64, 128]
             # TODO deduplicate?
