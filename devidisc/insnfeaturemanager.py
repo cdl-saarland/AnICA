@@ -35,6 +35,7 @@ _default_features = [
         ["category", "singleton"],
         ["extension", "singleton"],
         ["isa-set", "singleton"],
+        ["has_lock", "singleton"],
     ]
 
 class InsnFeatureManager(metaclass=ConfigMeta):
@@ -265,6 +266,10 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         if 'mnemonic' in remaining_features:
             res['mnemonic'] = self.iwho_ctx.extract_mnemonic(ischeme)
             remaining_features.discard('mnemonic')
+
+        if 'has_lock' in remaining_features:
+            res['has_lock'] = "lock " in str(ischeme)
+            remaining_features.discard('has_lock')
 
         if 'opschemes' in remaining_features or 'memory_usage' in remaining_features:
             memory_opschemes = []
