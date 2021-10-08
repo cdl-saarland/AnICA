@@ -101,8 +101,10 @@ def main():
 
     random.seed(args.seed)
 
+    rest_keys = args.predictors
+
     actx_config = load_json_config(args.config)
-    actx = AbstractionContext(config=actx_config)
+    actx = AbstractionContext(config=actx_config, restrict_to_insns_for=rest_keys)
 
     if args.input is None and args.output is None:
         print("Error: Cannot infer output file name, please specify one via -o or --out(put)", file=sys.stderr)
