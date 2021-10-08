@@ -4,7 +4,7 @@
         "predictors": ["llvm-mca.13-r+a.skl", "iaca.skl"],
         "restrict_to_supported_insns": true,
         "termination": {
-            "hours": 8
+            "hours": 12
         }
     },
     {
@@ -12,7 +12,39 @@
         "predictors": ["llvm-mca.13-r+a.skl", "uica.skl"],
         "restrict_to_supported_insns": true,
         "termination": {
-            "hours": 8
+            "hours": 12
+        }
+    },
+    {
+        "abstraction_config_path": "../abstraction/final01/standard.json",
+        "predictors": ["uica.skl", "iaca.skl"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "hours": 12
+        }
+    },
+    {
+        "abstraction_config_path": "../abstraction/final01/standard.json",
+        "predictors": ["llvm-mca.13-r+a.skl", "llvm-mca.9-r+a.skl"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "hours": 12
+        }
+    },
+    {
+        "abstraction_config_path": "../abstraction/final01/standard.json",
+        "predictors": ["ithemal.bhive.skl", "uica.skl"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "hours": 12
+        }
+    },
+    {
+        "abstraction_config_path": "../abstraction/final01/standard.json",
+        "predictors": ["ithemal.bhive.skl", "iaca.skl"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "hours": 12
         }
     }
 ]
