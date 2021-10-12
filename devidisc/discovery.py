@@ -19,11 +19,14 @@ from .witness import WitnessTrace
 import logging
 logger = logging.getLogger(__name__)
 
-def sample_block_list(abstract_bb, num, insn_scheme_blacklist=[]):
+def sample_block_list(abstract_bb, num, insn_scheme_blacklist=None):
     """Try to sample `num` samples from abstract_bb
 
     If samples fail, the result will have fewer entries.
     """
+    if insn_scheme_blacklist is None:
+        insn_scheme_blacklist = []
+
     sampler = abstract_bb.precompute_sampler(insn_scheme_blacklist=insn_scheme_blacklist)
     concrete_bbs = []
     for x in range(num):
