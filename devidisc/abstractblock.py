@@ -19,7 +19,7 @@ from typing import Optional, Union, Sequence
 import editdistance
 import iwho
 
-from .configurable import store_json_config
+from .configurable import store_json_config, load_json_config
 
 import logging
 logger = logging.getLogger(__name__)
@@ -1214,6 +1214,20 @@ class AbstractBlock(Expandable):
             out_data[k] = v
 
         store_json_config(out_data, filename)
+
+    @staticmethod
+    def load_json_dump(filename, actx=None):
+        from .abstractioncontext import AbstractionContext
+
+        json_dict = load_json_config(filename)
+        if actx is None:
+            config_dict = json_dict['config']
+            config_dict['predmanager'] = None # TODO support?
+            actx = AbstractionContext(config=config_dict)
+
+        ab_data = actx.json_ref_manager.resolve_json_references(json_dict['ab'])
+        ab = AbstractBlock.from_json_dict(actx, ab_data)
+        return ab
 
     @staticmethod
     def from_json_dict(actx, json_dict):
