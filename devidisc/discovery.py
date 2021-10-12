@@ -419,34 +419,39 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: s
 
         if strategy == "max_benefit":
             # choose the expansion that maximizes sampling freedom
-            expansions.sort(key=lambda x: x[1], reverse=True)
-            chosen_expansion, benefit = expansions[0]
+            expansions.sort(key=lambda x: x[1][0], reverse=True)
+            chosen_expansion, (benefit, definitely_does_not_change) = expansions[0]
         elif strategy == "random":
-            chosen_expansion, benefit = random.choice(expansions)
+            chosen_expansion, (benefit, definitely_does_not_change) = random.choice(expansions)
         else:
             assert False, f"unknown generalization strategy: {strategy}"
 
         working_copy.apply_expansion(chosen_expansion)
 
-        logger.info(f"  evaluating samples for expanding {chosen_expansion} (benefit: {benefit})")
-
-        # sample a number of concrete blocks from it
-        concrete_bbs = sample_block_list(working_copy, generalization_batch_size)
-
-        # if they are mostly interesting, use the copy as new abstract block
-        # one could also join the concrete bbs in instead
-        interesting, result_ref = actx.interestingness_metric.is_mostly_interesting(concrete_bbs)
-
-        if interesting:
-            logger.info(f"  samples for expanding {chosen_expansion} are interesting, adjusting BB")
-            trace.add_taken_expansion(chosen_expansion, result_ref)
-            last_result_ref = result_ref
+        if definitely_does_not_change:
+            logger.info(f"  the chosen expansion {chosen_expansion} (benefit: {benefit}) cannot change the represented basic blocks, skipping interestingness evaluation")
+            trace.add_taken_expansion(chosen_expansion, None)
             abstract_bb = working_copy
         else:
-            logger.info(f"  samples for expanding {chosen_expansion} are not interesting, discarding")
-            trace.add_nontaken_expansion(chosen_expansion, result_ref)
-            # make sure that we don't try that expansion again
-            do_not_expand.add(chosen_expansion)
+            logger.info(f"  evaluating samples for expanding {chosen_expansion} (benefit: {benefit})")
+
+            # sample a number of concrete blocks from it
+            concrete_bbs = sample_block_list(working_copy, generalization_batch_size)
+
+            # if they are mostly interesting, use the copy as new abstract block
+            # one could also join the concrete bbs in instead
+            interesting, result_ref = actx.interestingness_metric.is_mostly_interesting(concrete_bbs)
+
+            if interesting:
+                logger.info(f"  samples for expanding {chosen_expansion} are interesting, adjusting BB")
+                trace.add_taken_expansion(chosen_expansion, result_ref)
+                last_result_ref = result_ref
+                abstract_bb = working_copy
+            else:
+                logger.info(f"  samples for expanding {chosen_expansion} are not interesting, discarding")
+                trace.add_nontaken_expansion(chosen_expansion, result_ref)
+                # make sure that we don't try that expansion again
+                do_not_expand.add(chosen_expansion)
 
     trace.add_termination(comment="No more expansions remain.", measurements=None)
 

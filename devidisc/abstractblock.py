@@ -158,7 +158,7 @@ class EditDistanceAbstractFeature(AbstractFeature):
     def get_possible_expansions(self):
         if self.is_top():
             return []
-        return [(self.curr_dist + 1, 0)]
+        return [(self.curr_dist + 1, (0, False))]
 
     def apply_expansion(self, expansion):
         self.curr_dist = expansion
@@ -246,8 +246,8 @@ class LogUpperBoundAbstractFeature(AbstractFeature):
         if self.is_top():
             return []
         if self.is_bottom() or self.val >= self.max_ub:
-            return [(AbstractFeature.TOP, 0)]
-        return [(self.val + 1, 0)]
+            return [(AbstractFeature.TOP, (0, False))]
+        return [(self.val + 1, (0, False))]
 
     def apply_expansion(self, expansion):
         self.val = expansion
@@ -316,7 +316,7 @@ class SingletonAbstractFeature(AbstractFeature):
     def get_possible_expansions(self):
         if self.is_top():
             return []
-        return [(AbstractFeature.TOP, 0)]
+        return [(AbstractFeature.TOP, (0, False))]
 
     def apply_expansion(self, expansion):
         self.val = expansion
@@ -406,10 +406,10 @@ class SubSetAbstractFeature(AbstractFeature):
         if self.is_top():
             return []
         if self.is_bottom():
-            return [(AbstractFeature.TOP, 0)]
+            return [(AbstractFeature.TOP, (0, False))]
         res = []
         for v in self.val:
-            res.append((v, 1))
+            res.append((v, (1, False)))
         return res
 
     def apply_expansion(self, expansion):
@@ -531,7 +531,7 @@ class SubSetOrDefinitelyNotAbstractFeature(AbstractFeature):
         if self.is_top():
             return []
         if self.is_bottom() or self.is_in_subfeature.val == False or self.subfeature.is_top():
-            return [(AbstractFeature.TOP, 0)]
+            return [(AbstractFeature.TOP, (0, False))]
 
         return self.subfeature.get_possible_expansions()
 
@@ -677,7 +677,11 @@ class AbstractInsn(Expandable):
         absfeature_dict[replace_k] = replace_feature
 
         feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(absfeature_dict)
-        return len(feasible_schemes) / num_prev_feasible_schemes
+        num_feasible_schemes = len(feasible_schemes)
+
+        definitely_does_not_change = (num_prev_feasible_schemes == num_feasible_schemes)
+
+        return len(feasible_schemes) / num_prev_feasible_schemes, definitely_does_not_change
 
     def get_possible_expansions(self):
         exact_scheme_entry = self.features.get('exact_scheme', None)
@@ -693,7 +697,7 @@ class AbstractInsn(Expandable):
             # block, or to make sure that blocks not covered by the original
             # block are sampled.
             expansion = ('exact_scheme', AbstractFeature.TOP)
-            benefit = self.compute_benefit(expansion)
+            benefit  = self.compute_benefit(expansion)
             return [(expansion, benefit)]
 
         res = []
@@ -1249,13 +1253,14 @@ class AbstractBlock(Expandable):
         res = []
 
         for ai_idx, ai in enumerate(self.abs_insns):
-            for inner_expansion, benefit in ai.get_possible_expansions():
+            for inner_expansion, (benefit, definitely_does_not_change) in ai.get_possible_expansions():
                 expansion = (0, ai_idx, inner_expansion)
-                res.append((expansion, benefit))
+                res.append((expansion, (benefit, definitely_does_not_change)))
+                # if an absinsn expansion does not change the set of represented insnschemes, it also does not change the block
 
-        for inner_expansion, benefit in self.abs_aliasing.get_possible_expansions():
+        for inner_expansion, (benefit, definitely_does_not_change) in self.abs_aliasing.get_possible_expansions():
                 expansion = (1, inner_expansion)
-                res.append((expansion, benefit))
+                res.append((expansion, (benefit, False))) # we can never say whether an aliasing expansion does not change anything
 
         return res
 
