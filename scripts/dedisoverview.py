@@ -49,7 +49,7 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
                 res += 1
                 continue
             rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
-            if rel_error > err_threshold:
+            if rel_error >= err_threshold:
                 res += 1
         heatmap_data[k1][k2] = 100 * res / len(data)
 
