@@ -80,15 +80,25 @@ def main():
     print("interesting: {} out of {} ({:.1f}%)".format(len(all_bbs), full_bb_num, (len(all_bbs) * 100) / full_bb_num))
 
     covered = []
-    not_covered = []
-    # It might be possible to speed this up by interchanging these loops and precomputing the feasible schemes for the abs.
-    for bb in all_bbs:
-        for ab in all_abs:
-            if check_subsumed(bb, ab):
+    # not_covered = []
+
+    not_covered = all_bbs
+
+    for ab in all_abs:
+        next_not_covered = []
+
+        # precomputing schemes speeds up subsequent check_subsumed calls for this abstract block
+        precomputed_schemes = []
+        for ai in ab.abs_insns:
+            precomputed_schemes.append(actx.insn_feature_manager.compute_feasible_schemes(ai.features))
+
+        for bb in not_covered:
+            if check_subsumed(bb, ab, precomputed_schemes=precomputed_schemes):
                 covered.append(bb)
-                break
-        else:
-            not_covered.append(bb)
+            else:
+                next_not_covered.append(bb)
+
+        not_covered = next_not_covered
 
     total_num = len(all_bbs)
     num_covered = len(covered)
