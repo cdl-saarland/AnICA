@@ -12,8 +12,8 @@ import iwho
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractblock import AbstractBlock, SamplingError
-from devidisc.abstractioncontext import AbstractionContext
+from anica.abstractblock import AbstractBlock, SamplingError
+from anica.abstractioncontext import AbstractionContext
 
 from test_utils import *
 

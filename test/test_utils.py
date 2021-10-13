@@ -12,7 +12,7 @@ import iwho
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractioncontext import AbstractionContext
+from anica.abstractioncontext import AbstractionContext
 
 @pytest.fixture
 def random():

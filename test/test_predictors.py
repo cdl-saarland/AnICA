@@ -10,8 +10,8 @@ import iwho
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractioncontext import AbstractionContext
-from devidisc.utils import Timer
+from anica.abstractioncontext import AbstractionContext
+from anica.utils import Timer
 
 from test_utils import *
 

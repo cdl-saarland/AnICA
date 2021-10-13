@@ -12,7 +12,7 @@ import sys
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.measurementdb import MeasurementDB
+from anica.measurementdb import MeasurementDB
 
 def main():
     import argparse

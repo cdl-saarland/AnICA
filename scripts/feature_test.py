@@ -15,8 +15,8 @@ import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
 
-from devidisc.abstractioncontext import AbstractionContext
-from devidisc.configurable import load_json_config
+from anica.abstractioncontext import AbstractionContext
+from anica.configurable import load_json_config
 
 def get_entry(features, key):
     if features is None or len(features) == 0:

@@ -7,9 +7,9 @@ HERE = pathlib.Path(__file__).parent
 README = (HERE / "README.md").read_text()
 
 setuptools.setup(
-    name="devidisc",
+    name="AnICA",
     version="0.0.1",
-    description="Deviation Discovery for basic block throughput predictors",
+    description="Analyzing Inconsistencies of Code Analayzers",
     long_description=README,
     long_description_content_type="text/markdown",
     author="Fabian Ritter",

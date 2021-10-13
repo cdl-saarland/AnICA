@@ -20,7 +20,7 @@ import iwho.x86 as x86
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.predmanager import PredictorManager
+from anica.predmanager import PredictorManager
 
 import logging
 logger = logging.getLogger(__name__)

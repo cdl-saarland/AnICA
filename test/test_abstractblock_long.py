@@ -12,7 +12,7 @@ from iwho.x86 import DefaultInstantiator
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractblock import AbstractBlock
+from anica.abstractblock import AbstractBlock
 
 from test_utils import *
 

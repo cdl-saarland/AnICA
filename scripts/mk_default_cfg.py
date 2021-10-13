@@ -12,8 +12,8 @@ import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
 
-from devidisc.abstractioncontext import AbstractionContext
-from devidisc.configurable import pretty_print
+from anica.abstractioncontext import AbstractionContext
+from anica.configurable import pretty_print
 
 def main():
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)

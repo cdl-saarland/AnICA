@@ -14,10 +14,10 @@ import sys
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.configurable import load_json_config
-from devidisc.abstractblock import AbstractBlock
-from devidisc.abstractioncontext import AbstractionContext
-from devidisc.satsumption import check_subsumed
+from anica.configurable import load_json_config
+from anica.abstractblock import AbstractBlock
+from anica.abstractioncontext import AbstractionContext
+from anica.satsumption import check_subsumed
 
 
 def main():

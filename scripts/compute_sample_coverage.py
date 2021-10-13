@@ -13,9 +13,9 @@ from iwho.utils import parse_args_with_logging
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractioncontext import AbstractionContext
-from devidisc.abstractblock import AbstractBlock
-from devidisc.satsumption import ab_coverage
+from anica.abstractioncontext import AbstractionContext
+from anica.abstractblock import AbstractBlock
+from anica.satsumption import ab_coverage
 
 
 def main():

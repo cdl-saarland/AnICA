@@ -15,11 +15,11 @@ from iwho.utils import init_logging
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractblock import AbstractBlock
-from devidisc.abstractioncontext import AbstractionContext
-from devidisc.discovery import discover, generalize, minimize
-from devidisc.predmanager import PredictorManager
-from devidisc.witness import WitnessTrace
+from anica.abstractblock import AbstractBlock
+from anica.abstractioncontext import AbstractionContext
+from anica.discovery import discover, generalize, minimize
+from anica.predmanager import PredictorManager
+from anica.witness import WitnessTrace
 
 from test_utils import *
 

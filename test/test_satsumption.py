@@ -11,10 +11,10 @@ import iwho
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractblock import AbstractBlock
-from devidisc.abstractioncontext import AbstractionContext
+from anica.abstractblock import AbstractBlock
+from anica.abstractioncontext import AbstractionContext
 
-from devidisc.satsumption import check_subsumed, check_subsumed_aa
+from anica.satsumption import check_subsumed, check_subsumed_aa
 
 from test_utils import *
 

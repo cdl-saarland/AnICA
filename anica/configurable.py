@@ -125,7 +125,7 @@ def pretty_print(obj, filter_doc=False):
 
 
 class ConfigError(Exception):
-    """ An error indicating that something went wrong in the DeviDisc
+    """ An error indicating that something went wrong in the AnICA
     configuration.
     """
     pass

@@ -15,9 +15,9 @@ from iwho.utils import parse_args_with_logging
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractioncontext import AbstractionContext
-from devidisc.abstractblock import AbstractBlock, SamplingError
-from devidisc.configurable import load_json_config
+from anica.abstractioncontext import AbstractionContext
+from anica.abstractblock import AbstractBlock, SamplingError
+from anica.configurable import load_json_config
 
 import logging
 logger = logging.getLogger(__name__)

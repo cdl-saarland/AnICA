@@ -1,6 +1,6 @@
 #!/bin/bash
 
-MY_ENV_PATH=./env/devidisc
+MY_ENV_PATH=./env/anica
 
 echo "Setting up the virtual environment..."
 python3 -m venv $MY_ENV_PATH

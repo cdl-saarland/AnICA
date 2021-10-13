@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""DeviDisc: the deviation discovery tool for basic block throughput predictors.
+"""AnICA: Analyzing Inconsistencies of Code Analyzers
 """
 
 import argparse
@@ -22,11 +22,11 @@ from iwho.utils import parse_args_with_logging
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from devidisc.abstractioncontext import AbstractionContext
-from devidisc.abstractblock import AbstractBlock
-from devidisc.configurable import load_json_config
-import devidisc.discovery as discovery
-from devidisc.random_exploration import explore
+from anica.abstractioncontext import AbstractionContext
+from anica.abstractblock import AbstractBlock
+from anica.configurable import load_json_config
+import anica.discovery as discovery
+from anica.random_exploration import explore
 
 
 import logging
