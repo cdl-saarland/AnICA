@@ -1,0 +1,26 @@
+[
+    {
+        "abstraction_config_path": "../abstraction/final01/nanobench_tiny.json",
+        "predictors": ["nanobench.skl", "iaca.skl"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "hours": 6
+        }
+    },
+    {
+        "abstraction_config_path": "../abstraction/final01/nanobench_tiny.json",
+        "predictors": ["nanobench.skl", "uica.skl"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "hours": 6
+        }
+    },
+    {
+        "abstraction_config_path": "../abstraction/final01/nanobench_tiny.json",
+        "predictors": ["nanobench.skl", "llvm-mca.13-r+a.skl"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "hours": 6
+        }
+    }
+]
