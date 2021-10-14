@@ -35,9 +35,9 @@
             "timeout": 1.0
         }
 },
-"osaca.0.4.5.skx": {
+"osaca.0.4.6.skx": {
     "tool": "osaca",
-    "version": "0.4.5",
+    "version": "0.4.6",
     "uarch": "SKX",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
@@ -132,9 +132,9 @@
             "timeout": 1.0
         }
 },
-"osaca.0.4.5.hsw": {
+"osaca.0.4.6.hsw": {
     "tool": "osaca",
-    "version": "0.4.5",
+    "version": "0.4.6",
     "uarch": "HSW",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
