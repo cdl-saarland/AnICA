@@ -14,7 +14,7 @@ git clone https://github.com/RRZE-HPC/OSACA.git repo
 pip install networkx ruamel.yaml
 
 cd repo
-git checkout v0.4.5
+git checkout v0.4.6
 
 ./setup.py install
 
