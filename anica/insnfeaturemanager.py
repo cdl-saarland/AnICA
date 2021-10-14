@@ -36,6 +36,7 @@ _default_features = [
         ["extension", "singleton"],
         ["isa-set", "singleton"],
         ["has_lock", "singleton"],
+        ["has_rep", "singleton"],
     ]
 
 class InsnFeatureManager(metaclass=ConfigMeta):
@@ -270,6 +271,10 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         if 'has_lock' in remaining_features:
             res['has_lock'] = "lock " in str(ischeme)
             remaining_features.discard('has_lock')
+
+        if 'has_rep' in remaining_features:
+            res['has_rep'] = str(ischeme).startswith('rep')
+            remaining_features.discard('has_rep')
 
         if 'opschemes' in remaining_features or 'memory_usage' in remaining_features:
             memory_opschemes = []

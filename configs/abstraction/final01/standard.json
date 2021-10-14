@@ -9,7 +9,8 @@
       [ "category", "singleton" ],
       [ "extension", "singleton" ],
       [ "isa-set", "singleton" ],
-      [ "has_lock", "singleton" ]
+      [ "has_lock", "singleton" ],
+      [ "has_rep", "singleton" ]
     ]
   },
   "interestingness_metric": {
