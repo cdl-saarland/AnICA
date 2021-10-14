@@ -1,0 +1,40 @@
+bt dword ptr R:MEM(32), R:GPR:32
+lock btr qword ptr RW:MEM(64), R:GPR:64
+bts dword ptr RW:MEM(32), R:GPR:32
+cli
+div byte ptr R:MEM(8)
+div word ptr R:MEM(16)
+div dword ptr R:MEM(32)
+div qword ptr R:MEM(64)
+div R:GPR:16
+div R:GPR:32
+div R:GPR:64
+idiv byte ptr R:MEM(8)
+idiv word ptr R:MEM(16)
+idiv dword ptr R:MEM(32)
+idiv qword ptr R:MEM(64)
+idiv R:GPR:16
+idiv R:GPR:32
+idiv R:GPR:64
+in W:al, 0x0
+in W:al, IMM(8)
+in W:ax, 0x0
+in W:ax, IMM(8)
+in W:eax, 0x0
+in W:eax, IMM(8)
+in W:al, R:dx
+in W:ax, R:dx
+in W:eax, R:dx
+leave
+out 0x0, R:al
+out IMM(8), R:al
+out 0x0, R:ax
+out IMM(8), R:ax
+out 0x0, R:eax
+out IMM(8), R:eax
+out R:dx, R:al
+out R:dx, R:ax
+out R:dx, R:eax
+sti
+test word ptr R:MEM(16), IMM(16)
+xlatb
