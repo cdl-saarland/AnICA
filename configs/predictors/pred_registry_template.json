@@ -58,6 +58,7 @@
             "kind": "uica",
             "uica_path": "TODO: add path of uica executable",
             "uica_opts": ["-arch", "SKL"],
+            "wrap_in_loop": false,
             "timeout": 1.0
         }
 },
@@ -91,6 +92,7 @@
             "kind": "uica",
             "uica_path": "TODO: add path of uica executable",
             "uica_opts": ["-arch", "HSW"],
+            "wrap_in_loop": false,
             "timeout": 1.0
         }
 },
