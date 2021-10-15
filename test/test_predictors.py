@@ -49,6 +49,7 @@ def test_all():
     assert errors == 0
 
 
+@pytest.mark.skip()
 def test_ithemal_parallel():
     rand.seed(424242)
     Timer.enabled = True

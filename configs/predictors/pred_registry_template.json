@@ -173,6 +173,29 @@
             "timeout": 10.0
         }
 },
+
+"difftune.artifact.hsw": {
+    "tool": "difftune",
+    "version": "artifact (based on llvm 8)",
+    "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "${BASE_DIR}/predictors/difftune/repo/llvm-mca-parametric/build/bin/llvm-mca",
+            "llvmmca_opts": [
+                "-march=x86-64",
+                "-mcpu=haswell",
+                "--all-views=0",
+                "--summary-view",
+                "--iterations=100",
+                "-mtriple=x86_64-unknown-unknown",
+                "-parameters", "${BASE_DIR}/predictors/difftune/repo/data/artifacts/surrogate-model-params-extracted"
+            ],
+            "timeout": 1.0
+        }
+},
+
+
 "test.all_1": {
     "tool": "testpredictor",
     "version": "all_1",

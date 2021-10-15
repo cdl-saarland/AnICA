@@ -23,6 +23,11 @@ def load_json_config(path):
     basepath = path.parent.resolve()
     res = _make_paths_absolute(basepath, json_dict)
 
+    placeholders = {
+            'BASE_DIR': os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        }
+    res = _instantiate_placeholders(res, placeholders)
+
     return res
 
 def _make_paths_absolute(basepath, obj):
@@ -43,6 +48,28 @@ def _make_paths_absolute(basepath, obj):
         return res
     elif isinstance(obj, list) or isinstance(obj, tuple):
         return tuple(( _make_paths_absolute(basepath, x) for x in obj))
+    else:
+        return obj
+
+def _instantiate_placeholders(obj, placeholders):
+    """ Recursive helper method for `load_json_config`, to replace placeholders
+    of the form ${FOO}.
+    """
+    def adjust(s):
+        return res
+
+    if isinstance(obj, dict):
+        return { key: _instantiate_placeholders(value, placeholders) for key, value in obj.items() }
+    elif isinstance(obj, list) or isinstance(obj, tuple):
+        return tuple(( _instantiate_placeholders(x, placeholders) for x in obj))
+    elif isinstance(obj, str):
+        s = obj
+        if '${' not in s:
+            return s
+        res = s
+        for k, v in placeholders.items():
+            res = res.replace('${' + k + '}', v)
+        return res
     else:
         return obj
 
