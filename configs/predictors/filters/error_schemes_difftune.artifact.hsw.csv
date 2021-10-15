@@ -1,0 +1,4 @@
+cmpxchg8b qword ptr RW:MEM(64)
+lock cmpxchg8b qword ptr RW:MEM(64)
+cmpxchg16b xmmword ptr RW:MEM(128)
+lock cmpxchg16b xmmword ptr RW:MEM(128)
