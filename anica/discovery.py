@@ -19,21 +19,33 @@ from .witness import WitnessTrace
 import logging
 logger = logging.getLogger(__name__)
 
-def sample_block_list(abstract_bb, num, insn_scheme_blacklist=None):
-    """Try to sample `num` samples from abstract_bb
+def sample_block_list(abstract_bb, num, insn_scheme_blacklist=None, remarks=None):
+    """Try to sample `num` samples from abstract_bb.
 
-    If samples fail, the result will have fewer entries.
+    If samples fail, at most 2*num attempts will be made to sample enough
+    blocks anyway. If this is not enough, the result will have fewer samples.
     """
     if insn_scheme_blacklist is None:
         insn_scheme_blacklist = []
 
     sampler = abstract_bb.precompute_sampler(insn_scheme_blacklist=insn_scheme_blacklist)
     concrete_bbs = []
-    for x in range(num):
+    num_failed = 0
+    for x in range(2 * num):
+        if len(concrete_bbs) >= num:
+            break
         try:
             concrete_bbs.append(sampler.sample())
         except SamplingError as e:
             logger.info(f"a sample failed: {e}")
+            num_failed += 1
+
+    if remarks is not None and num_failed > 0:
+        # This means that a portion of the samples failed.
+        # If it is larger than 0.5, fewer samples than required are produced.
+        # If it is 1.0, no samples at all could be produced.
+        fail_ratio = num_failed / 2 * num
+        remarks.append(("non-zero sampling fail ratio encountered: {}", fail_ratio))
     return concrete_bbs
 
 
@@ -250,8 +262,10 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
                     working_bb = deepcopy(abstracted_bb)
 
+                    remarks = [('generalization strategy: {}', curr_strategy) ]
+
                     start_generalization_time = datetime.now()
-                    generalized_bb, trace, last_result_ref = generalize(actx, working_bb, strategy=curr_strategy)
+                    generalized_bb, trace, last_result_ref = generalize(actx, working_bb, strategy=curr_strategy, remarks=remarks)
 
                     generalization_time = ((datetime.now() - start_generalization_time) / timedelta(milliseconds=1)) / 1000
                     gen_stat_entry['generalization_time'] = generalization_time
@@ -291,9 +305,13 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
                     for prev_id in subsumes:
                         del good_generalizations[prev_id]
 
+                    if len(subsumes) > 0:
+                        remarks.append(('subsumes {} previous generalizations', len(subsumes)))
+
                     good_generalizations[generalization_id] = {
                             'absblock': generalized_bb,
                             'trace': trace,
+                            'remarks': remarks,
                             'last_result_ref': last_result_ref,
                         }
 
@@ -303,6 +321,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
                 generalized_bb = gen_data['absblock']
                 trace = gen_data['trace']
                 last_result_ref = gen_data['last_result_ref']
+                remarks = gen_data['remarks']
 
                 logger.info("  adding new discovery:\n" + textwrap.indent(str(generalized_bb), 4*' '))
                 discoveries.append(generalized_bb)
@@ -318,7 +337,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
                 if out_dir is not None:
                     trace.dump_json(witness_dir / f'{generalization_id}.json')
-                    generalized_bb.dump_json(discovery_dir / f'{generalization_id}.json', result_ref=last_result_ref)
+                    generalized_bb.dump_json(discovery_dir / f'{generalization_id}.json', result_ref=last_result_ref, remarks=remarks)
 
                 write_report()
 
@@ -374,7 +393,7 @@ def minimize(actx, concrete_bb):
     return concrete_bb
 
 
-def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: str):
+def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: str, remarks=None):
     """ Generalize the given AbstractBlock while presering interestingness.
 
     This means that we try to adjust it such that it represents a maximal
@@ -387,8 +406,9 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: s
     trace = WitnessTrace(abstract_bb)
 
     # check if sampling from abstract_bb leads to mostly interesting blocks
-    concrete_bbs = sample_block_list(abstract_bb, generalization_batch_size)
+    concrete_bbs = sample_block_list(abstract_bb, generalization_batch_size, remarks=remarks)
     assert len(concrete_bbs) > 0
+    # TODO we might want to catch this more gracefully
 
     interesting, result_ref = actx.interestingness_metric.is_mostly_interesting(concrete_bbs)
     last_result_ref = result_ref
@@ -396,6 +416,10 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: s
     if not interesting:
         logger.info("  samples from the BB are not uniformly interesting!")
         trace.add_termination(comment="Samples from the starting block are not interesting!", measurements=result_ref)
+
+        if remarks is not None:
+            remarks.append("generalization terminated prematurely because the trivial abstraction is not uniformly interesting")
+
         return abstract_bb, trace, last_result_ref
 
     # a set of expansions that we tried to apply but did not yield interesting
@@ -436,7 +460,7 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: s
             logger.info(f"  evaluating samples for expanding {chosen_expansion} (benefit: {benefit})")
 
             # sample a number of concrete blocks from it
-            concrete_bbs = sample_block_list(working_copy, generalization_batch_size)
+            concrete_bbs = sample_block_list(working_copy, generalization_batch_size, remarks=remarks)
 
             # if they are mostly interesting, use the copy as new abstract block
             # one could also join the concrete bbs in instead
@@ -454,6 +478,9 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: s
                 do_not_expand.add(chosen_expansion)
 
     trace.add_termination(comment="No more expansions remain.", measurements=None)
+
+    if remarks is not None:
+        remarks.append("generalization terminated properly")
 
     logger.info("  generalization done.")
     return abstract_bb, trace, last_result_ref
