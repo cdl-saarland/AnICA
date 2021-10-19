@@ -1,44 +1,93 @@
 {
+
 "iaca.skl": {
-    "tool": "iaca",
-    "version": "v3.0-28-g1ba2cbb",
-    "uarch": "SKL",
+    "tool": "iaca", "version": "v3.0-28-g1ba2cbb", "uarch": "SKL",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
             "kind": "iaca",
-            "iaca_path": "TODO: add path of IACA binary",
+            "iaca_path": "TODO: add path of IACA executable",
             "iaca_opts": ["-arch", "SKL"],
             "timeout": 1.0
         }
 },
+"iaca.hsw": {
+    "tool": "iaca", "version": "v3.0-28-g1ba2cbb", "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "iaca",
+            "iaca_path": "TODO: add path of iaca executable",
+            "iaca_opts": ["-arch", "HSW"],
+            "timeout": 1.0
+        }
+},
+
+
 "llvm-mca.13-r+a.skl": {
-    "tool": "llvm-mca",
-    "version": "13-r+a",
-    "uarch": "SKL",
+    "tool": "llvm-mca", "version": "13-r+a", "uarch": "SKL",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
             "kind": "llvmmca",
-            "llvmmca_path": "TODO: add path of llvm-mca binary",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
             "llvmmca_opts": ["-mcpu", "skylake"],
             "timeout": 1.0
         }
 },
+"llvm-mca.13-r+a.hsw": {
+    "tool": "llvm-mca", "version": "13-r+a", "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
+            "llvmmca_opts": ["-mcpu", "haswell"],
+            "timeout": 1.0
+        }
+},
+
 "llvm-mca.9-r+a.skl": {
-    "tool": "llvm-mca",
-    "version": "9.0.1-r+a",
-    "uarch": "SKL",
+    "tool": "llvm-mca", "version": "9-r+a", "uarch": "SKL",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
             "kind": "llvmmca",
-            "llvmmca_path": "TODO: add path of llvm-mca 9 binary",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
             "llvmmca_opts": ["-mcpu", "skylake"],
             "timeout": 1.0
         }
 },
+"llvm-mca.9-r+a.hsw": {
+    "tool": "llvm-mca", "version": "9-r+a", "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
+            "llvmmca_opts": ["-mcpu", "haswell"],
+            "timeout": 1.0
+        }
+},
+
+"llvm-mca.8-r+a.skl": {
+    "tool": "llvm-mca", "version": "8-r+a", "uarch": "SKL",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
+            "llvmmca_opts": ["-mcpu", "skylake"],
+            "timeout": 1.0
+        }
+},
+"llvm-mca.9-r+a.hsw": {
+    "tool": "llvm-mca", "version": "8-r+a", "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
+            "llvmmca_opts": ["-mcpu", "haswell"],
+            "timeout": 1.0
+        }
+},
+
+
 "osaca.0.4.6.skx": {
-    "tool": "osaca",
-    "version": "0.4.6",
-    "uarch": "SKX",
+    "tool": "osaca", "version": "0.4.6", "uarch": "SKX",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
             "kind": "osaca",
@@ -48,29 +97,71 @@
             "timeout": 3.0
         }
 },
+"osaca.0.4.6.hsw": {
+    "tool": "osaca", "version": "0.4.6", "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "osaca",
+            "osaca_path": "osaca",
+            "osaca_opts": ["--ignore-unknown", "--arch", "HSW"],
+            "llvmmc_path": "llvm-mc",
+            "timeout": 3.0
+        }
+},
+
 
 "uica.skl": {
-    "tool": "uica",
-    "version": "master",
-    "uarch": "SKL",
+    "tool": "uica", "version": "master", "uarch": "SKL",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
             "kind": "uica",
-            "uica_path": "TODO: add path of uica executable",
+            "uica_path": "${BASE_DIR}/predictors/uica/repo/uiCA.py",
             "uica_opts": ["-arch", "SKL"],
             "wrap_in_loop": false,
             "timeout": 1.0
         }
 },
+"uica.hsw": {
+    "tool": "uica", "version": "master", "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "uica",
+            "uica_path": "${BASE_DIR}/predictors/uica/repo/uiCA.py",
+            "uica_opts": ["-arch", "HSW"],
+            "wrap_in_loop": true,
+            "timeout": 1.0
+        }
+},
+"uica.loop.skl": {
+    "tool": "uica", "version": "master", "uarch": "SKL",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "uica",
+            "uica_path": "${BASE_DIR}/predictors/uica/repo/uiCA.py",
+            "uica_opts": ["-arch", "SKL"],
+            "wrap_in_loop": false,
+            "timeout": 1.0
+        }
+},
+"uica.loop.hsw": {
+    "tool": "uica", "version": "master", "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "uica",
+            "uica_path": "${BASE_DIR}/predictors/uica/repo/uiCA.py",
+            "uica_opts": ["-arch", "HSW"],
+            "wrap_in_loop": true,
+            "timeout": 1.0
+        }
+},
+
 
 "nanobench.skl": {
-    "tool": "nanobench",
-    "version": "master",
-    "uarch": "SKL",
+    "tool": "nanobench", "version": "master", "uarch": "SKL",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
             "kind": "nanobench",
-            "nanobench_path": "TODO: add path of nanobench executable",
+            "nanobench_path": "${BASE_DIR}/predictors/nanobench/repo/nanoBench.sh",
             "nanobench_opts": [
                 "-config", "${BASE}/configs/cfg_Skylake_common.txt",
                 "-unroll", "20",
@@ -83,103 +174,34 @@
 },
 
 
-"uica.hsw": {
-    "tool": "uica",
-    "version": "master",
-    "uarch": "HSW",
-    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
-    "config": {
-            "kind": "uica",
-            "uica_path": "TODO: add path of uica executable",
-            "uica_opts": ["-arch", "HSW"],
-            "wrap_in_loop": false,
-            "timeout": 1.0
-        }
-},
-
-
-"iaca.hsw": {
-    "tool": "iaca",
-    "version": "v3.0-28-g1ba2cbb",
-    "uarch": "HSW",
-    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
-    "config": {
-            "kind": "iaca",
-            "iaca_path": "TODO: add path of iaca executable",
-            "iaca_opts": ["-arch", "HSW"],
-            "timeout": 1.0
-        }
-},
-"llvm-mca.13-r+a.hsw": {
-    "tool": "llvm-mca",
-    "version": "13-r+a",
-    "uarch": "HSW",
-    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
-    "config": {
-            "kind": "llvmmca",
-            "llvmmca_path": "TODO: add path of llvm-mca executable",
-            "llvmmca_opts": ["-mcpu", "haswell"],
-            "timeout": 1.0
-        }
-},
-"llvm-mca.9-r+a.hsw": {
-    "tool": "llvm-mca",
-    "version": "9.0.1-r+a",
-    "uarch": "HSW",
-    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
-    "config": {
-            "kind": "llvmmca",
-            "llvmmca_path": "TODO: add path of llvm-mca executable",
-            "llvmmca_opts": ["-mcpu", "haswell"],
-            "timeout": 1.0
-        }
-},
-"osaca.0.4.6.hsw": {
-    "tool": "osaca",
-    "version": "0.4.6",
-    "uarch": "HSW",
-    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
-    "config": {
-            "kind": "osaca",
-            "osaca_path": "osaca",
-            "osaca_opts": ["--ignore-unknown", "--arch", "HSW"],
-            "llvmmc_path": "llvm-mc",
-            "timeout": 3.0
-        }
-},
-"ithemal.bhive.hsw": {
-    "tool": "ithemal",
-    "version": "bhive",
-    "uarch": "HSW",
-    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
-    "config": {
-            "kind": "ithemal_docker",
-            "host": "127.0.0.1",
-            "port": "42010",
-            "ssl_path": "TODO: add ssl_path",
-            "model": "bhive/hsw",
-            "timeout": 10.0
-        }
-},
 "ithemal.bhive.skl": {
-    "tool": "ithemal",
-    "version": "bhive",
-    "uarch": "SKL",
+    "tool": "ithemal", "version": "bhive", "uarch": "SKL",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
             "kind": "ithemal_docker",
             "host": "127.0.0.1",
             "port": "42010",
-            "ssl_path": "TODO: add ssl_path",
+            "ssl_path": "${BASE_DIR}/predictors/ithemal/ssl",
             "model": "bhive/skl",
             "timeout": 10.0
         }
 },
+"ithemal.bhive.hsw": {
+    "tool": "ithemal", "version": "bhive", "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "ithemal_docker",
+            "host": "127.0.0.1",
+            "port": "42010",
+            "ssl_path": "${BASE_DIR}/predictors/ithemal/ssl",
+            "model": "bhive/hsw",
+            "timeout": 10.0
+        }
+},
+
 
 "difftune.artifact.hsw": {
-    "tool": "difftune",
-    "version": "artifact (based on llvm 8)",
-    "uarch": "HSW",
+    "tool": "difftune", "version": "artifact (based on llvm 8)", "uarch": "HSW",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
             "kind": "llvmmca",
