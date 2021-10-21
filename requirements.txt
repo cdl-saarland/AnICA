@@ -4,6 +4,9 @@ graphviz
 editdistance
 rpyc
 
+pandas
+seaborn
+
 python-sat
 
 -r lib/iwho/requirements.txt
