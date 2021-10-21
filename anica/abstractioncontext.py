@@ -151,29 +151,29 @@ class AbstractionContext:
 
         return res
 
-    def get_config(self):
+    def get_config(self, skip_doc=False):
         res = dict()
-        res['insn_feature_manager'] = self.insn_feature_manager.get_config()
+        res['insn_feature_manager'] = self.insn_feature_manager.get_config(skip_doc=skip_doc)
 
-        res['iwho'] = self.iwho_cfg.get_config()
+        res['iwho'] = self.iwho_cfg.get_config(skip_doc=skip_doc)
 
         if self.interestingness_metric is None:
             res['interestingness_metric'] = None
         else:
-            res['interestingness_metric'] = self.interestingness_metric.get_config()
+            res['interestingness_metric'] = self.interestingness_metric.get_config(skip_doc=skip_doc)
 
-        res['discovery'] = self.discovery_cfg.get_config()
-        res['sampling'] = self.sampling_cfg.get_config()
+        res['discovery'] = self.discovery_cfg.get_config(skip_doc=skip_doc)
+        res['sampling'] = self.sampling_cfg.get_config(skip_doc=skip_doc)
 
         if self.measurement_db is None:
             res['measurement_db'] = None
         else:
-            res['measurement_db'] = self.measurement_db.get_config()
+            res['measurement_db'] = self.measurement_db.get_config(skip_doc=skip_doc)
 
         if self.predmanager is None:
             res['predmanager'] = None
         else:
-            res['predmanager'] = self.predmanager.get_config()
+            res['predmanager'] = self.predmanager.get_config(skip_doc=skip_doc)
 
         return res
 
