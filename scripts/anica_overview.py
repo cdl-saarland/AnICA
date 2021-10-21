@@ -182,8 +182,14 @@ def main():
     # perform the measurements
     logger.info(f"start decoding {len(data)} experiments")
     # TODO this decoding step is probably mostly unnecessary
-    bbs = [ iwho_ctx.make_bb( iwho_ctx.decode_insns(r['bb']) ) for r in data ]
-    logger.info(f"done decoding {len(bbs)} experiments")
+    bbs = []
+    for r in data:
+        try:
+            bbs.append( iwho_ctx.make_bb( iwho_ctx.decode_insns(r['bb']) ) )
+        except Exception as e:
+            logger.info("decoding a basic block failed: {}".format(e))
+
+    logger.info(f"successfully decoded {len(bbs)} of {len(data} experiments")
 
     logger.info(f"start evaluating {len(bbs)} experiments")
     for record, (bb, result) in zip(data, predman.eval_with_all(bbs)):
