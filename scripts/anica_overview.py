@@ -189,7 +189,7 @@ def main():
         except Exception as e:
             logger.info("decoding a basic block failed: {}".format(e))
 
-    logger.info(f"successfully decoded {len(bbs)} of {len(data} experiments")
+    logger.info(f"successfully decoded {len(bbs)} of {len(data)} experiments")
 
     logger.info(f"start evaluating {len(bbs)} experiments")
     for record, (bb, result) in zip(data, predman.eval_with_all(bbs)):
