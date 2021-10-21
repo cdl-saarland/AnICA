@@ -5,7 +5,7 @@ from typing import Optional
 from graphviz import Digraph
 
 from .abstractblock import AbstractBlock
-from .configurable import store_json_config
+from .configurable import store_json_config, load_json_config
 
 class WitnessTrace:
     class Witness:
@@ -79,6 +79,25 @@ class WitnessTrace:
 
         return res
 
+    def iter(self, taken_only=False):
+        res = deepcopy(self.start)
+        for witness in trace:
+            if witness.terminate:
+                return
+            if taken_only and not witness.taken:
+                continue
+            if not witness.taken:
+                prev_res = copy.deepcopy(res)
+            res.apply_expansion(witness.expansion)
+
+            yield (witness, res)
+
+            if not witness.taken:
+                res = prev_res
+                prev_res = None
+
+        raise RuntimeError("Unterminated witness!")
+
     def __str__(self):
         actx = self.start.actx
         json_dict = actx.json_ref_manager.introduce_json_references(self.to_json_dict())
@@ -107,6 +126,20 @@ class WitnessTrace:
         out_data['config'] = actx.get_config()
         out_data['trace'] = actx.json_ref_manager.introduce_json_references(self.to_json_dict())
         store_json_config(out_data, filename)
+
+    @staticmethod
+    def load_json_dump(filename, actx=None):
+        from .abstractioncontext import AbstractionContext
+
+        json_dict = load_json_config(filename)
+        if actx is None:
+            config_dict = json_dict['config']
+            config_dict['predmanager'] = None # TODO support?
+            actx = AbstractionContext(config=config_dict)
+
+        trace_data = actx.json_ref_manager.resolve_json_references(json_dict['trace'])
+        trace = WitnessTrace.from_json_dict(actx, trace_data)
+        return trace
 
     def to_dot(self):
         g = Digraph()
