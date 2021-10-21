@@ -81,13 +81,13 @@ class WitnessTrace:
 
     def iter(self, taken_only=False):
         res = deepcopy(self.start)
-        for witness in trace:
+        for witness in self.trace:
             if witness.terminate:
                 return
             if taken_only and not witness.taken:
                 continue
             if not witness.taken:
-                prev_res = copy.deepcopy(res)
+                prev_res = deepcopy(res)
             res.apply_expansion(witness.expansion)
 
             yield (witness, res)
