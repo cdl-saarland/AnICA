@@ -181,18 +181,19 @@ def main():
 
     # perform the measurements
     logger.info(f"start decoding {len(data)} experiments")
-    # TODO this decoding step is probably mostly unnecessary
     bbs = []
+    filtered_data = [] # we should only use blocks that we can actually decode
     for r in data:
         try:
             bbs.append( iwho_ctx.make_bb( iwho_ctx.decode_insns(r['bb']) ) )
+            filtered_data.append(r)
         except Exception as e:
             logger.info("decoding a basic block failed: {}".format(e))
 
     logger.info(f"successfully decoded {len(bbs)} of {len(data)} experiments")
 
     logger.info(f"start evaluating {len(bbs)} experiments")
-    for record, (bb, result) in zip(data, predman.eval_with_all(bbs)):
+    for record, (bb, result) in zip(filtered_data, predman.eval_with_all(bbs)):
         for k, v in result.items():
             tp = v.get('TP', None)
             if tp is None:
@@ -206,7 +207,7 @@ def main():
     with open(outname, 'w') as f:
         writer = csv.DictWriter(f, keys)
         writer.writeheader()
-        writer.writerows(data)
+        writer.writerows(filtered_data)
 
 
 if __name__ == "__main__":
