@@ -4,7 +4,9 @@
 """
 
 import argparse
+import copy
 from datetime import datetime
+import itertools
 import math
 from pathlib import Path
 import random
@@ -62,9 +64,26 @@ def main():
     if check_config:
         total_seconds = 0
 
+    template_key = 'TEMPLATE:all_predictor_pairs'
+    all_campaign_configs = []
+    for c in campaign_config:
+        template_preds = c.get(template_key, None)
+        if template_preds is not None:
+            assert 'predictors' not in c
+            num_pairs = 0
+            for pair_of_preds in itertools.combinations(template_preds, r=2):
+                num_pairs += 1
+                instance = copy.deepcopy(c)
+                del instance[template_key]
+                instance['predictors'] = list(pair_of_preds)
+                all_campaign_configs.append(instance)
+            print(f"config template expanded to {num_pairs} configs")
+        else:
+            all_campaign_configs.append(c)
+
     # to not require interactivity: query for the sudo password once, in the
     # beginning if necessary
-    for idx, config in enumerate(campaign_config):
+    for idx, config in enumerate(all_campaign_configs):
         actx_config = load_json_config(config['abstraction_config_path'])
         predictor_keys = config['predictors']
         actx = AbstractionContext(config=actx_config)
@@ -74,7 +93,7 @@ def main():
         del predictor_keys
 
     while True:
-        for idx, config in enumerate(campaign_config):
+        for idx, config in enumerate(all_campaign_configs):
             # create a campaign directory
             timestamp = datetime.now().replace(microsecond=0).isoformat()
             curr_out_dir = outdir / f'campaign_{idx:03d}_{timestamp}'

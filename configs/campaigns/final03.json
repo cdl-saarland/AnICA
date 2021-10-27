@@ -1,0 +1,20 @@
+[
+    {
+        "abstraction_config_path": "../abstraction/final01/standard.json",
+        "TEMPLATE:all_predictor_pairs": [
+            "iaca.hsw",
+            "llvm-mca.13-r+a.hsw",
+            "llvm-mca.9-r+a.hsw",
+            "llvm-mca.8-r+a.hsw",
+            "uica.hsw",
+            "osaca.0.4.6.hsw",
+            "ithemal.bhive.hsw",
+            "difftune.artifact.hsw"
+        ],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "hours": 6
+        }
+    }
+]
+

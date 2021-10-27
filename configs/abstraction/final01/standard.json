@@ -21,10 +21,13 @@
     "context_specifier": "x86_uops_info",
     "filters": ["no_cf", "with_measurements:SKL"]
   },
+  "sampling": {
+    "wrap_in_loop": false
+  },
   "discovery": {
-    "discovery_batch_size": 100,
+    "discovery_batch_size": 50,
     "discovery_possible_block_lengths": [3, 4, 5],
     "generalization_batch_size": 100,
-    "generalization_strategy": [["max_benefit", 1], ["random", 4]]
+    "generalization_strategy": [["max_benefit", 1], ["random", 9]]
   }
 }
