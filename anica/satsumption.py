@@ -41,20 +41,24 @@ def check_subsumed_aa(ab1, ab2, print_assignment=False):
         both_feasible_sets.append(feasible_sets)
 
 
-    map_vars = dict()
-    map_b1_vars = defaultdict(list)
-    map_b1_idxs = defaultdict(list)
-    map_b2_vars = defaultdict(list)
-    map_b2_idxs = defaultdict(list)
-    map_var_to_idx = dict()
+    map_vars = dict() # maps a pair of indices into the first and the second ab to their edge variable
+    map_b1_vars = defaultdict(list) # maps an index into the first ab to all edge variables to second ab absinsns that subsume it
+    # map_b1_idxs = defaultdict(list) # maps an index into the first ab to all indices of second ab absinsns that subsume it
+    # not needed
+    map_b2_vars = defaultdict(list) # maps an index into the second ab to all edge variables to first ab absinsns that are subsumed by it
+    map_b2_idxs = defaultdict(list) # maps an index into the second ab to all indices of first ab absinsns that are subsumed by it
+    map_var_to_idx = dict() # converse to map_vars, for printing the satisfying assignment
 
     for (idx_b1, fs_b1), (idx_b2, fs_b2) in itertools.product(*map(enumerate, both_feasible_sets)):
         if fs_b1.issubset(fs_b2):
-            # they could be mapped
+            # They could be mapped, i.e. the feasible set of the instruction in
+            # b1 is a subset of the feasible set of the instruction in b2. If
+            # that is not the case, the variables need to be false anyway, so
+            # we can omit them.
             var = fresh_var()
             map_vars[(idx_b1, idx_b2)] = var
             map_b1_vars[idx_b1].append(var)
-            map_b1_idxs[idx_b1].append(idx_b2)
+            # map_b1_idxs[idx_b1].append(idx_b2)
             map_b2_vars[idx_b2].append(var)
             map_b2_idxs[idx_b2].append(idx_b1)
             map_var_to_idx[var] = (idx_b1, idx_b2)
@@ -72,7 +76,7 @@ def check_subsumed_aa(ab1, ab2, print_assignment=False):
         cnf.extend(CardEnc.equals(lits=vs, bound=1))
 
     for idx_b2 in range(len(ab2.abs_insns)):
-        vs = map_b1_vars[idx_b2]
+        vs = map_b2_vars[idx_b2]
         # We don't just iterate over the map_b2_vars.items() because those
         # wouldn't contain empty entries.
         if len(vs) == 0:
@@ -86,6 +90,8 @@ def check_subsumed_aa(ab1, ab2, print_assignment=False):
         if abs_feature_b2.is_top():
             # this component of b2 subsumes everything anyway, no constraint needed
             continue
+
+        # b2 imposes an actual aliasing constraint. Mapped instructions in b1 need to impose this constraint as well.
 
         for idx1_b1, idx2_b1 in itertools.product(map_b2_idxs[idx1_b2], map_b2_idxs[idx2_b2]):
             abs_feature_b1 = ab1.abs_aliasing.get_component((idx1_b1, op_idx1), (idx2_b1, op_idx2))
@@ -114,6 +120,17 @@ def check_subsumed_aa(ab1, ab2, print_assignment=False):
 
 
 def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=False, precomputed_schemes=None):
+    """ Check if the concrete basic block bb contains a pattern that is
+    represented by the abstract basic block ab.
+
+    This is the case if there is an injective mapping of each abstract insn in
+    ab to a concrete insn in bb such that each concrete insn is feasible for
+    the mapped abstract insn and aliasing among the mapped instructions in bb
+    follows the constraints imposed by ab.
+
+    bb might therefore be longer than ab and still be subsumed, if a subset of
+    the instructions in bb has a suitable mapping to abstract insns.
+    """
     actx = ab.actx
 
     cnf = CNFPlus()
@@ -158,7 +175,9 @@ def check_subsumed(bb: BasicBlock, ab: AbstractBlock, print_assignment=False, pr
         cnf.extend(CardEnc.equals(lits=vs, bound=1))
 
     for cidx, vs in map_c_vars.items():
-        # at most one abs insn may be chosen for each concrete insn
+        # At most one abs insn may be chosen for each concrete insn.
+        # It is fine if there is a concrete insn that is not matched by any
+        # abstract insn.
         cnf.extend(CardEnc.atmost(lits=vs, bound=1))
 
     for ((aidx1, op_idx1), (aidx2, op_idx2)), v in abs_aliasing._aliasing_dict.items():
