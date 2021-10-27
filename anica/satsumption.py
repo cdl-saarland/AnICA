@@ -65,16 +65,6 @@ def check_subsumed_aa(ab1, ab2, print_assignment=False):
 
     cnf = CNFPlus()
 
-    for idx_b1 in range(len(ab1.abs_insns)):
-        vs = map_b1_vars[idx_b1]
-        # We don't just iterate over the map_b1_vars.items() because those
-        # wouldn't contain empty entries.
-        if len(vs) == 0:
-            # there is no fitting AbsInsn for this one
-            return False
-        # for every AbsInsn in ab1, there should be exactly one in ab2
-        cnf.extend(CardEnc.equals(lits=vs, bound=1))
-
     for idx_b2 in range(len(ab2.abs_insns)):
         vs = map_b2_vars[idx_b2]
         # We don't just iterate over the map_b2_vars.items() because those
@@ -83,6 +73,16 @@ def check_subsumed_aa(ab1, ab2, print_assignment=False):
             # there is no fitting AbsInsn for this one
             return False
         # for every AbsInsn in ab2, there should be exactly one in ab1
+        cnf.extend(CardEnc.equals(lits=vs, bound=1))
+
+    for idx_b1 in range(len(ab1.abs_insns)):
+        vs = map_b1_vars[idx_b1]
+        # We don't just iterate over the map_b1_vars.items() because those
+        # wouldn't contain empty entries.
+        if len(vs) == 0:
+            # there is no fitting AbsInsn for this one
+            return False
+        # for every AbsInsn in ab1, there should be exactly one in ab2
         cnf.extend(CardEnc.equals(lits=vs, bound=1))
 
 
