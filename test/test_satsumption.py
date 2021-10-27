@@ -160,3 +160,75 @@ def test_satsumption_aa_03(random, actx):
     assert check_subsumed_aa(ab, ab_exp)
     assert not check_subsumed_aa(ab_exp, ab)
 
+def test_satsumption_aa_04(random, actx):
+    # comparing different lengths should also be possible
+
+    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
+    ab1 = AbstractBlock(actx, bb1)
+
+    bb2 = make_bb(actx, "add rax, 0x2a")
+    ab2 = AbstractBlock(actx, bb2)
+
+    assert check_subsumed_aa(ab1, ab2)
+    assert not check_subsumed_aa(ab2, ab1)
+
+def test_satsumption_aa_05(random, actx):
+    # comparing different lengths should also be possible
+
+    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
+    ab1 = AbstractBlock(actx, bb1)
+
+    bb2 = make_bb(actx, "sub rbx, rax")
+    ab2 = AbstractBlock(actx, bb2)
+
+    assert check_subsumed_aa(ab1, ab2)
+    assert not check_subsumed_aa(ab2, ab1)
+
+def test_satsumption_aa_06(random, actx):
+    # these are not subsuming each other
+
+    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
+    ab1 = AbstractBlock(actx, bb1)
+
+    bb2 = make_bb(actx, "xor rbx, rax")
+    ab2 = AbstractBlock(actx, bb2)
+
+    assert not check_subsumed_aa(ab1, ab2)
+    assert not check_subsumed_aa(ab2, ab1)
+
+def test_satsumption_aa_07(random, actx):
+    # these are not subsuming each other
+
+    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
+    ab1 = AbstractBlock(actx, bb1)
+
+    bb2 = make_bb(actx, "xor rax, 0x2a\nsub rbx, rax")
+    ab2 = AbstractBlock(actx, bb2)
+
+    assert not check_subsumed_aa(ab1, ab2)
+    assert not check_subsumed_aa(ab2, ab1)
+
+def test_satsumption_aa_08(random, actx):
+    # these are not subsuming each other
+
+    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
+    ab1 = AbstractBlock(actx, bb1)
+
+    bb2 = make_bb(actx, "sub rax, 0x2a\nsub rbx, rax")
+    ab2 = AbstractBlock(actx, bb2)
+
+    assert not check_subsumed_aa(ab1, ab2)
+    assert not check_subsumed_aa(ab2, ab1)
+
+def test_satsumption_aa_09(random, actx):
+    # reordering should be fine
+
+    bb1 = make_bb(actx, "add rax, 0x2a\nsub rbx, rax")
+    ab1 = AbstractBlock(actx, bb1)
+
+    bb2 = make_bb(actx, "sub rbx, rax\nadd rax, 0x2a")
+    ab2 = AbstractBlock(actx, bb2)
+
+    assert check_subsumed_aa(ab1, ab2)
+    assert check_subsumed_aa(ab2, ab1)
+

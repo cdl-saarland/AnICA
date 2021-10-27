@@ -23,7 +23,10 @@ def check_subsumed_aa(ab1, ab2, print_assignment=False):
 
     actx = ab1.actx
 
-    assert len(ab1.abs_insns) == len(ab2.abs_insns)
+    if len(ab1.abs_insns) < len(ab2.abs_insns):
+        # Abstract blocks of different length can only be in a subsumption
+        # relation if the shorter one subsumes the longer one.
+        return False
 
     next_id = 1
     def fresh_var():
@@ -75,15 +78,14 @@ def check_subsumed_aa(ab1, ab2, print_assignment=False):
         # for every AbsInsn in ab2, there should be exactly one in ab1
         cnf.extend(CardEnc.equals(lits=vs, bound=1))
 
-    for idx_b1 in range(len(ab1.abs_insns)):
-        vs = map_b1_vars[idx_b1]
-        # We don't just iterate over the map_b1_vars.items() because those
-        # wouldn't contain empty entries.
-        if len(vs) == 0:
-            # there is no fitting AbsInsn for this one
-            return False
-        # for every AbsInsn in ab1, there should be exactly one in ab2
-        cnf.extend(CardEnc.equals(lits=vs, bound=1))
+    for idx_b1, vs in map_b1_vars.items():
+        # for every AbsInsn in ab1, there should be at most one in ab2
+        # It is fine if there is an abstract insn in ab1 that is not matched by
+        # any abstract insn in ab2.
+        # This is consistent to the check_subsumed function below, which only
+        # checks if a concrete block contains a subset of instructions that are
+        # matched by the abstract block.
+        cnf.extend(CardEnc.atmost(lits=vs, bound=1))
 
 
     for ((idx1_b2, op_idx1), (idx2_b2, op_idx2)), abs_feature_b2 in ab2.abs_aliasing._aliasing_dict.items():
