@@ -117,7 +117,6 @@
             "kind": "uica",
             "uica_path": "${BASE_DIR}/predictors/uica/repo/uiCA.py",
             "uica_opts": ["-arch", "SKL"],
-            "wrap_in_loop": false,
             "timeout": 1.0
         }
 },
@@ -128,29 +127,6 @@
             "kind": "uica",
             "uica_path": "${BASE_DIR}/predictors/uica/repo/uiCA.py",
             "uica_opts": ["-arch", "HSW"],
-            "wrap_in_loop": true,
-            "timeout": 1.0
-        }
-},
-"uica.loop.skl": {
-    "tool": "uica", "version": "master", "uarch": "SKL",
-    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
-    "config": {
-            "kind": "uica",
-            "uica_path": "${BASE_DIR}/predictors/uica/repo/uiCA.py",
-            "uica_opts": ["-arch", "SKL"],
-            "wrap_in_loop": false,
-            "timeout": 1.0
-        }
-},
-"uica.loop.hsw": {
-    "tool": "uica", "version": "master", "uarch": "HSW",
-    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
-    "config": {
-            "kind": "uica",
-            "uica_path": "${BASE_DIR}/predictors/uica/repo/uiCA.py",
-            "uica_opts": ["-arch", "HSW"],
-            "wrap_in_loop": true,
             "timeout": 1.0
         }
 },

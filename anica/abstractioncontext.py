@@ -37,7 +37,14 @@ class DiscoveryConfig(metaclass=ConfigMeta):
 
 
 class SamplingConfig(metaclass=ConfigMeta):
-    config_options = dict()
+    config_options = dict(
+            wrap_in_loop = (False,
+                'if true, enclose the sampled basic blocks with a simple loop '
+                'before using them if possible (It wouldn\'t be possible if '
+                'the predictor does not support this, as is the case e.g. with '
+                'measuring predictors like nanoBench.)'
+            ),
+        )
 
     def __init__(self, config):
         self.configure(config)

@@ -54,14 +54,30 @@ class LightBBWrapper:
         self.asm_str = bb.get_asm()
         self.coder = bb.context.coder
         self.hex = None
+        self.unwrapped_hex = None
+        self.wrap_in_loop = bb.wrap_in_loop
 
-    def get_hex(self):
-        if self.hex is None:
-            self.hex = self.coder.asm2hex(self.asm_str)
-        return self.hex
+    def get_hex(self, unwrapped=False):
+        if unwrapped:
+            if self.unwrapped_hex is None:
+                res = self.coder.asm2hex(self.get_asm(unwrapped=True))
+                self.unwrapped_hex = res
+            else:
+                res = self.unwrapped_hex
+        else:
+            if self.hex is None:
+                res = self.coder.asm2hex(self.get_asm(unwrapped=False))
+                self.hex = res
+            else:
+                res = self.hex
+        return res
 
-    def get_asm(self):
-        return self.asm_str
+    def get_asm(self, unwrapped=False):
+        res = self.asm_str
+        if self.wrap_in_loop and not unwrapped:
+            res = "loop:\n" + res + "\ndec r15\n jnz loop\n"
+            # TODO we should probably check whether r15 is unused
+        return res
 
 
 class PredictorManager(metaclass=ConfigMeta):

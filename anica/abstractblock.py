@@ -1346,7 +1346,11 @@ class AbstractBlock(Expandable):
             insn_scheme = ai.sample(insn_scheme_blacklist=insn_scheme_blacklist)
             insn_schemes.append(insn_scheme)
 
-        return self.abs_aliasing.sample(insn_schemes)
+        bb = self.abs_aliasing.sample(insn_schemes)
+
+        bb.wrap_in_loop = self.actx.sampling_cfg.wrap_in_loop
+
+        return bb
 
     def precompute_sampler(self, insn_scheme_blacklist: Sequence[iwho.InsnScheme]=[]):
         res = AbstractBlock(self.actx, bb=None)
