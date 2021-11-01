@@ -19,6 +19,12 @@ from .witness import WitnessTrace
 import logging
 logger = logging.getLogger(__name__)
 
+class DiscoveryError(Exception):
+    """ Something went really wrong during discovery
+    """
+    def __init__(self, message):
+        super().__init__(message)
+
 def sample_block_list(abstract_bb, num, insn_scheme_blacklist=None, remarks=None):
     """Try to sample `num` samples from abstract_bb.
 
@@ -407,8 +413,8 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: s
 
     # check if sampling from abstract_bb leads to mostly interesting blocks
     concrete_bbs = sample_block_list(abstract_bb, generalization_batch_size, remarks=remarks)
-    assert len(concrete_bbs) > 0
-    # TODO we might want to catch this more gracefully
+    if len(concrete_bbs) == 0:
+        raise DiscoveryError(f'Failed to sample any basic blocks for this abstract block:\n{abstract_bb}')
 
     interesting, result_ref = actx.interestingness_metric.is_mostly_interesting(concrete_bbs)
     last_result_ref = result_ref

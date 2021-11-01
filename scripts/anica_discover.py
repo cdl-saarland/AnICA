@@ -137,7 +137,12 @@ def main():
                     total_seconds = math.inf
                 continue
 
-            discoveries = discovery.discover(actx, termination=termination_criterion, out_dir=curr_out_dir)
+            try:
+                discoveries = discovery.discover(actx, termination=termination_criterion, out_dir=curr_out_dir)
+            except discovery.DiscoveryError as e:
+                logger.exception(e)
+                logger.error("Discovery campaign ended prematurely.")
+
 
         if (not args.loop):
             break
