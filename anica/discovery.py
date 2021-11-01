@@ -39,7 +39,7 @@ def sample_block_list(abstract_bb, num, insn_scheme_blacklist=None, remarks=None
     except SamplingError as e:
         logger.info(f"creating a precomputed sampler failed: {e}")
         if remarks is not None:
-            remarks.append(("creating a precomputed sampler failed for this absblock:\n{}", str(abstract_bb))
+            remarks.append(("creating a precomputed sampler failed for this absblock:\n{}", str(abstract_bb)))
         return []
 
     concrete_bbs = []
