@@ -34,7 +34,14 @@ def sample_block_list(abstract_bb, num, insn_scheme_blacklist=None, remarks=None
     if insn_scheme_blacklist is None:
         insn_scheme_blacklist = []
 
-    sampler = abstract_bb.precompute_sampler(insn_scheme_blacklist=insn_scheme_blacklist)
+    try:
+        sampler = abstract_bb.precompute_sampler(insn_scheme_blacklist=insn_scheme_blacklist)
+    except SamplingError as e:
+        logger.info(f"creating a precomputed sampler failed: {e}")
+        if remarks is not None:
+            remarks.append(("creating a precomputed sampler failed for this absblock:\n{}", str(abstract_bb))
+        return []
+
     concrete_bbs = []
     num_failed = 0
     for x in range(2 * num):
