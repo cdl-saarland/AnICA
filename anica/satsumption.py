@@ -133,7 +133,7 @@ def check_subsumed_aa(ab1, ab2, print_assignment=False):
                         continue
                     cnf.append([-clean_var, -map_vars[(idx_b1_mid, idx_b2_it)]])
 
-                idx_b1_mid = (idx_b1_mid + 1) % len(ab1)
+                idx_b1_mid = (idx_b1_mid + 1) % len(ab1.abs_insns)
 
     with Solver(bootstrap_with=cnf) as s:
         satisfiable = s.solve()
@@ -319,8 +319,12 @@ def ab_coverage(ab, num_samples, bb_len=None):
     return coverage_ratio
 
 
-def check_subsumed_arbitrary_order(ab1, ab2, print_assignment=False):
-    """ Check whether ab2 represents all concrete blocks that ab1 represents
+def check_subsumed_aa_arbitrary_order(ab1, ab2, print_assignment=False):
+    """ IMPORTANT!
+    THIS IMPLEMENTATION HAS BEEN DEEMED UNREASONABLE since changing up the
+    order affects the block semeantics probably too severly.
+
+    Check whether ab2 represents all concrete blocks that ab1 represents
     (wrt the abstraction context).
 
     Both blocks must have the same abstraction context.
