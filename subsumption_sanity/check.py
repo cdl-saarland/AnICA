@@ -14,7 +14,8 @@ sys.path.append(import_path)
 from anica.configurable import load_json_config, store_json_config
 from anica.abstractblock import AbstractBlock
 from anica.abstractioncontext import AbstractionContext
-from anica.satsumption import check_subsumed
+from anica.satsumption import check_subsumed, check_subsumed_fixed_order
+from anica.utils import Timer
 
 def load_bb_csv(iwho_ctx, filename):
     res = []
@@ -61,6 +62,7 @@ def get_covered(actx, all_abs, all_bbs, subsumption_fun, get_metrics=False):
         return covered
 
 def main():
+    Timer.enabled = True
     # ap = argparse.ArgumentParser(description=__doc__)
     # args = ap.parse_args()
 
@@ -88,9 +90,6 @@ def main():
         print(textwrap.indent(get_covered(actx=actx, all_abs=all_abs, all_bbs=boring_bbs, subsumption_fun=subsumption_fun, get_metrics=True), 4*' '))
 
 
-    print("original satsumption:")
-    check_fun(check_subsumed)
-
     print("plain lattice order:")
     def check_subsumed_lattice(bb, ab, *args, **kwargs):
         if len(bb.insns) != len(ab.abs_insns):
@@ -99,7 +98,19 @@ def main():
         bb_ab = AbstractBlock(actx, bb)
         return ab.subsumes(bb_ab)
 
-    check_fun(check_subsumed_lattice)
+    with Timer("plain lattice order") as t:
+        check_fun(check_subsumed_lattice)
+    print(t.get_result())
+
+    print("fixed-order satsumption:")
+    with Timer("fixed-order satsumption") as t:
+        check_fun(check_subsumed_fixed_order)
+    print(t.get_result())
+
+    print("original satsumption:")
+    with Timer("original satsumption") as t:
+        check_fun(check_subsumed)
+    print(t.get_result())
 
 
 if __name__ == "__main__":
