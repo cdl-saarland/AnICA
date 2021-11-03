@@ -14,7 +14,7 @@ sys.path.append(import_path)
 from anica.abstractblock import AbstractBlock
 from anica.abstractioncontext import AbstractionContext
 
-from anica.satsumption import check_subsumed, check_subsumed_aa, check_subsumed_fixed_order
+from anica.satsumption import check_subsumed, check_subsumed_aa, check_subsumed_arbitrary_order
 
 from test_utils import *
 
@@ -240,8 +240,8 @@ def test_satsumption_ca_fixed_order_01(random, actx):
     bb2 = make_bb(actx, "add rax, 0x2a\nor rdx, rbx\nsub rbx, rax")
     ab2 = AbstractBlock(actx, bb2)
 
-    assert check_subsumed(bb1, ab2)
-    assert not check_subsumed_fixed_order(bb1, ab2)
+    assert check_subsumed_arbitrary_order(bb1, ab2)
+    assert not check_subsumed(bb1, ab2)
 
 def test_satsumption_ca_fixed_order_02(random, actx):
 
@@ -250,8 +250,8 @@ def test_satsumption_ca_fixed_order_02(random, actx):
     bb2 = make_bb(actx, "or rdx, rbx\nadd rax, 0x2a\nsub rbx, rax")
     ab2 = AbstractBlock(actx, bb2)
 
+    assert check_subsumed_arbitrary_order(bb1, ab2)
     assert check_subsumed(bb1, ab2)
-    assert check_subsumed_fixed_order(bb1, ab2)
 
 def test_satsumption_ca_fixed_order_03(random, actx):
 
@@ -260,8 +260,8 @@ def test_satsumption_ca_fixed_order_03(random, actx):
     bb2 = make_bb(actx, "or rdx, rbx\nadd rax, 0x2a")
     ab2 = AbstractBlock(actx, bb2)
 
+    assert check_subsumed_arbitrary_order(bb1, ab2)
     assert check_subsumed(bb1, ab2)
-    assert check_subsumed_fixed_order(bb1, ab2)
 
 def test_satsumption_ca_fixed_order_04(random, actx):
 
@@ -270,8 +270,8 @@ def test_satsumption_ca_fixed_order_04(random, actx):
     bb2 = make_bb(actx, "or rdx, rbx\nsub rbx, rax")
     ab2 = AbstractBlock(actx, bb2)
 
+    assert check_subsumed_arbitrary_order(bb1, ab2)
     assert check_subsumed(bb1, ab2)
-    assert check_subsumed_fixed_order(bb1, ab2)
 
 
 def test_satsumption_ca_fixed_order_05(random, actx):
@@ -281,8 +281,8 @@ def test_satsumption_ca_fixed_order_05(random, actx):
     bb2 = make_bb(actx, "or rdx, rbx\nadd rax, 0x2a\nadd rax, 0x2a")
     ab2 = AbstractBlock(actx, bb2)
 
+    assert not check_subsumed_arbitrary_order(bb1, ab2)
     assert not check_subsumed(bb1, ab2)
-    assert not check_subsumed_fixed_order(bb1, ab2)
 
 def test_satsumption_ca_fixed_order_06(random, actx):
 
@@ -291,8 +291,8 @@ def test_satsumption_ca_fixed_order_06(random, actx):
     bb2 = make_bb(actx, "sub rbx, rax\nadd rax, 0x2a\nadd rax, 0x2a")
     ab2 = AbstractBlock(actx, bb2)
 
+    assert check_subsumed_arbitrary_order(bb1, ab2)
     assert check_subsumed(bb1, ab2)
-    assert check_subsumed_fixed_order(bb1, ab2)
 
 def test_satsumption_ca_fixed_order_07(random, actx):
 
@@ -302,7 +302,7 @@ def test_satsumption_ca_fixed_order_07(random, actx):
     ab2 = AbstractBlock(actx, bb2)
 
     assert check_subsumed(bb1, ab2)
-    assert check_subsumed_fixed_order(bb1, ab2)
+    assert check_subsumed_arbitrary_order(bb1, ab2)
 
 def test_satsumption_ca_fixed_order_08(random, actx):
 
@@ -312,5 +312,5 @@ def test_satsumption_ca_fixed_order_08(random, actx):
     ab2 = AbstractBlock(actx, bb2)
 
     assert check_subsumed(bb1, ab2)
-    assert check_subsumed_fixed_order(bb1, ab2)
+    assert check_subsumed_arbitrary_order(bb1, ab2)
 
