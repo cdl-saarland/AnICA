@@ -5,7 +5,6 @@
             "iaca.hsw",
             "llvm-mca.13-r+a.hsw",
             "llvm-mca.9-r+a.hsw",
-            "llvm-mca.8-r+a.hsw",
             "uica.hsw",
             "osaca.0.4.6.hsw",
             "ithemal.bhive.hsw",
@@ -13,7 +12,7 @@
         ],
         "restrict_to_supported_insns": true,
         "termination": {
-            "hours": 6
+            "hours": 5
         }
     }
 ]
