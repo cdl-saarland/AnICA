@@ -54,7 +54,13 @@ def get_covered(actx, all_abs, all_bbs, get_metrics=False):
         percent_not_covered = (num_not_covered * 100) / total_num
 
         res_str = f"covered: {num_covered} ({percent_covered:.1f}%)\n" + f"not covered: {num_not_covered} ({percent_not_covered:.1f}%)"
-        return res_str
+        res_dict = {
+                'num_covered': num_covered,
+                'percent_covered': percent_covered,
+                'num_not_covered': num_not_covered,
+                'percent_not_covered': percent_not_covered,
+            }
+        return res_str, res_dict
     else:
         return covered
 
@@ -67,7 +73,7 @@ def handle_campaign(campaign_dir, infile, threshold):
     campaign_config = load_json_config(base_dir / "campaign_config.json")
     predictors = campaign_config['predictors']
 
-    assert len(predictors) == 2, "the campaign comparse an unexpected number of predictors: {}".format(", ".join(map(str, predictors)))
+    assert len(predictors) == 2, "the campaign compares an unexpected number of predictors: {}".format(", ".join(map(str, predictors)))
 
     res_str = str(predictors)
     res_str += "\n"
@@ -108,13 +114,31 @@ def handle_campaign(campaign_dir, infile, threshold):
                 boring_bbs.append(iwho_ctx.make_bb(iwho_ctx.decode_insns(bb)))
 
     res_str += "interesting: {} out of {} ({:.1f}%)\n".format(len(interesting_bbs), full_bb_num, (len(interesting_bbs) * 100) / full_bb_num)
-    res_str += textwrap.indent(get_covered(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, get_metrics=True), '  ')
+    interesting_str, interesting_dict = get_covered(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, get_metrics=True)
+    res_str += textwrap.indent(interesting_str, '  ')
     res_str += "\n"
 
     res_str += "boring: {} out of {} ({:.1f}%)\n".format(len(boring_bbs), full_bb_num, (len(boring_bbs) * 100) / full_bb_num)
-    res_str += textwrap.indent(get_covered(actx=actx, all_abs=all_abs, all_bbs=boring_bbs, get_metrics=True), '  ')
+    boring_str, boring_dict = get_covered(actx=actx, all_abs=all_abs, all_bbs=boring_bbs, get_metrics=True)
+    res_str += textwrap.indent(boring_str, '  ')
     res_str += "\n"
-    return res_str
+
+    res_dict = {
+            'predictors': "_X_".join(map(str, predictors)),
+            'num_abstract_blocks': len(all_abs),
+            'num_bbs': full_bb_num,
+            'num_interesting_bbs': len(interesting_bbs),
+            'ratio_interesting_bbs': len(interesting_bbs) / full_bb_num,
+            'num_boring_bbs': len(boring_bbs),
+            'ratio_boring_bbs': len(boring_bbs) / full_bb_num,
+        }
+    for k, v in interesting_dict.items():
+        res_dict[k + '_interesting'] = v
+
+    for k, v in boring_dict.items():
+        res_dict[k + '_boring'] = v
+
+    return res_str, res_dict
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
@@ -122,6 +146,7 @@ def main():
     ap.add_argument('--threshold', default=0.5, type=float, metavar='V',
             help='only check input bbs with a deviation of at least this value')
 
+    ap.add_argument('-o', "--output", metavar="CSVFILE", required=True, help="csv file for writing the coverage results to")
     ap.add_argument("infile", metavar="CSVFILE", help="csv file containing the overview results")
 
 
@@ -136,10 +161,18 @@ def main():
 
     results = proc_pool.imap(partial(handle_campaign, infile=infile, threshold=threshold), args.campaigndirs)
 
-    for r in results:
-        print(r)
+    records = []
+    for res_str, res_dict in results:
+        print(res_str)
+        records.append(res_dict)
 
     proc_pool.close()
+
+    with open(args.output, 'w') as f:
+        keys = list(records[0].keys())
+        writer = csv.DictWriter(f, fieldnames=keys)
+        writer.writeheader()
+        writer.writerows(records)
 
 
 if __name__ == "__main__":
