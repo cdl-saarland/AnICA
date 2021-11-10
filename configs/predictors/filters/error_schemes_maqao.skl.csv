@@ -1,0 +1,30 @@
+prefetch byte ptr R:MEM(512)
+lock cmpxchg8b qword ptr RW:MEM(64)
+lahf
+repne lodsb W:al, byte ptr R:[rsi]
+repne lodsd W:eax, dword ptr R:[rsi]
+repne lodsw W:ax, word ptr R:[rsi]
+repne movsb byte ptr W:es:[rdi], byte ptr R:[rsi]
+repne movsd dword ptr W:es:[rdi], dword ptr R:[rsi]
+repne movsw word ptr W:es:[rdi], word ptr R:[rsi]
+repne stosb byte ptr W:es:[rdi], R:al
+repne stosd dword ptr W:es:[rdi], R:eax
+repne stosw word ptr W:es:[rdi], R:ax
+sahf
+lock cmpxchg16b xmmword ptr RW:MEM(128)
+repne lodsq W:rax, qword ptr R:[rsi]
+repne movsq qword ptr W:es:[rdi], qword ptr R:[rsi]
+repne stosq qword ptr W:es:[rdi], R:rax
+lzcnt W:GPR:16, word ptr R:MEM(16)
+lzcnt W:GPR:32, dword ptr R:MEM(32)
+lzcnt W:GPR:64, qword ptr R:MEM(64)
+lzcnt W:GPR:16, R:GPR:16
+lzcnt W:GPR:32, R:GPR:32
+lzcnt W:GPR:64, R:GPR:64
+movbe W:GPR:16, word ptr R:MEM(16)
+movbe W:GPR:32, dword ptr R:MEM(32)
+movbe word ptr W:MEM(16), R:GPR:16
+movbe dword ptr W:MEM(32), R:GPR:32
+fxsave64 W:MEM(4096)
+popcnt W:GPR:16, word ptr R:MEM(16)
+popcnt W:GPR:16, R:GPR:16
