@@ -132,6 +132,32 @@
 },
 
 
+"maqao.skl": {
+    "tool": "maqao", "version": "master", "uarch": "SKL",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "maqao",
+            "maqao_path": "${BASE_DIR}/predictors/maqao-cqa/maqao/maqao.intel64",
+            "maqao_opts": ["--uarch=SKYLAKE"],
+            "as_path": "as",
+            "timeout": 1.0
+        }
+},
+"maqao.hsw": {
+    "tool": "maqao",
+    "version": "master",
+    "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "maqao",
+            "maqao_path": "${BASE_DIR}/predictors/maqao-cqa/maqao/maqao.intel64",
+            "maqao_opts": ["--uarch=HASWELL"],
+            "as_path": "as",
+            "timeout": 1.0
+        }
+},
+
+
 "nanobench.skl": {
     "tool": "nanobench", "version": "master", "uarch": "SKL",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
