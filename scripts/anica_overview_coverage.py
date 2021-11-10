@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
-"""Get the ratio of concrete blocks in a set of benchmarks covered by the discoveries of 
+"""Get the ratio of concrete blocks in a set of benchmarks covered by the
+discoveries of AnICA campaigns.
 """
 
 import argparse
 import csv
+import json
 from pathlib import Path
 import textwrap
 
@@ -28,7 +30,9 @@ def get_covered(actx, all_abs, all_bbs, get_metrics=False):
 
     not_covered = all_bbs
 
-    for ab in all_abs:
+    covered_per_ab = dict()
+
+    for ab_idx, ab in enumerate(all_abs):
         next_not_covered = []
 
         # precomputing schemes speeds up subsequent check_subsumed calls for this abstract block
@@ -36,11 +40,15 @@ def get_covered(actx, all_abs, all_bbs, get_metrics=False):
         for ai in ab.abs_insns:
             precomputed_schemes.append(actx.insn_feature_manager.compute_feasible_schemes(ai.features))
 
+        covered_by_ab = 0
         for bb in not_covered:
             if check_subsumed(bb, ab, precomputed_schemes=precomputed_schemes):
                 covered.append(bb)
+                covered_by_ab += 1
             else:
                 next_not_covered.append(bb)
+
+        covered_per_ab[ab_idx] = covered_by_ab
 
         not_covered = next_not_covered
 
@@ -60,7 +68,7 @@ def get_covered(actx, all_abs, all_bbs, get_metrics=False):
                 'num_not_covered': num_not_covered,
                 'percent_not_covered': percent_not_covered,
             }
-        return res_str, res_dict
+        return res_str, res_dict, covered_per_ab
     else:
         return covered
 
@@ -68,6 +76,13 @@ def get_covered(actx, all_abs, all_bbs, get_metrics=False):
 def handle_campaign(campaign_dir, infile, threshold):
     base_dir = Path(campaign_dir)
     discovery_dir = base_dir / "discoveries"
+
+    metrics_path = base_dir / 'metrics.json'
+    if metrics_path.exists():
+        with open(metrics_path, 'r') as f:
+            metrics_dict = json.load(f)
+    else:
+        metrics_dict = {}
 
     # find out about which pair of predictors this campaign is
     campaign_config = load_json_config(base_dir / "campaign_config.json")
@@ -87,9 +102,17 @@ def handle_campaign(campaign_dir, infile, threshold):
         ab = AbstractBlock.load_json_dump(p, actx=actx)
         if actx is None:
             actx = ab.actx
+        gen_id = str(p).split('/')[-1].split('.')[0]
+        ab_metrics = metrics_dict.get(gen_id, None)
+        if ab_metrics is None:
+            print(f"Warning: no metrics found for discovery {gen_id}!")
+        else:
+            subsumed_by = ab_metrics['subsumed_by']
+            if subsumed_by is not None:
+                continue
         all_abs.append(ab)
 
-    # sort by ascending number of abstract instructions, as ones with fewer instructions will probably be more helpful
+    # sort by ascending number of abstract instructions, as those with fewer instructions will probably be more helpful
     all_abs.sort(key=lambda x: len(x.abs_insns))
 
     res_str += "num of abstract blocks: {}\n\n".format(len(all_abs))
@@ -114,12 +137,39 @@ def handle_campaign(campaign_dir, infile, threshold):
                 boring_bbs.append(iwho_ctx.make_bb(iwho_ctx.decode_insns(bb)))
 
     res_str += "interesting: {} out of {} ({:.1f}%)\n".format(len(interesting_bbs), full_bb_num, (len(interesting_bbs) * 100) / full_bb_num)
-    interesting_str, interesting_dict = get_covered(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, get_metrics=True)
+    interesting_str, interesting_dict, interesting_covered_per_ab = get_covered(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, get_metrics=True)
     res_str += textwrap.indent(interesting_str, '  ')
     res_str += "\n"
 
+    coverage_table = list(sorted(interesting_covered_per_ab.items(), key=lambda x: x[1], reverse=True))
+
+    covered_so_far = 0
+    idx = 0
+    bound = 1
+    while True:
+        while idx < len(coverage_table):
+            if idx >= bound:
+                break
+            covered_so_far += coverage_table[idx][1]
+            idx += 1
+        else:
+            break
+        percentage = (100 * covered_so_far) / len(interesting_bbs)
+        res_str += f"    covered with {bound} discoveries: {covered_so_far} ({percentage:.1f}%)\n"
+        bound *= 2
+
+    num_used = 0
+    for k, v in coverage_table:
+        if v != 0:
+            num_used += 1
+
+    res_str += f"    number of abstract blocks actually used for covering bbs: {num_used} out of {len(all_abs)}\n"
+
+
+    res_str += "\n"
+
     res_str += "boring: {} out of {} ({:.1f}%)\n".format(len(boring_bbs), full_bb_num, (len(boring_bbs) * 100) / full_bb_num)
-    boring_str, boring_dict = get_covered(actx=actx, all_abs=all_abs, all_bbs=boring_bbs, get_metrics=True)
+    boring_str, boring_dict, boring_covered_per_ab = get_covered(actx=actx, all_abs=all_abs, all_bbs=boring_bbs, get_metrics=True)
     res_str += textwrap.indent(boring_str, '  ')
     res_str += "\n"
 
