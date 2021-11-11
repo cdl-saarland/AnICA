@@ -82,7 +82,7 @@ def main():
             all_campaign_configs.append(c)
 
     # to not require interactivity: query for the sudo password once, in the
-    # beginning if necessary
+    # beginning, if necessary
     for idx, config in enumerate(all_campaign_configs):
         actx_config = load_json_config(config['abstraction_config_path'])
         predictor_keys = config['predictors']
