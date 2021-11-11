@@ -57,7 +57,7 @@ def sample_block_list(abstract_bb, num, insn_scheme_blacklist=None, remarks=None
         # This means that a portion of the samples failed.
         # If it is larger than 0.5, fewer samples than required are produced.
         # If it is 1.0, no samples at all could be produced.
-        fail_ratio = num_failed / 2 * num
+        fail_ratio = num_failed / (2 * num)
         remarks.append(("non-zero sampling fail ratio encountered: {}", fail_ratio))
     return concrete_bbs
 
