@@ -89,6 +89,52 @@ def main():
 
 
 
+    print("\n## Latex horizontal table:")
+
+    def latex_pred_name(x):
+        components = x.split('.')
+        if x.startswith('llvm-mca'):
+            if components[1].startswith('13'):
+                return "\\llvmmca"
+            else:
+                return "\\llvmmca " + components[1].split('-')[0]
+        else:
+            return "\\" + components[0]
+
+    columns = []
+    columns.append(["", " BBs interesting", "Int. BBs covered", "other BBs covered", "\\# Discoveries"])
+    # columns.append(["", " BBs interesting (\\%)", "Int. BBs covered (\\%)", "other BBs covered (\\%)", "\\# Discoveries"])
+    for r in data:
+        r_preds = tuple(map(latex_pred_name, r['predictors'].split('_X_')))
+        if "\\llvmmca 9" in r_preds:
+            continue
+        column = []
+        column.append(",".join(r_preds))
+        # column.append("{:.1f}".format(100 * float(r["ratio_interesting_bbs"])))
+        # column.append("{:.1f}".format(float(r["percent_covered_interesting"])))
+        # column.append("{:.1f}".format(float(r["percent_covered_boring"])))
+        column.append("{:.0f}\\%".format(100 * float(r["ratio_interesting_bbs"])))
+        column.append("{:.0f}\\%".format(float(r["percent_covered_interesting"])))
+        column.append("{:.0f}\\%".format(float(r["percent_covered_boring"])))
+        column.append("{}".format(int(r["num_abstract_blocks"])))
+        columns.append(column)
+
+    column_str = "r|" + (len(columns) - 1) * "c|"
+    res = "% start of generated table\n\\begin{tabular}{" + column_str + "}\n"
+    for idx, row in enumerate(zip(*columns)):
+        res += "  "
+        if idx == 0:
+            row = map(lambda x: "\\rot{" + x + "}" if len(x) > 0 else "", row)
+        res += " & ".join(row)
+        res += "\\\\\n"
+        if idx == 0:
+            res += "  \\hline\n"
+
+    res += "  \\hline\n"
+
+    res += "\\end{tabular}\n% end of generated table\n"
+
+    print(res)
 
 
 if __name__ == "__main__":
