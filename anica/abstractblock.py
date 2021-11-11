@@ -1220,7 +1220,7 @@ class AbstractBlock(Expandable):
         store_json_config(out_data, filename)
 
     @staticmethod
-    def load_json_dump(filename, actx=None):
+    def load_json_dump(filename, actx=None, metadata_res=None):
         from .abstractioncontext import AbstractionContext
 
         json_dict = load_json_config(filename)
@@ -1231,6 +1231,12 @@ class AbstractBlock(Expandable):
 
         ab_data = actx.json_ref_manager.resolve_json_references(json_dict['ab'])
         ab = AbstractBlock.from_json_dict(actx, ab_data)
+
+        if metadata_res is not None:
+            for k, v in json_dict.items():
+                if k in ['config', 'ab']:
+                    continue
+                metadata_res[k] = v
         return ab
 
     @staticmethod
