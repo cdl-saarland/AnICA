@@ -25,7 +25,7 @@
     "wrap_in_loop": false
   },
   "discovery": {
-    "discovery_batch_size": 50,
+    "discovery_batch_size": 20,
     "discovery_possible_block_lengths": [1, 2, 3, 4, 5],
     "generalization_batch_size": 100,
     "generalization_strategy": [["random", 8]]
