@@ -1,0 +1,40 @@
+[
+    {
+        "abstraction_config_path": "../../abstraction/final01/final.json",
+        "TEMPLATE:all_predictor_pairs": [
+            "iaca.hsw",
+            "llvm-mca.13-r+a.hsw",
+            "uica.hsw",
+            "osaca.0.4.6.hsw"
+        ],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "num_discoveries": 150
+        }
+    },
+    {
+        "abstraction_config_path": "../../abstraction/final01/final.json",
+        "predictors": ["difftune.artifact.hsw", "iaca.hsw"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "num_discoveries": 150
+        }
+    },
+    {
+        "abstraction_config_path": "../../abstraction/final01/final.json",
+        "predictors": ["difftune.artifact.hsw", "llvm-mca.13-r+a.hsw"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "num_discoveries": 150
+        }
+    },
+    {
+        "abstraction_config_path": "../../abstraction/final01/final.json",
+        "predictors": ["difftune.artifact.hsw", "uica.hsw"],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "num_discoveries": 150
+        }
+    }
+]
+
