@@ -36,6 +36,9 @@ discovery_results/
 generated_html/
 *.s
 
+*.png
+*.df
+
 # pyenv stuff
 .python-version
 
