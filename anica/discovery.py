@@ -406,7 +406,7 @@ def minimize(actx, concrete_bb):
     return concrete_bb
 
 
-def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: str, remarks=None):
+def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: str, remarks=None, interact=None):
     """ Generalize the given AbstractBlock while presering interestingness.
 
     This means that we try to adjust it such that it represents a maximal
@@ -460,6 +460,9 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: s
             chosen_expansion, (benefit, definitely_does_not_change) = expansions[0]
         elif strategy == "random":
             chosen_expansion, (benefit, definitely_does_not_change) = random.choice(expansions)
+        elif strategy == "interactive":
+            assert interact is not None
+            chosen_expansion, (benefit, definitely_does_not_change) = interact(working_copy, expansions)
         else:
             assert False, f"unknown generalization strategy: {strategy}"
 
