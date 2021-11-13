@@ -48,6 +48,10 @@ def main():
 
     argparser.add_argument('--no-minimize', action='store_true', help='do not minimize the basic block before generalization')
 
+    argparser.add_argument('--trace-output', metavar='trace file', default=None, help='path to a file where the generalization trace should be saved to')
+
+    argparser.add_argument('--json-output', metavar='gen file', default=None, help='path to a file where the generalized abstract basic block should be dumped to')
+
     argparser.add_argument('generalize', metavar='asm file', help='path to a file containing the assembly of a basic block to generalize')
 
     argparser.add_argument('predictors', nargs="+", metavar="PREDICTOR_ID", help='one or more identifiers of predictors specified in the config')
@@ -78,10 +82,15 @@ def main():
     res_abb, trace, result_ref = discovery.generalize(actx, abb, strategy=strategy)
     print("Generalization Result:\n" + textwrap.indent(str(res_abb), '  '))
 
-    timestamp = datetime.now().replace(microsecond=0).isoformat()
-    filename = f"traces/trace_{timestamp}.json"
-    trace.dump_json(filename)
-    print(f"witness trace written to: {filename}")
+    if args.json_output is not None:
+        filename = args.json_output
+        res_abb.dump_json(filename)
+        print(f"generalization result written to: {filename}")
+
+    if args.trace_output is not None:
+        filename = args.trace_output
+        trace.dump_json(filename)
+        print(f"witness trace written to: {filename}")
 
     sys.exit(0)
 
