@@ -52,7 +52,7 @@
       "abs_insns": [
           {
             "exact_scheme": "$SV:TOP",
-            "mnemonic": {"top": false, "base": "psubsb", "curr_dist": 2, "max_dist": 3},
+            "mnemonic": {"top": false, "base": "vpsubq", "curr_dist": 1, "max_dist": 3},
             "opschemes": [],
             "memory_usage": {"subfeature": [], "is_in_subfeature": true},
             "category": "$SV:TOP",
@@ -71,6 +71,7 @@
         ],
       "abs_aliasing": {
           "aliasing_dict": [
+              [[[0, ["$OperandKind:1", "reg0"]], [0, ["$OperandKind:1", "reg1"]]], "$SV:TOP"],
               [[[0, ["$OperandKind:1", "mem0"]], [1, ["$OperandKind:1", "mem0"]]], "$SV:TOP"]
             ],
           "is_bot": false
