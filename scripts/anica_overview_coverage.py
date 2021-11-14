@@ -90,6 +90,12 @@ def handle_campaign(campaign_dir, infile, threshold):
 
     assert len(predictors) == 2, "the campaign compares an unexpected number of predictors: {}".format(", ".join(map(str, predictors)))
 
+    report_path = base_dir / "report.json"
+    with open(report_path, 'r') as f:
+        report = json.load(f)
+        seconds_passed = report['seconds_passed']
+        del report
+
     res_str = str(predictors)
     res_str += "\n"
 
@@ -175,6 +181,7 @@ def handle_campaign(campaign_dir, infile, threshold):
 
     res_dict = {
             'predictors': "_X_".join(map(str, predictors)),
+            'campaign_seconds': seconds_passed,
             'num_abstract_blocks': len(all_abs),
             'num_bbs': full_bb_num,
             'num_interesting_bbs': len(interesting_bbs),
