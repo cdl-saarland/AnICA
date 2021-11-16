@@ -40,40 +40,51 @@ def main():
 
     iwho_ctx = actx.iwho_ctx
 
-    total = 0
+    scheme2num_bbs = defaultdict(lambda: 0)
+
+    bbs = []
+    with open(args.bhivecsv, 'r') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            bbs.append(row[0])
+
+    total = len(bbs)
+    print(f'total: {total}')
+
     coder_errors = 0
     instantiation_errors = 0
     passes = 0
 
-    scheme2num_bbs = defaultdict(lambda: 0)
+    step = max(total // 1000, 10)
 
-    with open(args.bhivecsv, 'r') as f:
-        reader = csv.reader(f)
-        for row in reader:
-            # TODO add a progress indicator!
-            hex_str = row[0]
-            if len(hex_str) == 0:
+    for idx, hex_str in enumerate(bbs):
+        if (idx % step) == 0:
+            progress = 100 * idx / total
+            print(f" > progress: {progress:.1f}%")
+
+        if len(hex_str) == 0:
+            continue
+        total += 1
+        try:
+            insns = iwho_ctx.decode_insns(hex_str, skip_instantiation_errors=True)
+        except iwho.ASMCoderError:
+            coder_errors += 1
+            continue
+
+        no_inst_error_yet = True
+        for i in insns:
+            if i is None:
+                if no_inst_error_yet:
+                    instantiation_errors += 1
+                    no_inst_error_yet = False
                 continue
-            total += 1
-            try:
-                insns = iwho_ctx.decode_insns(hex_str, skip_instantiation_errors=True)
-            except iwho.ASMCoderError:
-                coder_errors += 1
-                continue
+            scheme2num_bbs[i.scheme] += 1
 
-            no_inst_error_yet = True
-            for i in insns:
-                if i is None:
-                    if no_inst_error_yet:
-                        instantiation_errors += 1
-                        no_inst_error_yet = False
-                    continue
-                scheme2num_bbs[i.scheme] += 1
+        if no_inst_error_yet:
+            passes += 1
 
-            if not no_inst_error_yet:
-                passes += 1
+    print(f" > progress: 100%")
 
-    print(f"total: {total}")
     print(f"coder errors: {coder_errors}")
     print(f"instantiation errors: {instantiation_errors}")
     print(f"passes: {passes}")
@@ -88,9 +99,6 @@ def main():
     print(f"total schemes: {num_schemes}")
     percentage = 100 * num_schemes_not_covered / num_schemes
     print(f"not covered by any passing bb: {num_schemes_not_covered} ({percentage:.1f}%)")
-
-
-
 
 
 
