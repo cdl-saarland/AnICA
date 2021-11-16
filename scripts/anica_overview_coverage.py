@@ -149,6 +149,7 @@ def handle_campaign(campaign_dir, infile, threshold):
 
     coverage_table = list(sorted(interesting_covered_per_ab.items(), key=lambda x: x[1], reverse=True))
 
+    covered_by_10 = None
     covered_so_far = 0
     idx = 0
     bound = 1
@@ -158,6 +159,9 @@ def handle_campaign(campaign_dir, infile, threshold):
                 break
             covered_so_far += coverage_table[idx][1]
             idx += 1
+            if idx == 10:
+                covered_by_10 = covered_so_far
+
         else:
             break
         percentage = (100 * covered_so_far) / len(interesting_bbs)
@@ -184,6 +188,7 @@ def handle_campaign(campaign_dir, infile, threshold):
             'campaign_seconds': seconds_passed,
             'num_abstract_blocks': len(all_abs),
             'num_bbs': full_bb_num,
+            'covered_by_10': covered_by_10,
             'num_interesting_bbs': len(interesting_bbs),
             'ratio_interesting_bbs': len(interesting_bbs) / full_bb_num,
             'num_boring_bbs': len(boring_bbs),

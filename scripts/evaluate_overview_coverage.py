@@ -66,32 +66,32 @@ def main():
     for pred, num, percent in zip(pred_column, num_column, percent_column):
         print((" - {:" + str(pred_width) + "}: {:" + str(num_width) + "} ({:" + str(percent_width) + ".1f}%)").format(pred, num, percent))
 
-    print("\n## Latex csv table:")
-
-    all_predictors = set()
-
-    entries = dict()
-    for r in data:
-        r_preds = tuple(sorted(r['predictors'].split('_X_')))
-        entries[r_preds] = "{:.0f}\% / \\textbf{{{:.0f}}}\%".format(100 * float(r['ratio_interesting_bbs']), float(r['percent_covered_interesting']))
-        all_predictors.update(r_preds)
-    order = list(sorted(all_predictors))
-
-    def split_junk(x):
-        return x.split('.')[0]
-
-    lines = []
-    col_names = list(map(split_junk , order))
-    lines.append(','.join([''] + col_names))
-    for i1, p1 in list(enumerate(order))[1:]:
-        line = [split_junk(p1)]
-        for i2, p2 in list(enumerate(order))[:-1]:
-            if i2 >= i1:
-                line.append('---')
-                continue
-            line.append(entries[tuple(sorted([p1, p2]))])
-        lines.append(",".join(line))
-    print("\n".join(lines))
+    # print("\n## Latex csv table:")
+    #
+    # all_predictors = set()
+    #
+    # entries = dict()
+    # for r in data:
+    #     r_preds = tuple(sorted(r['predictors'].split('_X_')))
+    #     entries[r_preds] = "{:.0f}\% / \\textbf{{{:.0f}}}\%".format(100 * float(r['ratio_interesting_bbs']), float(r['percent_covered_interesting']))
+    #     all_predictors.update(r_preds)
+    # order = list(sorted(all_predictors))
+    #
+    # def split_junk(x):
+    #     return x.split('.')[0]
+    #
+    # lines = []
+    # col_names = list(map(split_junk , order))
+    # lines.append(','.join([''] + col_names))
+    # for i1, p1 in list(enumerate(order))[1:]:
+    #     line = [split_junk(p1)]
+    #     for i2, p2 in list(enumerate(order))[:-1]:
+    #         if i2 >= i1:
+    #             line.append('---')
+    #             continue
+    #         line.append(entries[tuple(sorted([p1, p2]))])
+    #     lines.append(",".join(line))
+    # print("\n".join(lines))
 
 
 
@@ -103,7 +103,7 @@ def main():
             if components[1].startswith('13'):
                 return "MCA"
             else:
-                return "MCA " + components[1].split('-')[0]
+                return "MCA." + components[1].split('-')[0]
         elif x.startswith('difftune'):
             return "DT"
         else:
@@ -115,7 +115,7 @@ def main():
     # columns.append(["", " BBs interesting (\\%)", "int. BBs covered (\\%)", "other BBs covered (\\%)", "\\# Discoveries"])
     for r in sorted(data, key=lambda x: float(x['percent_covered_interesting']), reverse=True):
         r_preds = tuple(sorted(map(latex_pred_name, r['predictors'].split('_X_'))))
-        if "\\llvmmca 9" in r_preds:
+        if "MCA.8" in r_preds:
             continue
         column = []
         column.append(",".join(r_preds))
@@ -124,7 +124,9 @@ def main():
         # column.append("{:.1f}".format(float(r["percent_covered_boring"])))
         column.append("{:.0f}\\%".format(100 * float(r["ratio_interesting_bbs"])))
         column.append("{:.0f}\\%".format(float(r["percent_covered_interesting"])))
-        column.append("{:.0f}\\%".format(42))
+
+        covered_percent = 100 * float(r["covered_by_10"])/float(r["num_interesting_bbs"])
+        column.append("{:.0f}\\%".format(covered_percent))
         column.append("{:.0f}\\%".format(float(r["percent_covered_boring"])))
         # column.append("{}".format(int(r["num_abstract_blocks"])))
 

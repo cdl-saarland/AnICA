@@ -36,6 +36,30 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
     all_keys = set(keys)
     all_keys.discard('bb')
     all_keys = sorted(all_keys)
+    print(",\n".join(map(lambda x: '"' + x + '"', all_keys)))
+    all_keys = [
+        "iaca.hsw",
+        "llvm-mca.13-r+a.hsw",
+        "llvm-mca.9-r+a.hsw",
+        "osaca.0.4.6.hsw",
+        "uica.hsw",
+        "ithemal.bhive.hsw",
+        "difftune.artifact.hsw",
+        # "llvm-mca.8-r+a.hsw",
+    ]
+
+    def latex_pred_name(x):
+        components = x.split('.')
+        if x.startswith('llvm-mca'):
+            if components[1].startswith('13'):
+                return "llvm-mca 13"
+            else:
+                return "llvm-mca " + components[1].split('-')[0]
+        # elif x.startswith('difftune'):
+        #     return "DT"
+        else:
+            # return "\\" + components[0]
+            return components[0]
 
     heatmap_data = defaultdict(dict)
     # for k1, k2 in itertools.product(all_keys, repeat=2):
@@ -51,12 +75,12 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
             rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
             if rel_error >= err_threshold:
                 res += 1
-        heatmap_data[k1][k2] = 100 * res / len(data)
+        heatmap_data[latex_pred_name(k1)][latex_pred_name(k2)] = 100 * res / len(data)
 
     df = pd.DataFrame(heatmap_data)
     cmap = sns.color_palette("rocket", as_cmap=True)
 
-    p = sns.heatmap(df, annot=True, fmt=".0f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=100.0, cbar_kws={'format': '%.0f%%', 'label': f"ratio of blocks with rel. deviation > {err_threshold}"})
+    p = sns.heatmap(df, annot=True, fmt=".0f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=100.0, cbar_kws={'format': '%.0f%%', 'label': f"Ratio of blocks with rel. difference > {100 * err_threshold:.0f}%"})
     # plt.title(f"Percentage of blocks with a rel. error >= {err_threshold} on a set of {len(data)} blocks")
 
     # locs, labels = plt.xticks()
