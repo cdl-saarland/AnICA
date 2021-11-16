@@ -1,0 +1,36 @@
+{
+  "insn_feature_manager": {
+      "features": [
+          ["exact_scheme", "singleton"],
+          ["mnemonic", ["editdistance", 3]],
+          ["opschemes", "subset"],
+          ["memory_usage", "subset_or_definitely_not"],
+          ["category", "singleton"],
+          ["extension", "singleton"],
+          ["isa-set", "singleton"]
+        ]
+    },
+  "iwho": {
+      "context_specifier": "x86_uops_info",
+      "filters": ["no_cf", "with_measurements:SKL"]
+    },
+  "interestingness_metric": {
+      "min_interestingness": 0.5,
+      "mostly_interesting_ratio": 1.00,
+      "invert_interestingness": false
+    },
+  "discovery": {
+      "discovery_batch_size": 100,
+      "discovery_possible_block_lengths": [3, 4, 5, 6, 7, 8],
+      "generalization_batch_size": 100,
+      "generalization_strategy": [["random", 3]]
+    },
+  "sampling": {
+      "wrap_in_loop": false
+    },
+  "measurement_db": null,
+  "predmanager": {
+      "registry_path": "/home/ritter/projects/portmapping/anica/anica/../configs/predictors/pred_registry.json",
+      "num_processes": 0
+    }
+}
