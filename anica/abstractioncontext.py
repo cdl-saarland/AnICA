@@ -1,6 +1,8 @@
 """ TODO document
 """
 
+from functools import partial
+
 from .abstractblock import *
 from .insnfeaturemanager import InsnFeatureManager
 from .interestingness import InterestingnessMetric
@@ -49,6 +51,9 @@ class SamplingConfig(metaclass=ConfigMeta):
     def __init__(self, config):
         self.configure(config)
 
+def filter_uarch(scheme, ctx, uarch_name):
+    return (ctx.get_features(scheme) is not None
+        and uarch_name in ctx.get_features(scheme)[0]["measurements"])
 
 class IWHOConfig(metaclass=ConfigMeta):
     config_options = dict(
@@ -72,8 +77,7 @@ class IWHOConfig(metaclass=ConfigMeta):
                 continue
             if key == 'with_measurements':
                 for uarch in args:
-                    uarch_filter = lambda scheme, ctx, uarch_name=uarch: (ctx.get_features(scheme) is not None
-                            and uarch_name in ctx.get_features(scheme)[0]["measurements"])
+                    uarch_filter = partial(filter_uarch, uarch_name=uarch)
                     iwho_ctx.push_filter(uarch_filter)
                 continue
             if key == 'only_mnemonics':
