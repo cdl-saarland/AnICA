@@ -4,6 +4,7 @@
 """
 
 import argparse
+from collections import defaultdict
 import os
 import sys
 import textwrap
@@ -31,6 +32,8 @@ def main():
 
     argparser.add_argument('-p', '--predictors', nargs="+", required=True, metavar="PREDICTOR_ID", help='one or more identifiers of predictors specified in the config')
 
+    argparser.add_argument('-s', '--same', action='store_true', help='arrange the output to ease checking whether each predictor predicts only one value for all basic blocks')
+
     args = parse_args_with_logging(argparser, "info")
 
 
@@ -56,7 +59,7 @@ def main():
             asm_str = f.read()
         bbs.append(iwho.BasicBlock(iwho_ctx, iwho_ctx.parse_asm(asm_str)))
 
-    results = actx.predmanager.eval_with_all(bbs)
+    results = list(actx.predmanager.eval_with_all(bbs))
 
     for bb, res in results:
         print("Basic Block:")
@@ -64,6 +67,19 @@ def main():
         print("  Result:")
         print(textwrap.indent(pretty_print(res), "    "))
 
+    if args.same:
+        per_pred = defaultdict(list)
+
+        for bb, res in results:
+            for k, v in res.items():
+                per_pred[k].append(v.get('TP', None))
+
+        for k, vs in per_pred.items():
+            v = vs[0]
+            if all(map(lambda x: x == v, vs)):
+                print(f"  {k}: same - {v}")
+            else:
+                print(f"  {k}: different - {', '.join(map(str, vs))}")
 
 
 if __name__ == "__main__":
