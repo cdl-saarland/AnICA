@@ -51,14 +51,18 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
     def latex_pred_name(x):
         components = x.split('.')
         if x.startswith('llvm-mca'):
-            if components[1].startswith('13'):
-                return "llvm-mca 13"
-            else:
-                return "llvm-mca " + components[1].split('-')[0]
-        # elif x.startswith('difftune'):
-        #     return "DT"
+            return "LLVM-MCA " + components[1].split('-')[0]
+        elif x.startswith('iaca'):
+            return "IACA"
+        elif x.startswith('uica'):
+            return "uiCA"
+        elif x.startswith('difftune'):
+            return "DiffTune"
+        elif x.startswith('osaca'):
+            return "OSACA"
+        elif x.startswith('ithemal'):
+            return "Ithemal"
         else:
-            # return "\\" + components[0]
             return components[0]
 
     heatmap_data = defaultdict(dict)
@@ -80,7 +84,8 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
     df = pd.DataFrame(heatmap_data)
     cmap = sns.color_palette("rocket", as_cmap=True)
 
-    p = sns.heatmap(df, annot=True, fmt=".0f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=100.0, cbar_kws={'format': '%.0f%%', 'label': f"Ratio of blocks with rel. difference > {100 * err_threshold:.0f}%"})
+    fig, ax = plt.subplots(figsize=(4.5,3.2))
+    p = sns.heatmap(df, annot=True, fmt=".0f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=100.0, ax=ax, cbar_kws={'format': '%.0f%%', 'label': f"Ratio of blocks with rel. difference > {100 * err_threshold:.0f}%"})
     # plt.title(f"Percentage of blocks with a rel. error >= {err_threshold} on a set of {len(data)} blocks")
 
     # locs, labels = plt.xticks()

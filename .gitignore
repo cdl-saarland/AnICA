@@ -37,6 +37,7 @@ generated_html/
 *.s
 
 *.png
+*.pgf
 *.df
 
 # pyenv stuff
