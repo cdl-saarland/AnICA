@@ -51,7 +51,7 @@ def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
     def latex_pred_name(x):
         components = x.split('.')
         if x.startswith('llvm-mca'):
-            return "LLVM-MCA " + components[1].split('-')[0]
+            return "llvm-mca " + components[1].split('-')[0]
         elif x.startswith('iaca'):
             return "IACA"
         elif x.startswith('uica'):
