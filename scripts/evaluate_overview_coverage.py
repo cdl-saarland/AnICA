@@ -101,21 +101,22 @@ def main():
         components = x.split('.')
         if x.startswith('llvm-mca'):
             if components[1].startswith('13'):
-                return "MCA"
+                return "\\llvmmca.13"
             else:
-                return "MCA." + components[1].split('-')[0]
-        elif x.startswith('difftune'):
-            return "DT"
+                return "\\llvmmca." + components[1].split('-')[0]
+        # elif x.startswith('difftune'):
+        #     return "DT"
         else:
-            # return "\\" + components[0]
-            return components[0]
+            return "\\" + components[0]
+            # return components[0]
 
     columns = []
-    columns.append(["", " BBs interesting", "int. BBs covered", "\\dots by top 10", "other BBs covered", "campaign time (h:m)"])
+    columns.append(["", " BBs interesting", "int. BBs covered", "\\dots by top 10", "campaign time (h:m)"])
+    # columns.append(["", " BBs interesting", "int. BBs covered", "\\dots by top 10", "other BBs covered", "campaign time (h:m)"])
     # columns.append(["", " BBs interesting (\\%)", "int. BBs covered (\\%)", "other BBs covered (\\%)", "\\# Discoveries"])
     for r in sorted(data, key=lambda x: float(x['percent_covered_interesting']), reverse=True):
         r_preds = tuple(sorted(map(latex_pred_name, r['predictors'].split('_X_'))))
-        if "MCA.8" in r_preds:
+        if "\\llvmmca.8" in r_preds:
             continue
         column = []
         column.append(",".join(r_preds))
@@ -127,7 +128,7 @@ def main():
 
         covered_percent = 100 * float(r["covered_by_10"])/float(r["num_interesting_bbs"])
         column.append("{:.0f}\\%".format(covered_percent))
-        column.append("{:.0f}\\%".format(float(r["percent_covered_boring"])))
+        # column.append("{:.0f}\\%".format(float(r["percent_covered_boring"])))
         # column.append("{}".format(int(r["num_abstract_blocks"])))
 
         td = timedelta(seconds=int(float(r["campaign_seconds"])))
