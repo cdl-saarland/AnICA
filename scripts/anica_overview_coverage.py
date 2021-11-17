@@ -150,6 +150,7 @@ def handle_campaign(campaign_dir, infile, threshold):
     coverage_table = list(sorted(interesting_covered_per_ab.items(), key=lambda x: x[1], reverse=True))
 
     covered_by_10 = None
+    covered_by_20 = None
     covered_so_far = 0
     idx = 0
     bound = 1
@@ -161,6 +162,8 @@ def handle_campaign(campaign_dir, infile, threshold):
             idx += 1
             if idx == 10:
                 covered_by_10 = covered_so_far
+            if idx == 20:
+                covered_by_20 = covered_so_far
 
         else:
             break
@@ -189,6 +192,7 @@ def handle_campaign(campaign_dir, infile, threshold):
             'num_abstract_blocks': len(all_abs),
             'num_bbs': full_bb_num,
             'covered_by_10': covered_by_10,
+            'covered_by_20': covered_by_20,
             'num_interesting_bbs': len(interesting_bbs),
             'ratio_interesting_bbs': len(interesting_bbs) / full_bb_num,
             'num_boring_bbs': len(boring_bbs),
