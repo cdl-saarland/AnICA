@@ -1,0 +1,80 @@
+{
+  "config": {
+      "insn_feature_manager": {
+          "features": [
+              ["exact_scheme", "singleton"],
+              ["mnemonic", ["editdistance", 3]],
+              ["opschemes", "subset"],
+              ["memory_usage", "subset_or_definitely_not"],
+              ["category", "singleton"],
+              ["extension", "singleton"],
+              ["isa-set", "singleton"]
+            ],
+          "features.doc": "An ordered list of tuples containing the names of features and the kind of abstraction to use for it. The order affects the index lookup order and as a consequence the run time."
+        },
+      "iwho": {
+          "context_specifier": "x86_uops_info",
+          "context_specifier.doc": "identifier for the IWHO context to use",
+          "filters": ["no_cf", "with_measurements:SKL"],
+          "filters.doc": "a list of filters to restrict the InsnSchemes used for sampling"
+        },
+      "interestingness_metric": {
+          "min_interestingness": 0.5,
+          "min_interestingness.doc": "the interestingness of an experiment must be at least that high to be considered interesting",
+          "mostly_interesting_ratio": 1.0,
+          "mostly_interesting_ratio.doc": "at least this ratio of a batch of experiments must be interesting for it to be considered mostly interesting.",
+          "invert_interestingness": false,
+          "invert_interestingness.doc": "if this is true, consider exactly those cases interesting that would not be interesting with the other settings."
+        },
+      "discovery": {
+          "discovery_batch_size": 100,
+          "discovery_batch_size.doc": "the number of basic blocks to sample at a time when looking for new interesting blocks",
+          "discovery_possible_block_lengths": [3, 4, 5, 6, 7, 8],
+          "discovery_possible_block_lengths.doc": "the different options for allowed block lengths for sampling. Duplicates are possible and increase the likelyhood.",
+          "generalization_batch_size": 100,
+          "generalization_batch_size.doc": "the number of basic blocks to sample when validating that an abstract block is still interesting",
+          "generalization_strategy": [["random", 3]],
+          "generalization_strategy.doc": "the strategy to use for selecting expansions during generalization. This should be a list of [\"<strategy>\", <N>] pairs, where each strategy is tried N times (with a different random state). Strategy options are: \"random\", \"max_benefit\""
+        },
+      "sampling": {
+          "wrap_in_loop": false,
+          "wrap_in_loop.doc": "if true, enclose the sampled basic blocks with a simple loop before using them if possible (It wouldn't be possible if the predictor does not support this, as is the case e.g. with measuring predictors like nanoBench.)"
+        },
+      "measurement_db": null,
+      "predmanager": {
+          "registry_path": "../../configs/predictors/pred_registry.json",
+          "registry_path.doc": "path to a predictor registry in json format",
+          "num_processes": 0,
+          "num_processes.doc": "number of predictor processes to use. A value <= 0 uses the number of available cores, None/null runs everything in the main process."
+        }
+    },
+  "ab": {
+      "abs_insns": [
+          {
+            "exact_scheme": "$SV:TOP",
+            "mnemonic": {"top": true, "base": "add", "curr_dist": null, "max_dist": 3},
+            "opschemes": [],
+            "memory_usage": {"subfeature": ["W"], "is_in_subfeature": true},
+            "category": "BINARY",
+            "extension": "$SV:TOP",
+            "isa-set": "$SV:TOP"
+          },
+          {
+            "exact_scheme": "$SV:TOP",
+            "mnemonic": {"top": true, "base": "add", "curr_dist": null, "max_dist": 3},
+            "opschemes": [],
+            "memory_usage": {"subfeature": ["W"], "is_in_subfeature": true},
+            "category": "$SV:TOP",
+            "extension": "$SV:TOP",
+            "isa-set": "$SV:TOP"
+          }
+        ],
+      "abs_aliasing": {
+          "aliasing_dict": [
+              [[[0, ["$OperandKind:1", "mem0"]], [1, ["$OperandKind:1", "mem0"]]], true],
+              [[[0, ["$OperandKind:1", "reg0"]], [1, ["$OperandKind:1", "reg0"]]], "$SV:TOP"]
+            ],
+          "is_bot": false
+        }
+    }
+}
