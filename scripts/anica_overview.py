@@ -23,7 +23,7 @@ sys.path.append(import_path)
 
 from anica.abstractblock import AbstractBlock, SamplingError
 from anica.abstractioncontext import AbstractionContext
-from anica.configurable import load_json_config
+from iwho.configurable import load_json_config
 
 import logging
 logger = logging.getLogger(__name__)

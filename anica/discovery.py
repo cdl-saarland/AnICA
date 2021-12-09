@@ -12,7 +12,7 @@ from pathlib import Path
 
 from .abstractblock import AbstractBlock, SamplingError
 from .abstractioncontext import AbstractionContext
-from .configurable import store_json_config
+from iwho.configurable import store_json_config
 from .satsumption import check_subsumed, check_subsumed_aa
 from .witness import WitnessTrace
 

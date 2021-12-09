@@ -15,6 +15,7 @@ import textwrap
 from datetime import datetime
 
 import iwho
+from iwho.configurable import load_json_config
 from iwho.predictors import Predictor
 from iwho.utils import parse_args_with_logging
 
@@ -24,9 +25,7 @@ sys.path.append(import_path)
 
 from anica.abstractioncontext import AbstractionContext
 from anica.abstractblock import AbstractBlock
-from anica.configurable import load_json_config
 import anica.discovery as discovery
-from anica.random_exploration import explore
 
 
 import logging

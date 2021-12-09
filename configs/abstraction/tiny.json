@@ -28,7 +28,7 @@
     "db_path": "measurements.db"
   },
   "predmanager": {
-    "registry_path": "../predictors/pred_registry.json",
+    "registry_path": "${BASE_DIR}/configs/predictors/pred_registry.json",
     "num_processes": 0
   }
 }

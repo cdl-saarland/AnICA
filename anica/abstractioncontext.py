@@ -1,18 +1,16 @@
 """ TODO document
 """
 
-from functools import partial
-
 from .abstractblock import *
 from .insnfeaturemanager import InsnFeatureManager
 from .interestingness import InterestingnessMetric
 from .iwho_augmentation import IWHOAugmentation
 from .jsonrefs import JSONReferenceManager
-from .measurementdb import MeasurementDB
-from .predmanager import PredictorManager
+from iwho.predictors.measurementdb import MeasurementDB
+from iwho.predictors.predictor_manager import PredictorManager
 
 
-from .configurable import ConfigMeta
+from iwho.configurable import ConfigMeta
 
 import iwho
 
@@ -51,48 +49,6 @@ class SamplingConfig(metaclass=ConfigMeta):
     def __init__(self, config):
         self.configure(config)
 
-def filter_uarch(scheme, ctx, uarch_name):
-    return (ctx.get_features(scheme) is not None
-        and uarch_name in ctx.get_features(scheme)[0]["measurements"])
-
-class IWHOConfig(metaclass=ConfigMeta):
-    config_options = dict(
-        context_specifier = ('x86_uops_info',
-            'identifier for the IWHO context to use'
-            ),
-        filters = (['no_cf', 'with_measurements:SKL'],
-            'a list of filters to restrict the InsnSchemes used for sampling'
-            ),
-    )
-
-    def __init__(self, config):
-        self.configure(config)
-
-    def create_context(self):
-        iwho_ctx = iwho.get_context(self.context_specifier)
-        for f in self.filters:
-            key, *args = f.split(':')
-            if key == 'no_cf':
-                iwho_ctx.push_filter(iwho.Filters.no_control_flow)
-                continue
-            if key == 'with_measurements':
-                for uarch in args:
-                    uarch_filter = partial(filter_uarch, uarch_name=uarch)
-                    iwho_ctx.push_filter(uarch_filter)
-                continue
-            if key == 'only_mnemonics':
-                iwho_ctx.push_filter(iwho.Filters.only_mnemonics(args))
-                continue
-            if key == 'whitelist':
-                iwho_ctx.push_filter(iwho.Filters.whitelist(args[0]))
-                continue
-            if key == 'blacklist':
-                iwho_ctx.push_filter(iwho.Filters.blacklist(args[0]))
-                continue
-
-        return iwho_ctx
-
-
 class AbstractionContext:
     """ An instance of the Context pattern to collect and manage the necessary
     objects for performing a deviation discovery campaign.
@@ -130,8 +86,8 @@ class AbstractionContext:
             if self.measurement_db is not None:
                 self.predmanager.set_measurement_db(self.measurement_db)
 
-        self.iwho_cfg = IWHOConfig(config.get('iwho', {}))
-        iwho_ctx = self.iwho_cfg.create_context()
+        self.iwho_cfg = iwho.Config(config.get('iwho', {}))
+        iwho_ctx = self.iwho_cfg.context
         self.iwho_ctx = iwho_ctx
 
         if restrict_to_insns_for is not None:
@@ -153,7 +109,7 @@ class AbstractionContext:
     def get_default_config():
         res = dict()
         res['insn_feature_manager'] = InsnFeatureManager.get_default_config()
-        res['iwho'] = IWHOConfig.get_default_config()
+        res['iwho'] = iwho.Config.get_default_config()
         res['interestingness_metric'] = InterestingnessMetric.get_default_config()
         res['discovery'] = DiscoveryConfig.get_default_config()
         res['sampling'] = SamplingConfig.get_default_config()

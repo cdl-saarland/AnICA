@@ -17,7 +17,7 @@ import sys
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from anica.configurable import pretty_print
+from iwho.configurable import pretty_print
 
 def strfdelta(tdelta, fmt):
     d = {"days": tdelta.days}

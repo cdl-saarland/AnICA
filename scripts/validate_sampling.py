@@ -20,7 +20,7 @@ import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
 from anica.witness import WitnessTrace
-from anica.configurable import load_json_config, pretty_print
+from iwho.configurable import load_json_config, pretty_print
 
 import logging
 logger = logging.getLogger(__name__)

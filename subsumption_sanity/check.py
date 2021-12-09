@@ -11,7 +11,7 @@ import sys
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
-from anica.configurable import load_json_config, store_json_config
+from iwho.configurable import load_json_config, store_json_config
 from anica.abstractblock import AbstractBlock
 from anica.abstractioncontext import AbstractionContext
 from anica.satsumption import check_subsumed, check_subsumed_fixed_order
