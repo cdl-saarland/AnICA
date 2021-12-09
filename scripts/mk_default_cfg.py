@@ -13,7 +13,7 @@ sys.path.append(import_path)
 
 
 from anica.abstractioncontext import AbstractionContext
-from anica.configurable import pretty_print
+from iwho.configurable import pretty_print
 
 def main():
     argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)

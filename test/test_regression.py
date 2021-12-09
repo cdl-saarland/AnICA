@@ -9,6 +9,7 @@ import os
 import sys
 
 import iwho
+from iwho.predictors.predictor_manager import PredictorManager
 
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
@@ -16,7 +17,6 @@ sys.path.append(import_path)
 from anica.abstractblock import AbstractBlock, SamplingError
 from anica.abstractioncontext import AbstractionContext
 from anica.discovery import sample_block_list, generalize
-from anica.predmanager import PredictorManager
 
 from test_utils import *
 
@@ -28,7 +28,19 @@ def load_test_case(config_dict, absblock_dict):
     return actx, absblock
 
 default_config_dict = {
-        "insn_feature_manager": { },
+        "insn_feature_manager": {
+            "features": [
+                    ["exact_scheme", "singleton"],
+                    ["mnemonic", ["editdistance", 3]],
+                    ["opschemes", "subset"],
+                    ["memory_usage", "subset_or_definitely_not"],
+                    ["uops_on_SKL", ["log_ub", 5]],
+                    ["category", "singleton"],
+                    ["extension", "singleton"],
+                    ["isa-set", "singleton"],
+                    ["has_lock", "singleton"],
+                ]
+            },
         "iwho": { },
         "interestingness_metric": { },
         "discovery": { },

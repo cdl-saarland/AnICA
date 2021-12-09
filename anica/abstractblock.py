@@ -19,7 +19,7 @@ from typing import Optional, Union, Sequence
 import editdistance
 import iwho
 
-from .configurable import store_json_config, load_json_config
+from iwho.configurable import store_json_config, load_json_config
 
 import logging
 logger = logging.getLogger(__name__)

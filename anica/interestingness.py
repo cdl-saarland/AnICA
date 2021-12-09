@@ -5,7 +5,7 @@ from typing import Sequence
 
 import iwho
 
-from .configurable import ConfigMeta
+from iwho.configurable import ConfigMeta
 
 class InterestingnessMetric(metaclass=ConfigMeta):
     """TODO"""

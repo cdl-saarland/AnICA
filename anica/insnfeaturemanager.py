@@ -8,7 +8,7 @@ import editdistance
 import iwho
 
 from .abstractblock import *
-from .configurable import ConfigMeta
+from iwho.configurable import ConfigMeta
 
 import iwho.x86
 

@@ -16,7 +16,7 @@ sys.path.append(import_path)
 
 
 from anica.abstractioncontext import AbstractionContext
-from anica.configurable import load_json_config
+from iwho.configurable import load_json_config
 
 def get_entry(features, key):
     if features is None or len(features) == 0:

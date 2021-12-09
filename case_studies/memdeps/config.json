@@ -30,7 +30,7 @@
     },
   "measurement_db": null,
   "predmanager": {
-      "registry_path": "/home/ritter/projects/portmapping/anica/anica/../configs/predictors/pred_registry.json",
+      "registry_path": "${BASE_DIR}/configs/predictors/pred_registry.json",
       "num_processes": 0
     }
 }

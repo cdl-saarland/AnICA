@@ -5,7 +5,7 @@ from typing import Optional
 from graphviz import Digraph
 
 from .abstractblock import AbstractBlock
-from .configurable import store_json_config, load_json_config
+from iwho.configurable import store_json_config, load_json_config
 
 class WitnessTrace:
     class Witness:

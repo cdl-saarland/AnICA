@@ -13,13 +13,13 @@ import random
 import os
 import sys
 
+from iwho.configurable import load_json_config, store_json_config
 from iwho.utils import init_logging, update_logfile
 
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
 from anica.abstractioncontext import AbstractionContext
-from anica.configurable import load_json_config, store_json_config
 import anica.discovery as discovery
 
 

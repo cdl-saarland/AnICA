@@ -10,6 +10,7 @@ import sys
 
 import iwho
 from iwho.predictors import Predictor
+from iwho.predictors.predictor_manager import PredictorManager
 from iwho.utils import init_logging
 
 import_path = os.path.join(os.path.dirname(__file__), "..")
@@ -18,7 +19,6 @@ sys.path.append(import_path)
 from anica.abstractblock import AbstractBlock
 from anica.abstractioncontext import AbstractionContext
 from anica.discovery import discover, generalize, minimize
-from anica.predmanager import PredictorManager
 from anica.witness import WitnessTrace
 
 from test_utils import *
