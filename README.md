@@ -9,18 +9,10 @@ TODO write this
 
 ### Functional Extensions
   - [ ] at least for the insn part, we could rather easily sample from  gamma(new) \ gamma(old), maybe that's a good idea
-  - [ ] think about making the required interesiting ratio relative to the interestingness ratio of the current state (probably not a good idea, since it could lead to a decay of the result quality)
+  - [ ] think about making the required interesting ratio relative to the interestingness ratio of the current state (probably not a good idea, since it could lead to a decay of the result quality)
   - [ ] maybe relax the aliasing domain to be operand-position independent?
-  - [ ] look into whether our discoveries cover also not-interesting samples
-  - [ ] add a discovery overview inspector
-  - [ ] revisit and adjust the aliasing assumptions in the AbstractionConfig
-  - [ ] add more predictors
-    - [ ] DiffTune
-    - [ ] CQA?
-    - [ ] measurements
-    - [X] Ithemal
-    - [X] OSACA
   - [ ] look into sampling constraint solvers if sampling turns out to be an issue
+  - [X] add a discovery overview inspector
   - [X] add a satsumption implementation for comparing two abstract blocks (rather than a concrete and an abstract one)
   - [X] randomize generalization and try different randomizations per run
   - [X] add an "at most 2^k uops used (on SKL)" domain, "no info about uops used" should be right under top
@@ -42,6 +34,14 @@ TODO write this
   - [X] add a way of restricting the insn schemes provided by iwho.Context
   - [X] replace the powerset domain for uop combinations with a subset domain of uops
   - [X] use "type signature" as an insn feature
+  - [X] look into whether our discoveries cover also not-interesting samples
+  - [X] revisit and adjust the aliasing assumptions in the AbstractionConfig
+  - [X] add more predictors
+    - [X] DiffTune
+    - [X] CQA?
+    - [X] measurements
+    - [X] Ithemal
+    - [X] OSACA
 
 # Fancy Quality-of-Life Extensions
   - [ ] add mouseover hints in the gui that explain the meaning of components of the abstract blocks
