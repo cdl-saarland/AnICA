@@ -19,7 +19,11 @@
   },
   "iwho": {
     "context_specifier": "x86_uops_info",
-    "filters": ["no_cf", "with_measurements:SKL", "whitelist:hsw_bhive_schemes.csv"]
+    "filters": [
+        {"kind": "no_cf"},
+        {"kind": "with_measurements", "archs": ["SKL"]},
+        {"kind": "whitelist", "file_path": "${BASE_DIR}/inputs/hsw_bhive_schemes.csv"}
+    ]
   },
   "discovery": {
     "discovery_batch_size": 50,

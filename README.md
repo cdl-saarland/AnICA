@@ -1,6 +1,21 @@
 TODO write this
 
-## TODO
+## Usage
+
+TODO
+
+## Design and Rationale
+
+### Campaign Structure
+A **campaign** is a run of the AnICA discovery algorithm for a (non-empty) set of basic block throughput predictors.
+
+Each campaign is subdivided into **batches**.
+In each batch, a fixed number of basic blocks (TODO option in the abstraction config) is sampled randomly.
+Campaigns can only terminate (regularly) right after completly processing a batch.
+
+
+
+
 
 ### Key Functionality
   - [X] implement cost budgets or some other termination criterion

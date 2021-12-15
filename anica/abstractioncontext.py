@@ -1,6 +1,8 @@
 """ TODO document
 """
 
+from copy import deepcopy
+
 from .abstractblock import *
 from .insnfeaturemanager import InsnFeatureManager
 from .interestingness import InterestingnessMetric
@@ -86,17 +88,21 @@ class AbstractionContext:
             if self.measurement_db is not None:
                 self.predmanager.set_measurement_db(self.measurement_db)
 
-        self.iwho_cfg = iwho.Config(config.get('iwho', {}))
-        iwho_ctx = self.iwho_cfg.context
-        self.iwho_ctx = iwho_ctx
+        iwho_cfg_dict = deepcopy(config.get('iwho', {}))
 
         if restrict_to_insns_for is not None:
-            # We need to do this exactly here, because we need to add the
+            # We need to do this here, because we need to add the
             # filters before we create the insn_feature_manager. Creation of
             # that will already include all insn schemes that are currently not
             # filtered away for building its indices.
+            filter_list = list(iwho_cfg_dict.get('filters', []))
             for f in self.predmanager.get_insn_filter_files(restrict_to_insns_for):
-                self.iwho_ctx.push_filter(iwho.Filters.blacklist(f))
+                filter_list.append({'kind': 'blacklist', 'file_path': str(f)})
+            iwho_cfg_dict['filters'] = filter_list
+
+        self.iwho_cfg = iwho.Config(iwho_cfg_dict)
+        iwho_ctx = self.iwho_cfg.context
+        self.iwho_ctx = iwho_ctx
 
         self.iwho_augmentation = IWHOAugmentation(self.iwho_ctx)
         self.json_ref_manager = JSONReferenceManager(self.iwho_ctx)

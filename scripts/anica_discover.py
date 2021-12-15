@@ -11,6 +11,7 @@ import math
 from pathlib import Path
 import random
 import os
+import shutil
 import sys
 
 from iwho.configurable import load_json_config, store_json_config
@@ -117,6 +118,36 @@ def main():
 
             actx = AbstractionContext(config=actx_config, restrict_to_insns_for=rest_keys)
             actx.predmanager.set_predictors(predictor_keys)
+
+            filter_dir = curr_out_dir / 'filter_files'
+            os.makedirs(filter_dir)
+
+            # Get the used instruction filter files and copy them into the
+            # result dir. Rewrite the filter file paths in the config object to
+            # make the reported discoveries refer to the right files.
+            filters = actx.iwho_cfg.filters
+            rewritten_filters = []
+            running_id = 0
+            for f in filters:
+                if f['kind'] in ["blacklist", "whitelist"]:
+                    path = Path(f['file_path'])
+                    if not path.exists():
+                        rewritten_filters.append(f)
+                        continue
+                    running_id += 1
+                    fname = path.name
+                    if not fname.endswith('.csv'):
+                        fname += '.csv'
+                    rewritten_path = filter_dir / f'filter_{running_id:02d}_{fname}'
+                    shutil.copy(src=path, dst=rewritten_path)
+                    rewritten_filters.append({'kind': f['kind'], 'file_path': str(rewritten_path)})
+                else:
+                    rewritten_filters.append(f)
+
+            # This will not affect the iwho context in the current actx since
+            # we have already created it. It will however affect the config
+            # that is dumped with discoveries and witnesses.
+            actx.iwho_cfg.filters = rewritten_filters
 
             outdict = {**config, "abstraction_config": actx.get_config()}
             store_json_config(outdict, curr_out_dir / 'campaign_config.json')
