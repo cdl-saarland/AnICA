@@ -48,7 +48,7 @@ def test_div_minimize():
             },
             "iwho": {
                 "context_specifier": "x86_uops_info",
-                "filters": ["no_cf", "with_measurements:SKL", "whitelist:hsw_bhive_schemes.csv"]
+                # "filters": [ "no_cf", "with_measurements:SKL", "whitelist:hsw_bhive_schemes.csv"]
             },
             "interestingness_metric": { },
             "discovery": { },
@@ -106,7 +106,7 @@ def test_pause_minimize():
             },
         "iwho": {
             "context_specifier": "x86_uops_info",
-            "filters": ["no_cf", "with_measurements:SKL", "whitelist:hsw_bhive_schemes.csv"]
+            # "filters": ["no_cf", "with_measurements:SKL", "whitelist:hsw_bhive_schemes.csv"]
         },
         "interestingness_metric": { },
         "discovery": { },
@@ -695,7 +695,10 @@ def test_sample_blacklist(random):
             ]
         },
         "iwho": { "context_specifier": "x86_uops_info",
-            "filters": ["no_cf", "only_mnemonics:add:sub"]
+            "filters": [
+                    {"kind": "no_cf"},
+                    {"kind": "only_mnemonics", "mnemonics": ["add", "sub"]}
+                ]
             },
         "interestingness": None,
         "measurement_db": None,

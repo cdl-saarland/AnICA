@@ -100,7 +100,10 @@ def actx_pred():
         },
         "iwho": {
             "context_specifier": "x86_uops_info",
-            "filters": ['no_cf', 'with_measurements:SKL'],
+            "filters": [
+                    {"kind": "no_cf"},
+                    {"kind": "with_measurements", "archs": ["SKL"]},
+                ],
         },
         "discovery": {
             "discovery_batch_size": 10,
