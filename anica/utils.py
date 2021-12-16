@@ -32,6 +32,8 @@ class Timer:
 
     enabled = False
 
+    second_fmt = ":.6f"
+
     def __init__(self, identifier, log=True, register_parent=True, accumulate=False):
         self.identifier = identifier
 
@@ -66,7 +68,7 @@ class Timer:
 
     def get_result(self):
         assert self.seconds_passed is not None
-        res = "time for '{}': {} s".format(self.identifier, self.seconds_passed)
+        res = ("time for '{}': {" + Timer.second_fmt + "} s").format(self.identifier, self.seconds_passed)
         for l in _str_sub_results(self.sub_results).split('\n'):
             if len(l) > 0:
                 res += '\n' + l
@@ -82,7 +84,7 @@ class Timer:
 
         if self.log:
             logger = logging.getLogger(self.logger_name)
-            logger.info("time for '{}': {} s".format(self.identifier, secs))
+            logger.info(("time for '{}': {" + Timer.second_fmt + "} s").format(self.identifier, secs))
             for l in _str_sub_results(self.sub_results).split('\n'):
                 if len(l) > 0:
                     logger.info(l)
@@ -119,7 +121,7 @@ def _str_sub_results(sub_results):
     for k, v in sub_results.items():
         secs = v['time']
         num = v['num']
-        res.append("  - acc time for '{}' ({} execuctions): {} s".format(k, num, secs))
+        res.append(("  - acc time for '{}' ({} execuctions): {" + Timer.second_fmt + "} s").format(k, num, secs))
         res.append(textwrap.indent(_str_sub_results(v['sub_results']), '  '))
 
     return "\n".join(res)
