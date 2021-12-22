@@ -1,8 +1,10 @@
 TODO write this
 
-## Usage
+## Installation
 
 TODO
+
+run the tests
 
 ## Design and Rationale
 
@@ -15,7 +17,56 @@ Campaigns can only terminate (regularly) right after completly processing a batc
 
 
 
+## Directory Overview
 
+* `./anica` - This directory contains the python modules that consitute the AnICA library.
+  The most notable modules are `discovery.py`, which contains the core algorithms, `abstractblock.py` and containing the implementation of the basic block abstraction.
+
+* `./tool` - This directory provides the entry-point python scripts to use AnICA.
+
+* `./scripts` - Here are several more entry-point scripts for specific tasks in the development and evaluation of AnICA.
+
+* `./configs` - Here are files that configure the behavior of AnICA.
+  - `configs/abstraction` contains configurations used in individual AnICA campaigns.
+  - `configs/campaigns` contains configurations to orchestrate groups of AnICA campaigns (which refer to abstraction configs).
+  - `configs/predictors` contains config files to register throughput predictors under investigation.
+    New configurations should be added to a installation-specific `configs/predictors/pred_registry.json`.
+
+* `./lib` - This directory contains custom requirements for AnICA.
+  Specifically, this is the iwho library, which is used to work with instructions, instruction schemes, and basic blocks.
+
+* `./test` - This directory contains the testing for the AnICA module.
+  Running the scripts in there should not yield unexpected failures.
+
+* `./case_studies` - This directory contains some assembly files that trigger inconsistencies that AnICA found.
+
+* `./setup_venv.sh` - This script sets up a python virtual environment at `./env/anica/` and installs AnICA's dependencies in it.
+  Make sure to activate the environment with `source ./env/anica/bin/activate` when using any AnICA-related scripts.
+  Using a virtual environment is not strictly necessary, but strongly recommended.
+
+* `./requirements.txt` - This file lists required python modules for using AnICA. It can be installed using `pip3 -r requirements.txt` (which the `setup_venv.sh` script does, in a virtual environment).
+
+
+## How to do Common Tasks?
+This section explains how several tasks that one might want to do with AnICA are done.
+
+### Run AnICA campaigns
+TODO
+
+### Generalize a specific basic block
+TODO
+
+### Add a new Throughput Predictor Configuration
+TODO
+
+### Add a new Throughput Predictor
+TODO
+
+### Add a new Feature Domain
+TODO
+
+
+## TODO List
 
 ### Key Functionality
   - [X] implement cost budgets or some other termination criterion
