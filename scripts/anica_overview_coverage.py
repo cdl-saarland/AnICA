@@ -58,8 +58,12 @@ def get_covered(actx, all_abs, all_bbs, get_metrics=False):
         num_covered = len(covered)
         num_not_covered = len(not_covered)
 
-        percent_covered = (num_covered * 100) / total_num
-        percent_not_covered = (num_not_covered * 100) / total_num
+        if total_num != 0:
+            percent_covered = (num_covered * 100) / total_num
+            percent_not_covered = (num_not_covered * 100) / total_num
+        else:
+            percent_covered = -1.0
+            percent_not_covered = -1.0
 
         res_str = f"covered: {num_covered} ({percent_covered:.1f}%)\n" + f"not covered: {num_not_covered} ({percent_not_covered:.1f}%)"
         res_dict = {
@@ -125,6 +129,7 @@ def handle_campaign(campaign_dir, infile, threshold):
 
     iwho_ctx = actx.iwho_ctx
 
+    num_decoding_fails = 0
     full_bb_num = 0
     interesting_bbs = []
     boring_bbs = []
@@ -133,14 +138,28 @@ def handle_campaign(campaign_dir, infile, threshold):
         for idx, line in enumerate(reader):
             full_bb_num +=1
             bb = line['bb']
+            try:
+                decoded = iwho_ctx.make_bb(iwho_ctx.decode_insns(bb))
+            except:
+                num_decoding_fails += 1
+
+            if threshold <= 0.0:
+                interesting_bbs.append(decoded)
+                continue
+
             eval_res = {}
             for k in predictors:
                 eval_res[k] = { 'TP': float(line[k])}
             interestingness = actx.interestingness_metric.compute_interestingness(eval_res)
             if interestingness >= threshold:
-                interesting_bbs.append(iwho_ctx.make_bb(iwho_ctx.decode_insns(bb)))
+                interesting_bbs.append(decoded)
             else:
-                boring_bbs.append(iwho_ctx.make_bb(iwho_ctx.decode_insns(bb)))
+                boring_bbs.append(decoded)
+
+    res_str += "decoding fails: {}\n".format(num_decoding_fails)
+
+    if full_bb_num == 0:
+        return res_str, {}
 
     res_str += "interesting: {} out of {} ({:.1f}%)\n".format(len(interesting_bbs), full_bb_num, (len(interesting_bbs) * 100) / full_bb_num)
     interesting_str, interesting_dict, interesting_covered_per_ab = get_covered(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, get_metrics=True)
