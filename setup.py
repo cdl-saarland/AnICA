@@ -20,5 +20,14 @@ setuptools.setup(
     #     "Programming Language :: Python"
     # ],
     packages=setuptools.find_packages(),
+    install_requires=[
+            "iwho",
+            "pytest",
+            "graphviz",
+            "editdistance",
+            "pandas",
+            "seaborn",
+            "python-sat",
+        ],
     python_requires=">=3"
 )
