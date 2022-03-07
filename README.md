@@ -12,7 +12,7 @@ run the tests
 A **campaign** is a run of the AnICA discovery algorithm for a (non-empty) set of basic block throughput predictors.
 
 Each campaign is subdivided into **batches**.
-In each batch, a fixed number of basic blocks (TODO option in the abstraction config) is sampled randomly.
+In each batch, a fixed number of basic blocks (configured with the `discovery/discovery_batch_size` option in the abstraction config) is sampled randomly.
 Campaigns can only terminate (regularly) right after completly processing a batch.
 
 
