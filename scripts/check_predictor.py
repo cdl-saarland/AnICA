@@ -30,8 +30,14 @@ def main():
     argparser.add_argument('-c', '--config', default=None, metavar="CONFIG",
             help='abstraction context config file in json format')
 
+    argparser.add_argument('-w', '--write-filter', action='store_true',
+            help='if true, write a list of all unsupported instructions to the filter list location specified in the predictor registry (if there is one)')
+
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
             help='seed for the rng')
+
+    argparser.add_argument('-b', '--batch-size', type=int, default=1, metavar="N",
+            help='number of samples to take for each instruction scheme')
 
     argparser.add_argument('predictors', nargs='*', metavar="PREDICTOR_ID",
             help='ids of predictor(s) to test')
@@ -47,8 +53,7 @@ def main():
 
     actx = AbstractionContext(config=config)
 
-    batch_size = 5
-    # batch_size = actx.discovery_cfg.generalization_batch_size
+    batch_size = args.batch_size
 
     pred_keys = actx.predmanager.resolve_key_patterns(args.predictors)
     if len(pred_keys) == 0:
@@ -97,9 +102,12 @@ def main():
                 logger.info("got several different predictions:\n" +
                         textwrap.indent("\n".join(sorted(map(lambda x: f"{x[0]}: {x[1]}", all_results.items()))), '  '))
 
-        with open(f'error_schemes_{pred_key}.csv', 'w') as f:
-            for ischeme in error_schemes:
-                print(str(ischeme), file=f)
+        if args.write_filter:
+            filter_file = actx.predmanager.pred_registry[pred_key].get('unsupported_insns_path', None)
+            if filter_file is not None:
+                with open(filter_file, 'w') as f:
+                    for ischeme in error_schemes:
+                        print(str(ischeme), file=f)
 
 
 
