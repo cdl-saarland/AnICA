@@ -26,6 +26,7 @@ def gen_configs(dest_dir):
     os.makedirs(abstraction_cfg_dir)
     default_cfg = AbstractionContext.get_default_config()
     default_cfg['predmanager']['registry_path'] = str((predictors_cfg_dir / 'pred_registry.json').absolute())
+    default_cfg['measurement_db'] = None
     store_json_config(default_cfg, abstraction_cfg_dir / 'default.json')
 
 
