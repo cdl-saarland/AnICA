@@ -42,7 +42,7 @@ def main():
     argparser.add_argument('predictors', nargs='*', metavar="PREDICTOR_ID",
             help='ids of predictor(s) to test')
 
-    args = parse_args_with_logging(argparser, "info")
+    args = parse_args_with_logging(argparser, "warning")
 
     random.seed(args.seed)
 
@@ -88,7 +88,7 @@ def main():
                 if cycles is None or cycles <= 0:
                     num_prediction_errors += 1
                     had_error = True
-                    logger.debug(f"error for '{str(bb).strip()}':\n{r}")
+                    logger.warning(f"error for '{str(bb).strip()}':\n{r}")
                 else:
                     all_results[cycles] = str(bb).strip()
 
@@ -99,7 +99,7 @@ def main():
             logger.info(f"prediction errors: {num_prediction_errors} (in {len(sampled_bbs)} samples)")
 
             if len(all_results) > 1:
-                logger.info("got several different predictions:\n" +
+                logger.warning("got several different predictions:\n" +
                         textwrap.indent("\n".join(sorted(map(lambda x: f"{x[0]}: {x[1]}", all_results.items()))), '  '))
 
         if args.write_filter:

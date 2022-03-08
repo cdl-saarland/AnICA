@@ -86,6 +86,7 @@ def main():
     # beginning, if necessary
     for idx, config in enumerate(all_campaign_configs):
         actx_config = load_json_config(config['abstraction_config_path'])
+        actx_config['measurement_db'] = None
         predictor_keys = config['predictors']
         actx = AbstractionContext(config=actx_config)
         actx.predmanager.set_predictors(predictor_keys) # this will query for the password if necessary

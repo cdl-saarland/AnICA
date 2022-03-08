@@ -33,3 +33,5 @@ def gen_configs(dest_dir):
     copy(src=template_dir / 'campaign_simple.json', dst=campaign_cfg_dir / 'simple.json')
     copy(src=template_dir / 'campaign_templated.json', dst=campaign_cfg_dir / 'templated.json')
 
+
+    os.makedirs(dest_dir / 'results')
