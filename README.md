@@ -2,11 +2,36 @@ TODO write this
 
 ## Installation
 
+These steps are for installing AnICA on its own. If you install AnICA as part
+of the AnICA UI, follow the steps there instead of the ones here. In
+particular, AnICA UI and AnICA should use the same virtual python environment.
+
+1. Get the repository and its submodule(s):
+    ```
+    git clone <repo> anica
+    cd anica
+    git submodule update --init --recursive
+    ```
+2. Set up the virtual environment for AnICA and install python dependencies and
+   the AnICA package itself there:
+   ```
+   ./setup_venv.sh
+   ```
+   Whenever you run AnICA commands, from a shell, you need to have activated
+   the virtual environment in this shell before:
+   ```
+   source ./env/anica/bin/activate
+   ```
+
+
+
 TODO
 
 run the tests
 
 ## Design and Rationale
+
+For the theoretical workings of AnICA, please refer to the paper (TODO: link).
 
 ### Campaign Structure
 A **campaign** is a run of the AnICA discovery algorithm for a (non-empty) set of basic block throughput predictors.
@@ -35,7 +60,7 @@ Campaigns can only terminate (regularly) right after completly processing a batc
 * `./lib` - This directory contains custom requirements for AnICA.
   Specifically, this is the iwho library, which is used to work with instructions, instruction schemes, and basic blocks.
 
-* `./test` - This directory contains the testing for the AnICA module.
+* `./tests` - This directory contains the testing for the AnICA module.
   Running the scripts in there should not yield unexpected failures.
 
 * `./case_studies` - This directory contains some assembly files that trigger inconsistencies that AnICA found.
