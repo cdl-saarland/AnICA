@@ -1,0 +1,16 @@
+[
+    {
+        "abstraction_config_path": "../abstraction/default.json",
+        "TEMPLATE:all_predictor_pairs": [
+            "test.all_1",
+            "test.add_expensive",
+            "test.addsub_expensive"
+        ],
+        "restrict_to_supported_insns": true,
+        "termination": {
+            "num_discoveries": 10,
+            "days": 0, "hours": 1, "minutes": 20,
+            "same_num_discoveries": 10
+        }
+    }
+]

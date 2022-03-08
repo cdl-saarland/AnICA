@@ -26,6 +26,10 @@ setuptools.setup(
             "seaborn",
             "python-sat",
         ],
-    scripts=["tool/anica-discover", "tool/anica-generalize"],
+    scripts=[
+            "tool/anica-discover",
+            "tool/anica-generalize",
+            "tool/anica-make-configs",
+        ],
     python_requires=">=3"
 )

@@ -75,13 +75,38 @@ Campaigns can only terminate (regularly) right after completly processing a batc
 ## How to do Common Tasks?
 This section explains how several tasks that one might want to do with AnICA are done.
 
-### Run AnICA campaigns
+### Set up a Configuration Environment
+There are a lot of things that can be configured on AnICA.
+The first step is therefore to choose a fresh directory `$BASE_DIR` to house your AnICA configurations and to go there.
+With a shell where the environment created during installation activated, run the following commands to create initial configuration files:
+```
+cd $BASE_DIR
+anica-make-configs .
+```
+You will now find a `configs` sub directory, with three more subdirectories `abstraction`, `campaign`, and `predictors`.
+Each contains at least one example file to configure an aspect of AnICA.
+
+  - The configurations in `campaign` each specify a series of AnICA campaigns.
+    A campaign config refers to an abstraction config to be used and specifies the predictors under test as well as the termination criterion and whether only instructions that are supported by all predictors under test should be considered.
+    Campaigns can terminate dependent on the number of discoveries made, on the passed time, or on the number of batches where no new discoveries were found.
+    If multiple of these are specified, the first condition among them that is satisfied after a batch terminates the campaign.
+
+  - The `abstraction_config_path` field in the campaign config refers to a file in the `configs/abstraction` sub directory (relative paths that start with a `.` in any config file are interpreted relative to the config file).
+    The abstraction configs in here describe how AnICA discovers and generalizes interesting basic blocks.
+    There are numerous settings that are each described by a '.doc' field in the default file.
+
+  - An important field is the `registry_path` in the `predmanager` component of an abstraction config.
+    It needs to point to a predictor registry that is located in the `configs/predictors` sub directory.
+    Here, the available predictors are declared and configured.
+    The default `pred_registry.json` only contains trivial test predictors, see (and copy+adjust from) the `pred_registry_template.json` for using actual predictors.
+    The keys used here are the ones that are also used in the campaign config to refer to the predictors.
+
+The next step is therefore to add and adjust relevant predictors to `configs/predictors/pred_registry.json`, with inspiration from `configs/predictors/pred_registry_template.json`.
+
+### Run AnICA Campaigns
 TODO
 
 ### Generalize a specific basic block
-TODO
-
-### Add a new Throughput Predictor Configuration
 TODO
 
 ### Add a new Throughput Predictor

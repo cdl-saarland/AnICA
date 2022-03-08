@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+
+""" A script that sets up all the necessary config files for running AnICA
+campaigns. It produces default settings and should be adjusted to the use case.
+"""
+
+import argparse
+import sys
+
+from anica.gen_configs import gen_configs
+
+def main():
+    argparser = argparse.ArgumentParser(description=__doc__)
+
+    argparser.add_argument('dest_dir', metavar="DEST_DIR",
+        help='the destination directory')
+
+    args = argparser.parse_args()
+
+    gen_configs(args.dest_dir)
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())
+

@@ -1,0 +1,31 @@
+{
+
+
+"test.all_1": {
+    "tool": "testpredictor",
+    "version": "all_1",
+    "uarch": "any",
+    "config": {
+            "kind": "test",
+            "mnemonic_costs": {}
+        }
+},
+"test.add_expensive": {
+    "tool": "testpredictor",
+    "version": "add_expensive",
+    "uarch": "any",
+    "config": {
+            "kind": "test",
+            "mnemonic_costs": {"add": 2.0}
+        }
+},
+"test.addsub_expensive": {
+    "tool": "testpredictor",
+    "version": "add_expensive",
+    "uarch": "any",
+    "config": {
+            "kind": "test",
+            "mnemonic_costs": {"add": 2.0, "sub": 3.0}
+        }
+}
+}
