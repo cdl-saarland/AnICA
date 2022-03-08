@@ -1,5 +1,9 @@
 #!/bin/bash
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+cd $SCRIPT_DIR
+
 set -ex
 
 MY_ENV_PATH=./env/anica
@@ -13,6 +17,10 @@ source $MY_ENV_PATH/bin/activate
 echo "Installing requirements..."
 pip install -r requirements.txt
 
+echo "Installing AnICA..."
+pip install -e .
+
+# just for convenience
 pip install ipython
 
 
