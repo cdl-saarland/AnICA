@@ -103,7 +103,7 @@ def main():
                         textwrap.indent("\n".join(sorted(map(lambda x: f"{x[0]}: {x[1]}", all_results.items()))), '  '))
 
         if args.write_filter:
-            filter_files = actx.predmanager.get_insn_filter_files(pred_key)
+            filter_files = actx.predmanager.get_insn_filter_files([pred_key])
             if len(filter_files) == 1:
                 filter_file = filter_files[0]
                 with open(filter_file, 'w') as f:
