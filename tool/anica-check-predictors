@@ -42,7 +42,7 @@ def main():
     argparser.add_argument('predictors', nargs='*', metavar="PREDICTOR_ID",
             help='ids of predictor(s) to test')
 
-    args = parse_args_with_logging(argparser, "warning")
+    args = parse_args_with_logging(argparser, "info")
 
     random.seed(args.seed)
 
@@ -95,11 +95,11 @@ def main():
             if had_error:
                 error_schemes.append(ischeme)
 
-            logger.info(f"sampling errors: {num_sampling_errors}")
-            logger.info(f"prediction errors: {num_prediction_errors} (in {len(sampled_bbs)} samples)")
+            logger.debug(f"sampling errors: {num_sampling_errors}")
+            logger.debug(f"prediction errors: {num_prediction_errors} (in {len(sampled_bbs)} samples)")
 
             if len(all_results) > 1:
-                logger.warning("got several different predictions:\n" +
+                logger.warning(f"got several different predictions with '{pred_key}':\n" +
                         textwrap.indent("\n".join(sorted(map(lambda x: f"{x[0]}: {x[1]}", all_results.items()))), '  '))
 
         if args.write_filter:
@@ -108,6 +108,7 @@ def main():
                 with open(filter_file, 'w') as f:
                     for ischeme in error_schemes:
                         print(str(ischeme), file=f)
+                logger.info(f"  filter file for '{pred_key}' written to '{filter_file}'")
 
 
 
