@@ -16,7 +16,7 @@ setuptools.setup(
     author="Fabian Ritter",
     author_email="fabian.ritter@cs.uni-saarland.de",
     license=LICENSE,
-    packages=setuptools.find_packages(exclude=('test',)),
+    packages=setuptools.find_packages(exclude=('tests',)),
     install_requires=[
             "iwho",
             "pytest",

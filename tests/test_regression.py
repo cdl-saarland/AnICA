@@ -139,6 +139,13 @@ def test_sample_rep_generalize():
     actx.predmanager = log_pm
     actx.interestingness_metric.predmanager = log_pm
 
+    try:
+        actx.predmanager.set_predictors(['llvm-mca.13-r+a.skl', 'iaca.skl'])
+    except:
+        # this test does nothing by default
+        return
+
+
     num_not_scas = 0
     for x in range(10):
         bb = absblock.sample()
@@ -147,8 +154,6 @@ def test_sample_rep_generalize():
             num_not_scas += 1
 
     assert num_not_scas == 0
-
-    actx.predmanager.set_predictors(['llvm-mca.13-r+a.skl', 'iaca.skl'])
 
     gen_ab = generalize(actx, absblock, strategy="max_benefit")
 
