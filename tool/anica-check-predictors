@@ -103,8 +103,9 @@ def main():
                         textwrap.indent("\n".join(sorted(map(lambda x: f"{x[0]}: {x[1]}", all_results.items()))), '  '))
 
         if args.write_filter:
-            filter_file = actx.predmanager.pred_registry[pred_key].get('unsupported_insns_path', None)
-            if filter_file is not None:
+            filter_files = actx.predmanager.get_insn_filter_files(pred_key)
+            if len(filter_files) == 1:
+                filter_file = filter_files[0]
                 with open(filter_file, 'w') as f:
                     for ischeme in error_schemes:
                         print(str(ischeme), file=f)
