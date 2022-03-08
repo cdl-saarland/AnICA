@@ -22,6 +22,7 @@ setuptools.setup(
             "pytest",
             "graphviz",
             "editdistance",
+            "progress",
             "pandas",
             "seaborn",
             "python-sat",
