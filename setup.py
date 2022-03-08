@@ -30,6 +30,7 @@ setuptools.setup(
             "tool/anica-discover",
             "tool/anica-generalize",
             "tool/anica-make-configs",
+            "tool/anica-check-predictors",
         ],
     python_requires=">=3"
 )

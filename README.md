@@ -103,6 +103,14 @@ Each contains at least one example file to configure an aspect of AnICA.
 
 The next step is therefore to add and adjust relevant predictors to `configs/predictors/pred_registry.json`, with inspiration from `configs/predictors/pred_registry_template.json`.
 
+Once all relevant predictors are specified in the `pred_registry.json`, you can generate filter files that contain all instructions that a predictor does not support (i.e. where it fails to produce a strictly positive cycle prediction):
+```
+anica-check-predictors -w --config abstraction/default.json
+```
+The corresponding files need to be specified beforehand in the `pred_registry.json`, if you follow the ones in the `pred_registry_template.json`, the filter files will be in `configs/predictors/filters/`.
+They are used in AnICA if indicated so in the campaign config.
+
+
 ### Run AnICA Campaigns
 TODO
 
