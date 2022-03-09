@@ -64,12 +64,13 @@ def main():
 
     actx.predmanager.get_sudo_if_necessary(pred_keys)
 
+    num_schemes = len(actx.iwho_ctx.filtered_insn_schemes)
     for pred_key in pred_keys:
         error_schemes = []
         logger.info(f"checking predictor '{pred_key}'")
         with ProgressBar(f"checking predictor '{pred_key}'",
                 suffix = '%(percent).1f%%',
-                max=len(actx.iwho_ctx.filtered_insn_schemes)) as pb:
+                max=num_schemes) as pb:
             for ischeme in actx.iwho_ctx.filtered_insn_schemes:
                 ab = AbstractBlock.make_top(actx, num_insns=1)
                 ab.abs_insns[0].features['exact_scheme'].val = ischeme
@@ -108,6 +109,8 @@ def main():
                             textwrap.indent("\n".join(sorted(map(lambda x: f"{x[0]}: {x[1]}", all_results.items()))), '  '))
                 pb.next()
 
+        num_errors = len(error_schemes)
+        print("Found {} schemes with error(s) (out of {}).".format(num_errors, num_schemes))
         if args.write_filter:
             filter_files = actx.predmanager.get_insn_filter_files([pred_key])
             if len(filter_files) == 1:
