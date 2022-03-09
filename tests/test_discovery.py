@@ -109,7 +109,7 @@ def actx_pred():
             "discovery_batch_size": 10,
             "generalization_batch_size": 10,
         },
-        "interestingness": {
+        "interestingness_metric": {
             'min_interestingness': 0.1,
             'mostly_interesting_ratio': 1.0,
         },

@@ -14,7 +14,7 @@ class InterestingnessMetric(metaclass=ConfigMeta):
         min_interestingness = (0.5,
             'the interestingness of an experiment must be at least that high '
             'to be considered interesting'),
-        mostly_interesting_ratio = (1.00,
+        mostly_interesting_ratio = (1.0,
             'at least this ratio of a batch of experiments must be interesting '
             'for it to be considered mostly interesting.'),
         invert_interestingness = (False,
