@@ -11,10 +11,10 @@ class InterestingnessMetric(metaclass=ConfigMeta):
     """TODO"""
 
     config_options = dict(
-        min_interestingness = (0.1,
+        min_interestingness = (0.5,
             'the interestingness of an experiment must be at least that high '
             'to be considered interesting'),
-        mostly_interesting_ratio = (0.97,
+        mostly_interesting_ratio = (1.00,
             'at least this ratio of a batch of experiments must be interesting '
             'for it to be considered mostly interesting.'),
         invert_interestingness = (False,

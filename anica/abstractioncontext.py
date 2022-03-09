@@ -18,10 +18,10 @@ import iwho
 
 class DiscoveryConfig(metaclass=ConfigMeta):
     config_options = dict(
-        discovery_batch_size = (100,
+        discovery_batch_size = (20,
             'the number of basic blocks to sample at a time when looking for '
             'new interesting blocks'),
-        discovery_possible_block_lengths = (list(range(3, 9)),
+        discovery_possible_block_lengths = (list(range(1, 5)),
             'the different options for allowed block lengths for sampling. '
             'Duplicates are possible and increase the likelyhood.'),
         generalization_batch_size = (100,
