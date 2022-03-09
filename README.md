@@ -45,7 +45,7 @@ Campaigns can only terminate (regularly) right after completly processing a batc
 ## Directory Overview
 
 * `./anica` - This directory contains the python modules that consitute the AnICA library.
-  The most notable modules are `discovery.py`, which contains the core algorithms, `abstractblock.py` and containing the implementation of the basic block abstraction.
+  The most notable modules are `discovery.py`, which contains the core algorithms, and `abstractblock.py` containing the implementation of the basic block abstraction.
 
 * `./tool` - This directory provides the entry-point python scripts to use AnICA.
 
