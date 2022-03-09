@@ -93,7 +93,7 @@ def main():
                     if cycles is None or cycles <= 0:
                         num_prediction_errors += 1
                         had_error = True
-                        logger.warning(f"error for '{str(bb).strip()}':\n{r}")
+                        logger.info(f"error for '{str(bb).strip()}':\n{r}")
                     else:
                         all_results[cycles] = str(bb).strip()
 
@@ -104,7 +104,7 @@ def main():
                 logger.debug(f"prediction errors: {num_prediction_errors} (in {len(sampled_bbs)} samples)")
 
                 if len(all_results) > 1:
-                    logger.warning(f"got several different predictions with '{pred_key}':\n" +
+                    logger.info(f"got several different predictions with '{pred_key}':\n" +
                             textwrap.indent("\n".join(sorted(map(lambda x: f"{x[0]}: {x[1]}", all_results.items()))), '  '))
                 pb.next()
 
