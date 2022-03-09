@@ -14,6 +14,8 @@ python3 -m venv $MY_ENV_PATH
 
 source $MY_ENV_PATH/bin/activate
 
+pip install wheel
+
 echo "Installing requirements..."
 pip install -r requirements.txt
 
