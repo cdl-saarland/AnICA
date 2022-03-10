@@ -88,8 +88,9 @@ class IWHOAugmentation:
     # do not want a REX prefix. Since we use a displacement anyway, using rbp
     # should be fine as well.
 
-    reserved_names = ["r15", "rsp"] + mem_base_names
+    reserved_names = ["r15", "rsp", "r14"] + mem_base_names
     # nanoBench requires an unused r15 for the loop counter
+    # similarly, r14 is a memory base register, even though we don't use it
 
     def allowed_operands(self, op_scheme):
         if op_scheme.is_fixed():
