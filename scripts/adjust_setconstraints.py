@@ -23,14 +23,14 @@ def main():
     argparser.add_argument('-c', '--config', metavar="CONFIG", default=None,
             help='abstraction context configuration file in json format')
 
-    argparser.add_argument('--featurefile', metavar="NAME", required=True,
-        help='a feature file of the old scheme description, or any json file with a dict using all old-style insn schemes as keys')
-
     argparser.add_argument('-o', '--output', metavar="OUTFILE", default="replace.sh",
         help='the output file')
 
-    # argparser.add_argument('input', metavar="INFILE",
-    #     help='the input file')
+    argparser.add_argument('-d', '--dryrun', action="store_true",
+        help='if provided, do not overwrite the files, only list translations')
+
+    argparser.add_argument('infiles', metavar="NAME", nargs="+",
+        help='files that contain old-style insn schemes as keys')
 
     args = argparser.parse_args()
 
@@ -60,47 +60,57 @@ def main():
 
     print(f"found {len(all_set_constraints)} relevant set constraints")
 
-    with open(args.featurefile) as f:
-        indict = json.load(f)
 
     relevant_strings = set()
     for cs in all_set_constraints:
         relevant_strings.update(cs)
-
     pat = re.compile(r":(\S*)(\s|$)")
 
-    translations = set()
+    for infile in args.infiles:
+        print(f"processing {infile}")
+        with open(infile) as f:
+            lines = f.readlines()
 
-    for key in indict.keys():
-        if not any(map(lambda x: x in key, relevant_strings)):
-            continue
-        matches = pat.findall(key)
-        if len(matches) == 0:
-            print(f"no matches for {key}")
-            continue
-        for m in matches:
-            old_str = m[0]
-            if old_str.endswith(","):
-                old_str = old_str[:-1]
-            old_set = tuple(sorted(old_str.split(",")))
-            if len(old_set) == 1:
+        translations = set()
+
+        result_lines = []
+        for l in lines:
+            if not any(map(lambda x: x in l, relevant_strings)):
+                result_lines.append(l)
                 continue
-            if old_set in all_set_constraints:
-                translations.add((":" + old_str, ":" + ",".join(old_set)))
 
-    for fr, to in translations:
-        print(f"{fr} -> {to}")
+            matches = pat.findall(l)
+            if len(matches) == 0:
+                print(f"  no matches for {l.strip()}")
+                result_lines.append(l)
+                continue
+            replaced = False
+            original = l
+            for m in matches:
+                old_str = m[0]
+                if old_str.endswith(","):
+                    old_str = old_str[:-1]
+                sorted_set = tuple(sorted(old_str.split(",")))
+                if len(sorted_set) == 1:
+                    continue
+                if sorted_set in all_set_constraints:
+                    from_str = ":" + old_str
+                    to_str = ":" + ",".join(sorted_set)
+                    translations.add((from_str, to_str))
+                    l = l.replace(from_str, to_str, 1)
+                    replaced = True
+            result_lines.append(l)
+            if replaced:
+                print(f"  transformed line:\n    from: {original.strip()}\n    to:   {l.strip()}")
 
-    print(f"found {len(translations)} translations")
-
-    outfile = args.output
-    with open(outfile, "w") as f:
-        print("#!/usr/bin/env bash\n", file=f)
+        print(f"  applied {len(translations)} distinct translations:")
         for fr, to in translations:
-            print(f'sed -i "s/{fr}/{to}/g" $*', file=f)
+            print(f"    {fr} -> {to}")
 
-    st = os.stat(outfile)
-    os.chmod(outfile, st.st_mode | stat.S_IEXEC)
+        if not args.dryrun:
+            with open(infile, "w") as f:
+                for l in result_lines:
+                    f.write(l)
 
     return 0
 
