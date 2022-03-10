@@ -64,6 +64,7 @@ def main():
 
     if check_config:
         total_seconds = 0
+        num_unpredictable = 0
 
     template_key = 'TEMPLATE:all_predictor_pairs'
     all_campaign_configs = []
@@ -166,7 +167,7 @@ def main():
                     max_seconds_passed += termination.get('seconds', 0)
                     total_seconds += max_seconds_passed
                 else:
-                    total_seconds = math.inf
+                    num_unpredictable += 1
                 continue
 
             try:
@@ -188,6 +189,7 @@ def main():
         total_seconds %= 60
         seconds = total_seconds
         print(f"estimated total time: {days} days, {hours} hours, {minutes} minutes, {seconds} seconds")
+        print(f"    + the time required for {num_unpredictable} unpredictable campaigns")
 
 
 
