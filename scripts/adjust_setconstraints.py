@@ -64,7 +64,7 @@ def main():
     relevant_strings = set()
     for cs in all_set_constraints:
         relevant_strings.update(cs)
-    pat = re.compile(r":(\S*)(\s|$)")
+    pat = re.compile(r":([^\s\"]*)(\s|$|\")")
 
     for infile in args.infiles:
         print(f"processing {infile}")
