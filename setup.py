@@ -28,6 +28,7 @@ setuptools.setup(
             "python-sat",
         ],
     scripts=[
+            "tool/anica-create-filter",
             "tool/anica-discover",
             "tool/anica-generalize",
             "tool/anica-make-configs",

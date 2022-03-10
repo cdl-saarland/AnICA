@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+
+""" Interactively create an instruction scheme filter list for restricting
+sampled instructions.
+"""
+
+import argparse
+from collections import defaultdict
+
+from anica.abstractioncontext import AbstractionContext
+from anica.insnfeaturemanager import extract_feature
+from iwho.configurable import load_json_config
+from iwho.utils import parse_args_with_logging
+
+import logging
+logger = logging.getLogger(__name__)
+
+def main():
+    argparser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    argparser.add_argument('-c', '--config', default=None, metavar="CONFIG",
+            help='abstraction context config file in json format')
+
+    argparser.add_argument('outfile', metavar="OUTFILE",
+            help='path for the resulting CSV file containing the instructions to be filtered')
+
+    args = parse_args_with_logging(argparser, "warning")
+
+    if args.config is None:
+        config = {}
+    else:
+        config = load_json_config(args.config)
+
+    actx = AbstractionContext(config=config)
+
+    iwho_ctx = actx.iwho_ctx
+    fm = actx.insn_feature_manager
+
+    available_features = list(sorted({ k for k, v in fm.features }))
+
+    filtered_schemes = set()
+    not_included_schemes = set(iwho_ctx.filtered_insn_schemes)
+
+    total_schemes = len(iwho_ctx.filtered_insn_schemes)
+    while True:
+        print(f"Currently, {len(filtered_schemes)} instruction schemes (out of {total_schemes}) are included.")
+        available_values_per_feature = defaultdict(lambda: defaultdict(set))
+        for s in not_included_schemes:
+            for f in available_features:
+                val = str(extract_feature(iwho_ctx, s, f))
+                available_values_per_feature[f][val].add(s)
+
+        feature_idx_mapping = dict()
+        print("Select the number of a feature for which instruction schemes should be included:")
+        for x, f in enumerate(sorted(available_values_per_feature.keys())):
+            print(f" ({x:3}.) {f}")
+            feature_idx_mapping[x] = f
+
+        print("or enter 'q' to finish.")
+
+        inp = input("> ")
+
+        if inp == 'q':
+            break
+
+        try:
+            feature_idx = int(inp)
+        except ValueError:
+            print(f"invalid input: '{inp}'")
+            continue
+        if not (0 <= feature_idx < len(feature_idx_mapping)):
+            print(f"number out of range: '{feature_idx}'")
+            continue
+
+        selected_feature = feature_idx_mapping[feature_idx]
+        available_values = available_values_per_feature[selected_feature]
+
+        val_idx_mapping = dict()
+        print(f"Select the value(s) for '{selected_feature}' for which the corresponding schemes should be included:")
+        for x, (val, schemes) in enumerate(available_values.items()):
+            num_schemes = len(schemes)
+            print(f" ({x:3}.) {val} ({num_schemes} schemes)")
+            val_idx_mapping[x] = schemes
+        print("or leave empty to select a different feature.")
+
+        inp = input("> ")
+        if len(inp) == 0:
+            continue
+
+        inps = inp.split()
+
+        val_idxs = []
+
+        for inp in inps:
+            try:
+                val_idx = int(inp)
+            except ValueError:
+                print(f"invalid input: '{inp}'")
+                continue
+            if not (0 <= val_idx < len(val_idx_mapping)):
+                print(f"number out of range: '{val_idx}'")
+                continue
+            val_idxs.append(val_idx)
+
+        for val_idx in val_idxs:
+            schemes_for_selected_val = val_idx_mapping[val_idx]
+            filtered_schemes.update(schemes_for_selected_val)
+            not_included_schemes.difference_update(schemes_for_selected_val)
+
+    with open(args.outfile, 'w') as f:
+        for i in sorted(map(str, filtered_schemes)):
+            print(i, file=f)
+
+
+if __name__ == "__main__":
+    main()
