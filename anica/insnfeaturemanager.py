@@ -26,6 +26,66 @@ def mem_access_width(opscheme):
     else:
         return opscheme.operand_constraint.width
 
+
+def extract_feature(iwho_ctx, ischeme, feature):
+    """ TODO document
+    """
+    if feature == 'exact_scheme':
+        return ischeme
+
+    if feature == 'mnemonic':
+        return iwho_ctx.extract_mnemonic(ischeme)
+
+    if feature == 'has_lock':
+        return "lock " in str(ischeme)
+
+    if feature == 'has_rep':
+        return str(ischeme).startswith('rep')
+
+    if feature in ['opschemes', 'memory_usage']:
+        memory_opschemes = []
+        opschemes = []
+        for k, opscheme in ischeme.explicit_operands.items():
+            if is_memory_opscheme(opscheme):
+                memory_opschemes.append(opscheme)
+            opschemes.append(str(opscheme))
+        for opscheme in ischeme.implicit_operands:
+            opschemes.append(str(opscheme))
+
+        if feature == 'opschemes':
+            return opschemes
+
+        if feature == 'memory_usage':
+            mem_usage = set()
+            for opscheme in memory_opschemes:
+                if opscheme.is_read:
+                    mem_usage.add("R")
+                if opscheme.is_written:
+                    mem_usage.add("W")
+                mem_usage.add(f"S:{mem_access_width(opscheme)}")
+            return mem_usage
+
+    from_scheme = iwho_ctx.get_features(ischeme)
+
+    if from_scheme is None or len(from_scheme) == 0:
+        return None
+
+    entry = from_scheme[0]
+
+    if feature == 'uops_on_SKL':
+        port_str = entry['measurements'].get('SKL', None)
+        if port_str is None:
+            return None
+        else:
+            uops = []
+            for u in port_str.split('+'):
+                n, ps = u.split('*')
+                for x in range(int(n)):
+                    uops.append(ps)
+            return uops
+    return entry.get(feature, None)
+
+
 _default_features = [
         ["exact_scheme", "singleton"],
         ["mnemonic", ["editdistance", 3]], # "singleton"
@@ -261,73 +321,11 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         res = dict()
 
         if any(map(lambda x: x[0] == 'exact_scheme', self.features)):
-            res['exact_scheme'] = ischeme
+            res['exact_scheme'] = extract_feature(self.iwho_ctx, ischeme, 'exact_scheme')
             remaining_features.discard('exact_scheme')
 
-        if 'mnemonic' in remaining_features:
-            res['mnemonic'] = self.iwho_ctx.extract_mnemonic(ischeme)
-            remaining_features.discard('mnemonic')
-
-        if 'has_lock' in remaining_features:
-            res['has_lock'] = "lock " in str(ischeme)
-            remaining_features.discard('has_lock')
-
-        if 'has_rep' in remaining_features:
-            res['has_rep'] = str(ischeme).startswith('rep')
-            remaining_features.discard('has_rep')
-
-        if 'opschemes' in remaining_features or 'memory_usage' in remaining_features:
-            memory_opschemes = []
-            opschemes = []
-            for k, opscheme in ischeme.explicit_operands.items():
-                if is_memory_opscheme(opscheme):
-                    memory_opschemes.append(opscheme)
-                opschemes.append(str(opscheme))
-            for opscheme in ischeme.implicit_operands:
-                opschemes.append(str(opscheme))
-
-        if 'opschemes' in remaining_features:
-            res['opschemes'] = opschemes
-            remaining_features.discard('opschemes')
-
-        if 'memory_usage' in remaining_features:
-            mem_usage = set()
-            for opscheme in memory_opschemes:
-                if opscheme.is_read:
-                    mem_usage.add("R")
-                if opscheme.is_written:
-                    mem_usage.add("W")
-                mem_usage.add(f"S:{mem_access_width(opscheme)}")
-            res['memory_usage'] = mem_usage
-            remaining_features.discard('memory_usage')
-
-        from_scheme = self.iwho_ctx.get_features(ischeme)
-
-        if 'uops_on_SKL' in remaining_features:
-            if from_scheme is None or len(from_scheme) == 0:
-                res['uops_on_SKL'] = None
-            else:
-                entry = from_scheme[0]
-
-                port_str = entry['measurements'].get('SKL', None)
-                if port_str is None:
-                    res['uops_on_SKL'] = None
-                else:
-                    uops = []
-                    for u in port_str.split('+'):
-                        n, ps = u.split('*')
-                        for x in range(int(n)):
-                            uops.append(ps)
-
-                    res['uops_on_SKL'] = uops
-            remaining_features.discard('uops_on_SKL')
-
-        for key in remaining_features:
-            if from_scheme is None or len(from_scheme) == 0:
-                res[key] = None
-                continue
-            entry = from_scheme[0]
-            res[key] = entry.get(key, None)
+        for feature in remaining_features:
+            res[feature] = extract_feature(self.iwho_ctx, ischeme, feature)
 
         return res
 
