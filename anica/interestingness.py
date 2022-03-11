@@ -1,4 +1,3 @@
-""" TODO document """
 
 import math
 from typing import Sequence
@@ -8,7 +7,11 @@ import iwho
 from iwho.configurable import ConfigMeta
 
 class InterestingnessMetric(metaclass=ConfigMeta):
-    """TODO"""
+    """ This class decides when a group of predictor results are interesting.
+
+    Although not a common usecase (and not well-tested), these metrics should
+    work for any number of predictors under test, not only for 2.
+    """
 
     config_options = dict(
         min_interestingness = (0.5,
@@ -19,8 +22,10 @@ class InterestingnessMetric(metaclass=ConfigMeta):
             'for it to be considered mostly interesting.'),
         invert_interestingness = (False,
             'if this is true, consider exactly those cases interesting that '
-            'would not be interesting with the other settings.'
-            )
+            'would not be interesting with the other settings.'),
+        use_absolute_difference = (False,
+            'if true, consider bbs interesiting iff the absolute difference '
+            'between the results exceeds the min_interestingness value.'),
     )
 
     def __init__(self, config):
@@ -32,9 +37,15 @@ class InterestingnessMetric(metaclass=ConfigMeta):
         self.predmanager = predmanager
 
     def compute_interestingness(self, eval_res):
-        """ Compute a (symmetric) relative difference between the throughputs.
-        If it would be impossible to compute this, return infinity to indicate
-        maximally interesting results.
+        """ Compute the interestingness of a number of evaluation results.
+
+        If use_absolute_difference is not given:
+            Compute a (symmetric) relative difference between the throughputs.
+        If it is:
+            Compute the absolute difference between the largest and the
+            smallest value.
+        If it would be impossible to compute the respective value, return
+        infinity to indicate maximally interesting results.
         """
         if any((v.get('TP', None) is None or v.get('TP', -1.0) < 0 for k, v in eval_res.items())):
             # errors are always interesting
@@ -44,7 +55,12 @@ class InterestingnessMetric(metaclass=ConfigMeta):
         if divisor <= 0.001:
             # divisions by zero here are suspicious
             return math.inf
-        rel_error = ((max(values) - min(values)) / divisor) * len(values)
+        abs_error = max(values) - min(values)
+
+        if self.use_absolute_difference:
+            return abs_error
+
+        rel_error = (abs_error / divisor) * len(values)
         # This is the difference between minimum and maximum, divided by the
         # average.
         return rel_error
