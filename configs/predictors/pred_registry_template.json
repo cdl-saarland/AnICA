@@ -75,6 +75,17 @@
         }
 },
 "llvm-mca.9-r+a.hsw": {
+    "tool": "llvm-mca", "version": "9-r+a", "uarch": "HSW",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
+            "llvmmca_opts": ["-mcpu", "haswell"],
+            "timeout": 1.0
+        }
+},
+
+"llvm-mca.8-r+a.hsw": {
     "tool": "llvm-mca", "version": "8-r+a", "uarch": "HSW",
     "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
     "config": {
@@ -84,6 +95,7 @@
             "timeout": 1.0
         }
 },
+
 
 
 "osaca.0.4.6.skx": {
