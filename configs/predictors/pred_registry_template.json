@@ -21,6 +21,16 @@
         }
 },
 
+"llvm-mca.13.Zen+": {
+    "tool": "llvm-mca", "version": "13-r+a", "uarch": "Zen+",
+    "unsupported_insns_path": "./filters/error_schemes_{KEY}.csv",
+    "config": {
+            "kind": "llvmmca",
+            "llvmmca_path": "TODO: add path of llvm-mca executable",
+            "llvmmca_opts": ["-mcpu", "znver1"],
+            "timeout": 1.0
+        }
+},
 
 "llvm-mca.13-r+a.skl": {
     "tool": "llvm-mca", "version": "13-r+a", "uarch": "SKL",
