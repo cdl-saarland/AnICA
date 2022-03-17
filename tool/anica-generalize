@@ -4,11 +4,13 @@
 """
 
 import argparse
+from datetime import datetime
 import json
 import multiprocessing
 from pathlib import Path
 import random
 import os
+import shutil
 import sys
 import textwrap
 
@@ -17,7 +19,7 @@ from datetime import datetime
 import iwho
 from iwho.configurable import load_json_config
 from iwho.predictors import Predictor
-from iwho.utils import parse_args_with_logging
+from iwho.utils import parse_args_with_logging, update_logfile
 
 
 import_path = os.path.join(os.path.dirname(__file__), "..")
@@ -154,11 +156,11 @@ def main():
 
     argparser.add_argument('--no-minimize', action='store_true', help='do not minimize the basic block before generalization')
 
+    argparser.add_argument('--no-restrict-to-supported', action='store_true', help='do not restrict the considered instructions to those supported by the predictors')
+
     argparser.add_argument('-i', '--interactive', action='store_true', help='interactively choose the expansion order')
 
-    argparser.add_argument('--trace-output', metavar='trace file', default=None, help='path to a file where the generalization trace should be saved to')
-
-    argparser.add_argument('--json-output', metavar='gen file', default=None, help='path to a file where the generalized abstract basic block should be dumped to')
+    argparser.add_argument('-o', '--output', metavar="OUTDIR", default="results", help='output directory for reports and results')
 
     argparser.add_argument('generalize', metavar='asm file', help='path to a file containing the assembly of a basic block to generalize')
 
@@ -168,10 +170,67 @@ def main():
 
     random.seed(args.seed)
 
+    predictor_keys = args.predictors
+
+    restrict_to_supported_insns = not args.no_restrict_to_supported
+
+    outdir = Path(args.output)
+
+    timestamp = datetime.now().replace(microsecond=0).isoformat()
+    gen_dir = outdir / f'generalization_{timestamp}'
+    gen_dir.mkdir(parents=True)
+
+    update_logfile(logfile=gen_dir / 'log.txt')
+
     actx_config = load_json_config(args.config)
 
-    actx = AbstractionContext(config=actx_config)
-    actx.predmanager.set_predictors(args.predictors)
+    if restrict_to_supported_insns:
+        rest_keys = predictor_keys
+    else:
+        rest_keys = None
+
+    # set the db path
+    actx_config['measurement_db'] = {"db_path": str(gen_dir / 'measurements.db')}
+
+    actx = AbstractionContext(config=actx_config, restrict_to_insns_for=rest_keys)
+    actx.predmanager.set_predictors(predictor_keys)
+
+    infos = {}
+    infos["predictors"] = actx.predmanager.resolve_key_patterns(predictor_keys)
+
+    filter_dir = gen_dir / 'filter_files'
+    filter_dir.mkdir(parents=True)
+
+    # Get the used instruction filter files and copy them into the
+    # result dir. Rewrite the filter file paths in the config object to
+    # make the reported discoveries refer to the right files.
+    filters = actx.iwho_cfg.filters
+    rewritten_filters = []
+    running_id = 0
+    for f in filters:
+        if f['kind'] in ["blacklist", "whitelist"]:
+            path = Path(f['file_path'])
+            if not path.exists():
+                rewritten_filters.append(f)
+                continue
+            running_id += 1
+            fname = path.name
+            if not fname.endswith('.csv'):
+                fname += '.csv'
+            rewritten_path = filter_dir / f'filter_{running_id:02d}_{fname}'
+            shutil.copy(src=path, dst=rewritten_path)
+            rewritten_filters.append({'kind': f['kind'], 'file_path': str(rewritten_path)})
+        else:
+            rewritten_filters.append(f)
+
+    # This will not affect the iwho context in the current actx since
+    # we have already created it. It will however affect the config
+    # that is dumped with discoveries and witnesses.
+    actx.iwho_cfg.filters = rewritten_filters
+
+    # initialize the measurement db
+    with actx.measurement_db as mdb:
+        mdb.create_tables()
 
     iwho_ctx = actx.iwho_ctx
 
@@ -179,11 +238,19 @@ def main():
         asm_str = f.read()
     bb = iwho.BasicBlock(iwho_ctx, iwho_ctx.parse_asm(asm_str))
 
+    # write start bb
+    with open(gen_dir / 'start_bb.s', 'w') as f:
+        print(bb.get_asm(), file=f)
+
     if not args.no_minimize:
         min_bb = discovery.minimize(actx, bb)
         print("Pruned {} instructions in the minimization step:".format(len(bb) - len(min_bb)))
         print(textwrap.indent(min_bb.get_asm(), '  '))
         bb = min_bb
+
+        # write minimized bb
+        with open(gen_dir / 'minimized_bb.s', 'w') as f:
+            print(bb.get_asm(), file=f)
 
     abb = AbstractBlock(actx, bb)
     if args.interactive:
@@ -192,22 +259,35 @@ def main():
     else:
         strategy = actx.discovery_cfg.generalization_strategy[0][0]
         interact_fun = None
+
     try:
-        res_abb, trace, result_ref = discovery.generalize(actx, abb, strategy=strategy, interact=interact_fun)
+        remarks = []
+        res_abb, trace, result_ref = discovery.generalize(actx, abb, strategy=strategy, remarks=remarks, interact=interact_fun)
         print("Generalization Result:\n" + textwrap.indent(str(res_abb), '  '))
+        infos['witness_len'] = len(trace)
     except EndInteractive as e:
         print("generalization terminated early")
         res_abb = e.ab
         trace = None
+        infos['witness_len'] = None
 
+    if len(remarks) > 0:
+        print("Remarks:")
+        for r in remarks:
+            print(f"  - {r}")
+        print("")
 
-    if args.json_output is not None:
-        filename = args.json_output
-        res_abb.dump_json(filename)
-        print(f"generalization result written to: {filename}")
+    infos['remarks'] = remarks
 
-    if args.trace_output is not None and trace is not None:
-        filename = args.trace_output
+    filename = gen_dir / 'discovery.json'
+    res_abb.dump_json(filename)
+    print(f"generalization result written to: {filename}")
+
+    with open(gen_dir / 'infos.json', 'w') as f:
+        json.dump(infos, f, indent=2)
+
+    if trace is not None:
+        filename = gen_dir / 'witness.json'
         trace.dump_json(filename)
         print(f"witness trace written to: {filename}")
 
