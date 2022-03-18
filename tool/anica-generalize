@@ -268,6 +268,7 @@ def main():
     except EndInteractive as e:
         print("generalization terminated early")
         res_abb = e.ab
+        result_ref = None
         trace = None
         infos['witness_len'] = None
 
@@ -277,10 +278,8 @@ def main():
             print(f"  - {r}")
         print("")
 
-    infos['remarks'] = remarks
-
     filename = gen_dir / 'discovery.json'
-    res_abb.dump_json(filename)
+    res_abb.dump_json(filename, result_ref=result_ref, remarks=remarks)
     print(f"generalization result written to: {filename}")
 
     with open(gen_dir / 'infos.json', 'w') as f:
