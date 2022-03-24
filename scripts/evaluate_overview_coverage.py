@@ -95,8 +95,6 @@ def main():
 
 
 
-    print("\n## Latex horizontal table:")
-
     def latex_pred_name(x):
         components = x.split('.')
         if x.startswith('llvm-mca'):
@@ -109,6 +107,8 @@ def main():
         else:
             return "\\" + components[0]
             # return components[0]
+
+    print("\n## Latex horizontal table:")
 
     columns = []
     columns.append(["", " BBs interesting", "int. BBs covered", "\\dots by top 10", "campaign time (h:m)"])
@@ -135,6 +135,9 @@ def main():
         assert td.days == 0
         column.append(strfdelta(td, "{hours:01d}:{minutes:02d}"))
         columns.append(column)
+
+    # to make it vertical:
+    # list(zip(*columns))
 
     column_str = "r|" + (len(columns) - 1) * "c|"
     res = "% start of generated table\n\\begin{tabular}{" + column_str + "}\n"
