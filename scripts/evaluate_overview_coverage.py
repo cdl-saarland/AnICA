@@ -14,6 +14,11 @@ import textwrap
 import os
 import sys
 
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
 import_path = os.path.join(os.path.dirname(__file__), "..")
 sys.path.append(import_path)
 
@@ -155,6 +160,44 @@ def main():
     res += "\\end{tabular}\n% end of generated table\n"
 
     print(res)
+
+
+    df_data = {
+            "Campaign": [],
+            "BBs interesting": [],
+            "int. BBs covered": [],
+            "... by top 10": [],
+        }
+    for r in sorted(data, key=lambda x: float(x['percent_covered_interesting']), reverse=True):
+        r_preds = tuple(sorted(map(latex_pred_name, r['predictors'].split('_X_'))))
+        if "\\llvmmca.8" in r_preds:
+            continue
+        df_data['Campaign'].append(",".join(r_preds))
+        ratio_interesting = float(r["ratio_interesting_bbs"])
+        df_data['BBs interesting'].append(100 * ratio_interesting)
+        df_data['int. BBs covered'].append(ratio_interesting * float(r["percent_covered_interesting"]))
+        covered_percent = 100 * float(r["covered_by_10"])/float(r["num_interesting_bbs"])
+        df_data['... by top 10'].append(ratio_interesting * covered_percent)
+
+    df = pd.DataFrame(df_data)
+
+    s1 = sns.barplot(x = 'Campaign', y = 'BBs interesting', data = df, color = 'red')
+    s2 = sns.barplot(x = 'Campaign', y = 'int. BBs covered', data = df, color = 'blue')
+    s3 = sns.barplot(x = 'Campaign', y = '... by top 10', data = df, color = 'green')
+
+    # create stacked bar chart for monthly temperatures
+    # df.plot(kind='bar', stacked=True)
+    # df.plot(kind='bar', stacked=True, color=['red', 'skyblue', 'green'])
+    bar1 = mpatches.Patch(color='red', label='BBs interesting')
+    bar2 = mpatches.Patch(color='blue', label='int. BBs interesting')
+    bar3 = mpatches.Patch(color='green', label='... by top 10')
+    plt.legend(handles=[bar1, bar2, bar3])
+
+    # labels for x & y axis
+    plt.xlabel('Campaign')
+    plt.ylabel('% of sampled basic blocks')
+    plt.xticks(rotation=45)
+    plt.savefig("out.png")
 
 
 if __name__ == "__main__":
