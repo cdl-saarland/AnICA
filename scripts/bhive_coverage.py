@@ -81,6 +81,9 @@ def main():
     argparser.add_argument('-c', '--config', metavar="CONFIG", default=None,
             help='abstraction context configuration file in json format')
 
+    argparser.add_argument('--dump-supported', metavar="FILE", default=None,
+            help='if specified, dump the the supported and used instruction schemes to this file')
+
     argparser.add_argument('bhivecsv', metavar="CSV", help='path to a csv file with hex basic blocks in its first column')
 
     args = parse_args_with_logging(argparser, "info")
@@ -151,14 +154,22 @@ def main():
 
     num_schemes_not_covered = 0
 
+    used_schemes = []
     for scheme in iwho_ctx.filtered_insn_schemes:
         if scheme2num_bbs[str(scheme)] == 0:
             num_schemes_not_covered += 1
+        else:
+            used_schemes.append(str(scheme))
 
     print(f"total schemes: {num_schemes}")
     percentage = 100 * num_schemes_not_covered / num_schemes
     print(f"not covered by any passing bb: {num_schemes_not_covered} ({percentage:.1f}%)")
 
+
+    if args.dump_supported is not None:
+        with open(args.dump_supported, 'w') as f:
+            for s in sorted(used_schemes):
+                print(s, file=f)
 
 
 if __name__ == "__main__":
