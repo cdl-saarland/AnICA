@@ -765,6 +765,36 @@ def _lists2tuples(obj):
     return obj
 
 
+def _transitive_closure(same):
+    """ Expand the symmetric relation implied by same to its transitive closure.
+
+    same is expexted to be a dictionary mapping things X to sets of different
+    things that are related to X.
+    """
+    total_steps = 0
+    for k in same.keys():
+        entries_for_k = set(same[k])
+        entries_for_k.add(k)
+        worklist = list(same[k])
+        while len(worklist) > 0:
+            curr = worklist.pop(0)
+
+            # get elements that are in relation to curr, but not yet in the set for k
+            additional_entries = same[curr] - entries_for_k
+
+            # add those that are not yet in the worklist
+            additional_entries.difference_update(worklist)
+            worklist += additional_entries
+
+            # also add them to the elements for k (those previously in the worklist are in here anyway)
+            entries_for_k.update(additional_entries)
+            total_steps += 1
+
+        entries_for_k.discard(k)
+        same[k] = entries_for_k
+    logger.debug(f"total transitive closure steps: {total_steps}")
+
+
 class AbstractAliasInfo(Expandable):
     """ An object of this class represents the aliasing relationships between
     (operands of) instructions of a basic block.
@@ -995,7 +1025,24 @@ class AbstractAliasInfo(Expandable):
                 not_same[insn_op1].add(insn_op2)
                 not_same[insn_op2].add(insn_op1)
 
-        return same, not_same
+        # extend the same mapping to its transitive closure
+        _transitive_closure(same)
+
+        # use same's transitive closure to extend not_same
+        closed_not_same = defaultdict(set)
+        for k, vs in not_same.items():
+            entry_for_k = set(vs)
+            for v in vs:
+                entry_for_k.update(same[v])
+            if k in entry_for_k:
+                raise SamplingError(f"inconsistent aliasing constraints for {k}!")
+            closed_not_same[k] = entry_for_k
+            for ok in same[k]:
+                if ok in entry_for_k:
+                    raise SamplingError(f"inconsistent aliasing constraints for {ok}!")
+                closed_not_same[ok] = entry_for_k
+
+        return same, closed_not_same
 
     def _choose_fixed_operands(self, chosen_operands, insn_schemes, same, not_same):
         """ Go through all insn_schemes and pin each fixed operand.
@@ -1115,6 +1162,7 @@ class AbstractAliasInfo(Expandable):
                 # choose one from the allowed_operands
                 chosen = random.choice(list(allowed_operands))
                 chosen_operands[idx] = chosen
+                logger.debug(f"choose {idx} -> {chosen}")
 
                 if not self.actx.iwho_augmentation.skip_for_aliasing(op_scheme):
                     # also choose this one for the entries in the same set
@@ -1124,6 +1172,7 @@ class AbstractAliasInfo(Expandable):
                         chosen_operand = ctx.adjust_operand(chosen, insn_schemes[k[0]].get_operand_scheme(k[1]))
                         assert chosen_operand is not None, "This should have been ruled out by the above `ruled_out_by_` code!"
                         chosen_operands[k] = chosen_operand
+                        logger.debug(f"choose {k} -> {chosen}")
 
         return chosen_operands
 
@@ -1138,9 +1187,15 @@ class AbstractAliasInfo(Expandable):
         if self.is_bot:
             raise SamplingError(f"Trying to sample a basic block with BOTTOM as aliasing information")
 
+        logger.debug("sampling operands for these InsnSchemes:\n" + textwrap.indent("\n".join(map(str, insn_schemes)), '  '))
         # for each operand, determine which operands should and which ones
         # shouldn't alias
         same, not_same = self._compute_partitions(insn_schemes)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("aliasing dict:\n" + textwrap.indent("\n".join(map(lambda x: "{}: {}".format(x[0], x[1]), self._aliasing_dict.items())), '  '))
+            logger.debug("identified same operand constraints:\n" + textwrap.indent("\n".join(map(lambda x: "{}: {}".format(x[0], ", ".join(map(str, x[1]))), same.items())), '  '))
+            logger.debug("identified not same operand constraints:\n" + textwrap.indent("\n".join(map(lambda x: "{}: {}".format(x[0], ", ".join(map(str, x[1]))), not_same.items())), '  '))
 
         chosen_operands = dict()
 

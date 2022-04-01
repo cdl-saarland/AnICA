@@ -6,6 +6,7 @@ import copy
 import json
 import os
 import sys
+import logging
 
 import iwho
 
@@ -550,9 +551,7 @@ def test_aliasing_complex_constraints_01(random, actx):
     assert len(operands) == 1
 
 
-@pytest.mark.xfail # Here, the aliasing info does not encode a valid partition.
-                   # We currently omit a test for this because it should not
-                   # happen anyway and would only make the normal path slower.
+# Here, the aliasing info does not encode a valid partition.
 def test_aliasing_complex_constraints_02(random, actx):
     bb = make_bb(actx, "add rdx, rdx\nadd rdx, rdx")
     ab = AbstractBlock(actx, bb)
@@ -606,6 +605,87 @@ def test_aliasing_complex_constraints_03(random, actx):
     # The "add rax, IMM" instructions have an InsnScheme where rax is a fixed
     # operand (because they have a special encoding).
     assert check_sampling_consistent(ab, all_fail=True)
+
+def check_samples_satisfy(ab, cond, n=10, may_fail=False):
+    """ Return True if all successful ones of n samples from ab satisfy cond.
+    cond should be a function mapping basic blocks to True or False.
+    If may_fail is False, return False on failed samples, otherwise ignore them.
+
+    """
+    for i in range(n):
+        try:
+            bb = ab.sample()
+            if not cond(bb):
+                print(f"Violating sample:\n{bb}")
+                return False
+        except SamplingError as e:
+            print(e)
+            if not may_fail:
+                return False
+    return True
+
+EXPLICIT = iwho.InsnScheme.OperandKind.EXPLICIT
+
+def test_aliasing_transitivity_1(random, actx, caplog):
+    caplog.set_level(logging.DEBUG)
+
+    bb = make_bb(actx, "vhaddpd xmm1, xmm1, xmm1")
+    ab = AbstractBlock(actx, bb)
+
+    def all_operands_equal(x):
+        if len(x) != 1:
+            return False
+        insn = x[0]
+        if str(insn.scheme) != "vhaddpd W:XMM0..15, R:XMM0..15, R:XMM0..15":
+            return False
+        if insn.get_operand((EXPLICIT, 'reg0')) != insn.get_operand((EXPLICIT, 'reg1')):
+            return False
+        if insn.get_operand((EXPLICIT, 'reg0')) != insn.get_operand((EXPLICIT, 'reg2')):
+            return False
+        if insn.get_operand((EXPLICIT, 'reg1')) != insn.get_operand((EXPLICIT, 'reg2')):
+            return False
+        return True
+
+    assert check_samples_satisfy(ab, cond=all_operands_equal, may_fail=True)
+
+    (k, v) = next(iter(ab.abs_aliasing._aliasing_dict.items()))
+    # This step should just set a constraint to top that is implied by transitivity from the remaining ones.
+    v.set_to_top()
+
+    assert check_samples_satisfy(ab, cond=all_operands_equal, may_fail=False)
+
+
+def test_aliasing_transitivity_02(random, actx, caplog):
+    caplog.set_level(logging.DEBUG)
+
+    bb = make_bb(actx, "vhaddpd xmm1, xmm1, xmm1\nvhaddpd xmm2, xmm2, xmm2")
+    ab = AbstractBlock(actx, bb)
+
+    def all_operands_equal(x):
+        if len(x) != 2:
+            return False
+        if x[0].get_operand((EXPLICIT, 'reg0')) == x[1].get_operand((EXPLICIT, 'reg0')):
+            return False
+        for insn in x:
+            if str(insn.scheme) != "vhaddpd W:XMM0..15, R:XMM0..15, R:XMM0..15":
+                return False
+            if insn.get_operand((EXPLICIT, 'reg0')) != insn.get_operand((EXPLICIT, 'reg1')):
+                return False
+            if insn.get_operand((EXPLICIT, 'reg0')) != insn.get_operand((EXPLICIT, 'reg2')):
+                return False
+            if insn.get_operand((EXPLICIT, 'reg1')) != insn.get_operand((EXPLICIT, 'reg2')):
+                return False
+            return True
+
+    assert check_samples_satisfy(ab, cond=all_operands_equal, may_fail=False)
+
+    # (k, v) = next(iter(ab.abs_aliasing._aliasing_dict.items()))
+    # # This step should just set a constraint to top that is implied by transitivity from the remaining ones.
+    # v.set_to_top()
+    #
+    # assert check_samples_satisfy(ab, cond=all_operands_equal, may_fail=False)
+
+
 
 def test_deepcopy(random, actx):
     bb = make_bb(actx, "add rax, 0x2a\nsub ebx, eax")
