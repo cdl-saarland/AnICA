@@ -238,6 +238,14 @@ def main():
         asm_str = f.read()
     bb = iwho.BasicBlock(iwho_ctx, iwho_ctx.parse_asm(asm_str))
 
+    for i in bb:
+        scheme = i.scheme
+        if scheme not in iwho_ctx.filtered_insn_schemes:
+            print("Error: An instruction from the input basic block is not represented by the used iwho config:", file=sys.stderr)
+            print(textwrap.indent(str(i), '  '), file=sys.stderr)
+            print("Check the iwho filters!", file=sys.stderr)
+            sys.exit(1)
+
     # write start bb
     with open(gen_dir / 'start_bb.s', 'w') as f:
         print(bb.get_asm(), file=f)
