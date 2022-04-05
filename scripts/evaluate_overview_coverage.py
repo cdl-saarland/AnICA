@@ -115,49 +115,68 @@ def main():
 
     print("\n## Latex horizontal table:")
 
-    columns = []
-    columns.append(["", " BBs interesting", "int. BBs covered", "\\dots by top 10", "campaign time (h:m)"])
-    # columns.append(["", " BBs interesting", "int. BBs covered", "\\dots by top 10", "other BBs covered", "campaign time (h:m)"])
-    # columns.append(["", " BBs interesting (\\%)", "int. BBs covered (\\%)", "other BBs covered (\\%)", "\\# Discoveries"])
-    for r in sorted(data, key=lambda x: float(x['percent_covered_interesting']), reverse=True):
-        r_preds = tuple(sorted(map(latex_pred_name, r['predictors'].split('_X_'))))
-        if "\\llvmmca.8" in r_preds:
-            continue
-        column = []
-        column.append(",".join(r_preds))
-        # column.append("{:.1f}".format(100 * float(r["ratio_interesting_bbs"])))
-        # column.append("{:.1f}".format(float(r["percent_covered_interesting"])))
-        # column.append("{:.1f}".format(float(r["percent_covered_boring"])))
-        column.append("{:.0f}\\%".format(100 * float(r["ratio_interesting_bbs"])))
-        column.append("{:.0f}\\%".format(float(r["percent_covered_interesting"])))
+    split_after = 11
+    start_idx = 0
+    res = ""
+    done = False
 
-        covered_percent = 100 * float(r["covered_by_10"])/float(r["num_interesting_bbs"])
-        column.append("{:.0f}\\%".format(covered_percent))
-        # column.append("{:.0f}\\%".format(float(r["percent_covered_boring"])))
-        # column.append("{}".format(int(r["num_abstract_blocks"])))
+    while True:
+        columns = []
+        columns.append(["", " BBs interesting", "int. BBs covered", "\\dots by top 10", "run time (h:m)"])
+        # columns.append(["", " BBs interesting", "int. BBs covered", "\\dots by top 10", "other BBs covered", "campaign time (h:m)"])
+        # columns.append(["", " BBs interesting (\\%)", "int. BBs covered (\\%)", "other BBs covered (\\%)", "\\# Discoveries"])
+        for r in sorted(data, key=lambda x: float(x['percent_covered_interesting']), reverse=True):
+            r_preds = tuple(sorted(map(latex_pred_name, r['predictors'].split('_X_'))))
+            if "\\llvmmca.8" in r_preds:
+                continue
+            column = []
+            column.append(",".join(r_preds))
+            # column.append("{:.1f}".format(100 * float(r["ratio_interesting_bbs"])))
+            # column.append("{:.1f}".format(float(r["percent_covered_interesting"])))
+            # column.append("{:.1f}".format(float(r["percent_covered_boring"])))
+            column.append("{:.0f}\\%".format(100 * float(r["ratio_interesting_bbs"])))
+            column.append("{:.0f}\\%".format(float(r["percent_covered_interesting"])))
 
-        td = timedelta(seconds=int(float(r["campaign_seconds"])))
-        assert td.days == 0
-        column.append(strfdelta(td, "{hours:01d}:{minutes:02d}"))
-        columns.append(column)
+            covered_percent = 100 * float(r["covered_by_10"])/float(r["num_interesting_bbs"])
+            column.append("{:.0f}\\%".format(covered_percent))
+            # column.append("{:.0f}\\%".format(float(r["percent_covered_boring"])))
+            # column.append("{}".format(int(r["num_abstract_blocks"])))
 
-    # to make it vertical:
-    # list(zip(*columns))
+            td = timedelta(seconds=int(float(r["campaign_seconds"])))
+            assert td.days == 0
+            column.append(strfdelta(td, "{hours:01d}:{minutes:02d}"))
+            columns.append(column)
 
-    column_str = "r|" + (len(columns) - 1) * "c|"
-    res = "% start of generated table\n\\begin{tabular}{" + column_str + "}\n"
-    for idx, row in enumerate(zip(*columns)):
-        res += "  "
-        if idx == 0:
-            row = map(lambda x: "\\rot{" + x + "}" if len(x) > 0 else "", row)
-        res += " & ".join(row)
-        res += "\\\\\n"
-        if idx == 0:
-            res += "  \\hline\n"
+        # to make it vertical:
+        # list(zip(*columns))
 
-    res += "  \\hline\n"
+        header = columns[0]
+        tail = list(columns[1:])
+        tail = list(tail[start_idx:])
 
-    res += "\\end{tabular}\n% end of generated table\n"
+        if len(tail) > split_after:
+            start_idx += split_after
+            columns = [header] + tail[:split_after]
+        else:
+            columns = [header] + tail
+            done = True
+
+        column_str = "r|" + (len(columns) - 1) * "c|"
+        res += "% start of generated table\n\\begin{tabular}{" + column_str + "}\n"
+        for idx, row in enumerate(zip(*columns)):
+            res += "  "
+            if idx == 0:
+                row = map(lambda x: "\\rot{" + x + "}" if len(x) > 0 else "", row)
+            res += " & ".join(row)
+            res += "\\\\\n"
+            if idx == 0:
+                res += "  \\hline\n"
+
+        res += "  \\hline\n"
+
+        res += "\\end{tabular}\n% end of generated table\n"
+        if done:
+            break
 
     print(res)
 
