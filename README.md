@@ -1,4 +1,18 @@
-TODO write this
+# AnICA - Analyzing Inconsistencies in Microarchitectural Code Analyzers
+
+AnICA is a tool for discovering inconsistencies in microarchitectural code analyzers such as
+[llvm-mca](https://llvm.org/docs/CommandGuide/llvm-mca.html),
+[uiCA](https://uops.info/uiCA.html),
+[OSACA](https://www.perf-lab.hpc.fau.de/software/osaca/),
+[IACA](https://www.intel.com/content/www/us/en/developer/articles/tool/architecture-code-analyzer.html),
+[Ithemal](https://github.com/ithemal/Ithemal), and
+[DiffTune](https://github.com/ithemal/DiffTune).
+It uses differential testing in combination with an Abstract-Interpretation-inspired generalization algorithm to produce concise results.
+
+There is a webapp-based user interface to explore AnICA campaigns.
+An installation of the UI contains a full AnICA installation, you might
+therefore consider to just install the UI.
+
 
 ## Installation
 
@@ -23,6 +37,7 @@ particular, AnICA UI and AnICA should use the same virtual python environment.
    source ./env/anica/bin/activate
    ```
 
+## Quick Start
 
 
 TODO
