@@ -22,59 +22,8 @@ sys.path.append(import_path)
 
 from iwho.configurable import load_json_config
 from anica.abstractblock import AbstractBlock
-from anica.abstractioncontext import AbstractionContext
-from anica.satsumption import check_subsumed
 
-def get_covered(actx, all_abs, all_bbs, get_metrics=False):
-    covered = []
-
-    not_covered = all_bbs
-
-    covered_per_ab = dict()
-
-    for ab_idx, ab in enumerate(all_abs):
-        next_not_covered = []
-
-        # precomputing schemes speeds up subsequent check_subsumed calls for this abstract block
-        precomputed_schemes = []
-        for ai in ab.abs_insns:
-            precomputed_schemes.append(actx.insn_feature_manager.compute_feasible_schemes(ai.features))
-
-        covered_by_ab = 0
-        for bb in not_covered:
-            if check_subsumed(bb, ab, precomputed_schemes=precomputed_schemes):
-                covered.append(bb)
-                covered_by_ab += 1
-            else:
-                next_not_covered.append(bb)
-
-        covered_per_ab[ab_idx] = covered_by_ab
-
-        not_covered = next_not_covered
-
-
-    if get_metrics:
-        total_num = len(all_bbs)
-        num_covered = len(covered)
-        num_not_covered = len(not_covered)
-
-        if total_num != 0:
-            percent_covered = (num_covered * 100) / total_num
-            percent_not_covered = (num_not_covered * 100) / total_num
-        else:
-            percent_covered = -1.0
-            percent_not_covered = -1.0
-
-        res_str = f"covered: {num_covered} ({percent_covered:.1f}%)\n" + f"not covered: {num_not_covered} ({percent_not_covered:.1f}%)"
-        res_dict = {
-                'num_covered': num_covered,
-                'percent_covered': percent_covered,
-                'num_not_covered': num_not_covered,
-                'percent_not_covered': percent_not_covered,
-            }
-        return res_str, res_dict, covered_per_ab
-    else:
-        return covered
+from anica.bbset_coverage import get_coverage_metrics
 
 
 def handle_campaign(campaign_dir, infile, threshold):
@@ -162,7 +111,7 @@ def handle_campaign(campaign_dir, infile, threshold):
         return res_str, {}
 
     res_str += "interesting: {} out of {} ({:.1f}%)\n".format(len(interesting_bbs), full_bb_num, (len(interesting_bbs) * 100) / full_bb_num)
-    interesting_str, interesting_dict, interesting_covered_per_ab = get_covered(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, get_metrics=True)
+    interesting_str, interesting_dict, interesting_covered_per_ab = get_coverage_metrics(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs)
     res_str += textwrap.indent(interesting_str, '  ')
     res_str += "\n"
 
@@ -201,7 +150,7 @@ def handle_campaign(campaign_dir, infile, threshold):
     res_str += "\n"
 
     res_str += "boring: {} out of {} ({:.1f}%)\n".format(len(boring_bbs), full_bb_num, (len(boring_bbs) * 100) / full_bb_num)
-    boring_str, boring_dict, boring_covered_per_ab = get_covered(actx=actx, all_abs=all_abs, all_bbs=boring_bbs, get_metrics=True)
+    boring_str, boring_dict, boring_covered_per_ab = get_coverage_metrics(actx=actx, all_abs=all_abs, all_bbs=boring_bbs)
     res_str += textwrap.indent(boring_str, '  ')
     res_str += "\n"
 
