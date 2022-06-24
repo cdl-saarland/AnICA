@@ -26,6 +26,7 @@ setuptools.setup(
             "pandas",
             "seaborn",
             "python-sat",
+            "ortools",
         ],
     scripts=[
             "tool/anica-create-filter",

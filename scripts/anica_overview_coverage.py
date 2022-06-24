@@ -23,7 +23,7 @@ sys.path.append(import_path)
 from iwho.configurable import load_json_config
 from anica.abstractblock import AbstractBlock
 
-from anica.bbset_coverage import get_coverage_metrics
+from anica.bbset_coverage import get_coverage_metrics, compute_optimal_covering_set
 
 
 def handle_campaign(campaign_dir, infile, threshold):
@@ -110,6 +110,8 @@ def handle_campaign(campaign_dir, infile, threshold):
     if full_bb_num == 0:
         return res_str, {}
 
+    num_interesting_covered_top10, top10_abs = compute_optimal_covering_set(actx, all_abs, interesting_bbs, 10)
+
     res_str += "interesting: {} out of {} ({:.1f}%)\n".format(len(interesting_bbs), full_bb_num, (len(interesting_bbs) * 100) / full_bb_num)
     interesting_str, interesting_dict, interesting_covered_per_ab = get_coverage_metrics(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs)
     res_str += textwrap.indent(interesting_str, '  ')
@@ -159,6 +161,7 @@ def handle_campaign(campaign_dir, infile, threshold):
             'campaign_seconds': seconds_passed,
             'num_abstract_blocks': len(all_abs),
             'num_bbs': full_bb_num,
+            'covered_by_10_optimal': num_interesting_covered_top10,
             'covered_by_10': covered_by_10,
             'covered_by_20': covered_by_20,
             'num_interesting_bbs': len(interesting_bbs),
