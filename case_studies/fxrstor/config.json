@@ -12,7 +12,7 @@
     },
   "iwho": {
       "context_specifier": "x86_uops_info",
-      "filters": ["no_cf"]
+      "filters": [ {"kind": "no_cf"} ]
     },
   "interestingness_metric": {
       "min_interestingness": 0.1,
