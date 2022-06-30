@@ -3,8 +3,18 @@
 
 from collections import defaultdict
 
+ORTOOLS=0
+Z3=1
 
-from ortools.sat.python import cp_model
+SOLVER=ORTOOLS
+# SOLVER=Z3
+
+if SOLVER == ORTOOLS:
+    from ortools.sat.python import cp_model
+elif SOLVER == Z3:
+    import z3
+else:
+    assert False, f"unknown solver {SOLVER}"
 
 from anica.satsumption import check_subsumed
 
@@ -58,64 +68,128 @@ def compute_optimal_covering_set(actx, all_abs, all_bbs, num_abs_taken):
         candidate_bbs.update(bbs)
     candidate_bbs = sorted(candidate_bbs)
 
-    model = cp_model.CpModel()
+    if SOLVER == ORTOOLS:
+        model = cp_model.CpModel()
 
-    # Variables:
-    # - 1 iff abstract block i is chosen
-    use_ab_vars = {
-            i: model.NewIntVar(0, 1, f'use_ab_{i}')
-                for i in range(len(all_abs)) if len(cover_map[i]) > 0
-                # ABs that cover no BB never need to be chosen, so we cut the
-                # variable number here a bit smaller
-        }
+        # Variables:
+        # - 1 iff abstract block i is chosen
+        use_ab_vars = {
+                i: model.NewIntVar(0, 1, f'use_ab_{i}')
+                    for i in range(len(all_abs)) if len(cover_map[i]) > 0
+                    # ABs that cover no BB never need to be chosen, so we cut the
+                    # variable number here a bit smaller
+            }
 
-    # - 1 iff concrete block j is covered
-    cover_bb_vars = {
-            j: model.NewIntVar(0, 1, f'cover_ab_{j}')
-                for j in candidate_bbs
-                # Only BBs that are covered by some AB need to be considered,
-                # more BBs to be cut.
-        }
+        # - 1 iff concrete block j is covered
+        cover_bb_vars = {
+                j: model.NewIntVar(0, 1, f'cover_ab_{j}')
+                    for j in candidate_bbs
+                    # Only BBs that are covered by some AB need to be considered,
+                    # more BBs to be cut.
+            }
 
-    # Constraints:
-    # - at most 10 ABs may be chosen
-    model.Add(cp_model.LinearExpr.Sum([use_ab_i for i, use_ab_i in use_ab_vars.items()]) <= num_abs_taken)
+        # Constraints:
+        # - at most 10 ABs may be chosen
+        model.Add(cp_model.LinearExpr.Sum([use_ab_i for i, use_ab_i in use_ab_vars.items()]) <= num_abs_taken)
 
-    # - if none of the ABs that cover a BB is chosen, that BB is not covered.
-    for j, cover_bb_j in cover_bb_vars.items():
-        model.Add(
-                cover_bb_j <= cp_model.LinearExpr.Sum([
-                    use_ab_i for i, use_ab_i in use_ab_vars.items() if j in cover_map[i]
-                ])
-            )
+        # - if none of the ABs that cover a BB is chosen, that BB is not covered.
+        for j, cover_bb_j in cover_bb_vars.items():
+            model.Add(
+                    cover_bb_j <= cp_model.LinearExpr.Sum([
+                        use_ab_i for i, use_ab_i in use_ab_vars.items() if j in cover_map[i]
+                    ])
+                )
 
-    # Objective: maximize the number of covered BBs
-    model.Maximize(cp_model.LinearExpr.Sum([cover_bb_j for j, cover_bb_j in cover_bb_vars.items()]))
+        # Objective: maximize the number of covered BBs
+        model.Maximize(cp_model.LinearExpr.Sum([cover_bb_j for j, cover_bb_j in cover_bb_vars.items()]))
 
-    solver = cp_model.CpSolver()
-    status = solver.Solve(model)
+        solver = cp_model.CpSolver()
+        status = solver.Solve(model)
 
-    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
-        if status == cp_model.FEASIBLE:
-            print("found potentially non-optimal solution")
-        objective_val = solver.ObjectiveValue()
-        chosen_abs = []
-        for i, use_ab_i in use_ab_vars.items():
-            if solver.Value(use_ab_i) > 0:
-                chosen_abs.append(i)
+        if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+            if status == cp_model.FEASIBLE:
+                print("found potentially non-optimal solution")
+            objective_val = solver.ObjectiveValue()
+            chosen_abs = []
+            for i, use_ab_i in use_ab_vars.items():
+                if solver.Value(use_ab_i) > 0:
+                    chosen_abs.append(i)
 
-        # Do some sanity checks to validate the result.
-        # Without any trust in model and solver, this ensures that at least
-        # objective_val many BBs can be covered by a set of num_abs_taken ABs.
-        assert len(chosen_abs) <= num_abs_taken
-        covered_bbs = set()
-        for ab_idx in chosen_abs:
-            covered_bbs.update(cover_map[ab_idx])
-        assert len(covered_bbs) == objective_val
+            # Do some sanity checks to validate the result.
+            # Without any trust in model and solver, this ensures that at least
+            # objective_val many BBs can be covered by a set of num_abs_taken ABs.
+            assert len(chosen_abs) <= num_abs_taken
+            covered_bbs = set()
+            for ab_idx in chosen_abs:
+                covered_bbs.update(cover_map[ab_idx])
+            assert len(covered_bbs) == objective_val
 
-        return objective_val, chosen_abs
+            return objective_val, chosen_abs
+        else:
+            assert False, "No solution to coverage problem found!"
+    elif SOLVER == Z3:
+        solver = z3.Optimize()
+
+        use_ab_vars = {
+                i: z3.Int(f'use_ab_{i}')
+                    for i in range(len(all_abs)) if len(cover_map[i]) > 0
+                    # ABs that cover no BB never need to be chosen, so we cut the
+                    # variable number here a bit smaller
+            }
+
+        for i, v in use_ab_vars.items():
+            solver.add(z3.And((0 <= v), (v <= 1)))
+
+        # - 1 iff concrete block j is covered
+        cover_bb_vars = {
+                j: z3.Int(f'cover_ab_{j}')
+                    for j in candidate_bbs
+                    # Only BBs that are covered by some AB need to be considered,
+                    # more BBs to be cut.
+            }
+
+        for i, v in cover_bb_vars.items():
+            solver.add(z3.And((0 <= v), (v <= 1)))
+
+        # Constraints:
+        # - at most 10 ABs may be chosen
+        solver.add(z3.Sum([use_ab_i for i, use_ab_i in use_ab_vars.items()]) <= num_abs_taken)
+
+        # - if none of the ABs that cover a BB is chosen, that BB is not covered.
+        for j, cover_bb_j in cover_bb_vars.items():
+            solver.add(
+                    cover_bb_j <= z3.Sum([
+                        use_ab_i for i, use_ab_i in use_ab_vars.items() if j in cover_map[i]
+                    ])
+                )
+
+        # Objective: maximize the number of covered BBs
+        objective = solver.maximize(z3.Sum([cover_bb_j for j, cover_bb_j in cover_bb_vars.items()]))
+
+        status = str(solver.check())
+
+        if status == "sat":
+            objective_val = objective.upper().as_long()
+            model = solver.model()
+            chosen_abs = []
+            for i, use_ab_i in use_ab_vars.items():
+                if model[use_ab_i].as_long() > 0:
+                    chosen_abs.append(i)
+
+            # Do some sanity checks to validate the result.
+            # Without any trust in model and solver, this ensures that at least
+            # objective_val many BBs can be covered by a set of num_abs_taken ABs.
+            assert len(chosen_abs) <= num_abs_taken
+            covered_bbs = set()
+            for ab_idx in chosen_abs:
+                covered_bbs.update(cover_map[ab_idx])
+            assert len(covered_bbs) == objective_val
+
+            return objective_val, chosen_abs
+        else:
+            assert False, "No solution to coverage problem found!"
     else:
-        assert False, "No solution to coverage problem found!"
+        assert False, f"unknown solver {SOLVER}"
 
 
 
