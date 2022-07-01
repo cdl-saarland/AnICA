@@ -37,12 +37,58 @@ particular, AnICA UI and AnICA should use the same virtual python environment.
    source ./env/anica/bin/activate
    ```
 
-## Quick Start
+## Usage
+This section explains how several tasks that one might want to do with AnICA are done.
+Every AnICA command has a `--help` option documenting its command line interface.
+
+### Set up a Configuration Environment
+There are a lot of things that can be configured on AnICA.
+The first step is therefore to choose a fresh directory `$BASE_DIR` to house your AnICA configurations and to go there.
+With a shell with the environment created during installation activated, run the following commands to create initial configuration files:
+```
+cd $BASE_DIR
+anica-make-configs .
+```
+You will now find a `configs` sub directory, with three more subdirectories `abstraction`, `campaign`, and `predictors`.
+Each contains at least one example file to configure an aspect of AnICA.
+
+- The configurations in `campaign` each specify a series of AnICA campaigns.
+  A campaign config refers to an abstraction config to be used and specifies the predictors under test as well as the termination criterion and whether only instructions that are supported by all predictors under test should be considered.
+  Campaigns can terminate dependent on the number of discoveries made, on the passed time, or on the number of batches where no new discoveries were found.
+  If multiple of these are specified, the first condition among them that is satisfied after a batch terminates the campaign.
+
+- The `abstraction_config_path` field in the campaign config refers to a file in the `configs/abstraction` sub directory (relative paths that start with a `.` in any config file are interpreted relative to the config file).
+  The abstraction configs in here describe how AnICA discovers and generalizes interesting basic blocks.
+  There are numerous settings that are each described by a '.doc' field in the default file.
+
+- An important field is the `registry_path` in the `predmanager` component of an abstraction config.
+  It needs to point to a predictor registry that is located in the `configs/predictors` sub directory.
+  Here, the available predictors are declared and configured.
+  The default `pred_registry.json` only contains trivial test predictors, see (and copy+adjust from) the `pred_registry_template.json` for using actual predictors.
+  The keys used here are the ones that are also used in the campaign config to refer to the predictors.
+
+The next step is therefore to add and adjust relevant predictors to `configs/predictors/pred_registry.json`, with inspiration from `configs/predictors/pred_registry_template.json`.
+
+Once all relevant predictors are specified in the `pred_registry.json`, you can generate filter files that contain all instructions that a predictor does not support (i.e. where it fails to produce a strictly positive cycle prediction):
+```
+anica-check-predictors -w --config abstraction/default.json
+```
+The corresponding files need to be specified beforehand in the `pred_registry.json`, if you follow the ones in the `pred_registry_template.json`, the filter files will be in `configs/predictors/filters/`.
+They are used in AnICA if indicated so in the campaign config.
 
 
+### Run AnICA Campaigns
+
+
+### Generalize a specific basic block
 TODO
 
-run the tests
+### Add a new Throughput Predictor
+TODO
+
+### Add a new Feature Domain
+TODO
+
 
 ## Design and Rationale
 
@@ -53,26 +99,22 @@ A **campaign** is a run of the AnICA discovery algorithm for a (non-empty) set o
 
 Each campaign is subdivided into **batches**.
 In each batch, a fixed number of basic blocks (configured with the `discovery/discovery_batch_size` option in the abstraction config) is sampled randomly.
-Campaigns can only terminate (regularly) right after completly processing a batch.
+Campaigns can only terminate (regularly) right after completely processing a batch.
 
 
 
 ## Directory Overview
 
-* `./anica` - This directory contains the python modules that consitute the AnICA library.
+* `./anica` - This directory contains the python modules that constitute the AnICA library.
   The most notable modules are `discovery.py`, which contains the core algorithms, and `abstractblock.py` containing the implementation of the basic block abstraction.
 
 * `./tool` - This directory provides the entry-point python scripts to use AnICA.
 
 * `./scripts` - Here are several more entry-point scripts for specific tasks in the development and evaluation of AnICA.
 
-* `./configs` - Here are files that configure the behavior of AnICA.
-  - `configs/abstraction` contains configurations used in individual AnICA campaigns.
-  - `configs/campaigns` contains configurations to orchestrate groups of AnICA campaigns (which refer to abstraction configs).
-  - `configs/predictors` contains config files to register throughput predictors under investigation.
-    New configurations should be added to a installation-specific `configs/predictors/pred_registry.json`.
+* `./configs` - Here are (default) files to configure the behavior of AnICA. It is recommended to not change them here, but to use an individual configuration environment created with the `anica-make-configs` command.
 
-* `./lib` - This directory contains custom requirements for AnICA.
+* `./lib` - This directory contains custom dependencies for AnICA.
   Specifically, this is the iwho library, which is used to work with instructions, instruction schemes, and basic blocks.
 
 * `./tests` - This directory contains the testing for the AnICA module.
@@ -86,57 +128,6 @@ Campaigns can only terminate (regularly) right after completly processing a batc
 
 * `./requirements.txt` - This file lists required python modules for using AnICA. It can be installed using `pip3 -r requirements.txt` (which the `setup_venv.sh` script does, in a virtual environment).
 
-
-## How to do Common Tasks?
-This section explains how several tasks that one might want to do with AnICA are done.
-
-### Set up a Configuration Environment
-There are a lot of things that can be configured on AnICA.
-The first step is therefore to choose a fresh directory `$BASE_DIR` to house your AnICA configurations and to go there.
-With a shell where the environment created during installation activated, run the following commands to create initial configuration files:
-```
-cd $BASE_DIR
-anica-make-configs .
-```
-You will now find a `configs` sub directory, with three more subdirectories `abstraction`, `campaign`, and `predictors`.
-Each contains at least one example file to configure an aspect of AnICA.
-
-  - The configurations in `campaign` each specify a series of AnICA campaigns.
-    A campaign config refers to an abstraction config to be used and specifies the predictors under test as well as the termination criterion and whether only instructions that are supported by all predictors under test should be considered.
-    Campaigns can terminate dependent on the number of discoveries made, on the passed time, or on the number of batches where no new discoveries were found.
-    If multiple of these are specified, the first condition among them that is satisfied after a batch terminates the campaign.
-
-  - The `abstraction_config_path` field in the campaign config refers to a file in the `configs/abstraction` sub directory (relative paths that start with a `.` in any config file are interpreted relative to the config file).
-    The abstraction configs in here describe how AnICA discovers and generalizes interesting basic blocks.
-    There are numerous settings that are each described by a '.doc' field in the default file.
-
-  - An important field is the `registry_path` in the `predmanager` component of an abstraction config.
-    It needs to point to a predictor registry that is located in the `configs/predictors` sub directory.
-    Here, the available predictors are declared and configured.
-    The default `pred_registry.json` only contains trivial test predictors, see (and copy+adjust from) the `pred_registry_template.json` for using actual predictors.
-    The keys used here are the ones that are also used in the campaign config to refer to the predictors.
-
-The next step is therefore to add and adjust relevant predictors to `configs/predictors/pred_registry.json`, with inspiration from `configs/predictors/pred_registry_template.json`.
-
-Once all relevant predictors are specified in the `pred_registry.json`, you can generate filter files that contain all instructions that a predictor does not support (i.e. where it fails to produce a strictly positive cycle prediction):
-```
-anica-check-predictors -w --config abstraction/default.json
-```
-The corresponding files need to be specified beforehand in the `pred_registry.json`, if you follow the ones in the `pred_registry_template.json`, the filter files will be in `configs/predictors/filters/`.
-They are used in AnICA if indicated so in the campaign config.
-
-
-### Run AnICA Campaigns
-TODO
-
-### Generalize a specific basic block
-TODO
-
-### Add a new Throughput Predictor
-TODO
-
-### Add a new Feature Domain
-TODO
 
 
 ## TODO List
@@ -190,8 +181,8 @@ TODO
 ### Meta Features
   - [ ] make sampling deterministic (for the same seed)
   - [ ] profile running times of the components and check for bottlenecks
-  - [ ] write this README
   - [ ] document everything
+  - [X] write this README
   - [X] improve database scheme to make comparing measurements faster
 
 
