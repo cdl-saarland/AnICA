@@ -6,6 +6,7 @@ from collections import defaultdict
 ORTOOLS=0
 Z3=1
 
+# Google's ortools seem to be substantially faster here.
 SOLVER=ORTOOLS
 # SOLVER=Z3
 
@@ -23,7 +24,8 @@ def get_table_metrics(actx, all_abs, interesting_bbs, total_num_bbs):
 
     num_interesting = len(interesting_bbs)
 
-    num_interesting_bbs_covered_top10, top10_abs = compute_optimal_covering_set(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, num_abs_taken=10)
+    num_interesting_bbs_covered_top10, top10_abs = compute_heuristic_covering_set(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, num_abs_taken=10)
+    # num_interesting_bbs_covered_top10, top10_abs = compute_optimal_covering_set(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, num_abs_taken=10)
 
     percent_interesting_bbs_covered_top10 = (num_interesting_bbs_covered_top10 * 100) / num_interesting
 
@@ -51,6 +53,56 @@ def get_complete_coverage(actx, all_abs, all_bbs):
             if check_subsumed(bb, ab, precomputed_schemes=precomputed_schemes):
                 cover_map[ab_idx].add(bb_idx)
     return cover_map
+
+
+def compute_heuristic_covering_set(actx, all_abs, all_bbs, num_abs_taken):
+    """ Employ a greedy algorithm to find a non-optimal selection of
+    num_abs_taken abstract blocks from all_abs to cover a large portion of
+    all_bbs.
+
+    Returns a tuple of the size of the found large portion of all_bbs and a
+    list of the indices in all_abs of the selected abs.
+    """
+    # sort the ABs by their string representation (which should be
+    # deterministic) for a deterministic start
+    # with the idx column, we can translate the result back to indices into
+    # all_abs
+    annotated_abs = [ (ab, str(ab), idx) for idx, ab in enumerate(all_abs) ]
+    annotated_abs.sort(key=lambda x: x[1])
+    sorted_abs = [ ab for ab, s, i in annotated_abs ]
+
+    cover_map = get_complete_coverage(actx, sorted_abs, all_bbs)
+
+    covered = set()
+    recently_covered = set()
+
+    selected_abs = []
+
+    total_abs = len(sorted_abs)
+    while len(selected_abs) < min(num_abs_taken, total_abs):
+        max_val = -1
+        max_ab = None
+        max_bbs = None
+
+        for ab, bbs in cover_map.items():
+            bbs.difference_update(recently_covered)
+            if len(bbs) > max_val:
+                max_val = len(bbs)
+                max_ab = ab
+                max_bbs = bbs
+
+        assert max_ab is not None
+        selected_abs.append(max_ab)
+        recently_covered = max_bbs
+        covered.update(max_bbs)
+        del cover_map[max_ab]
+
+    # selected_abs are indices into the sorted_abs, we need to translate them
+    # to the original all_abs:
+    unsorted_indices = [ annotated_abs[sorted_idx][2] for sorted_idx in selected_abs ]
+
+    return len(covered), unsorted_indices
+
 
 
 def compute_optimal_covering_set(actx, all_abs, all_bbs, num_abs_taken):
