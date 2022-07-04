@@ -37,6 +37,16 @@ particular, AnICA UI and AnICA should use the same virtual python environment.
    source ./env/anica/bin/activate
    ```
 
+
+## Generating Documentation
+
+The API documentation can be built with [pdoc3](https://pdoc3.github.io/pdoc/).
+After installing pdoc3 (`pip install pdoc3`) in the virtual environment, run the following command to generate html documentation in the `html` directory:
+```
+pdoc --html anica --force
+```
+
+
 ## Usage
 This section explains how several tasks that one might want to do with AnICA are done.
 Every AnICA command has a `--help` option documenting its command line interface.
