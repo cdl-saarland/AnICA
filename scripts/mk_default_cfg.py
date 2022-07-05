@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" TODO document
+""" Create an explicit default abstraction config.
 """
 
 import argparse

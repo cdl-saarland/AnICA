@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" TODO document
+""" A script to visualize relationships between features.
 """
 
 import argparse

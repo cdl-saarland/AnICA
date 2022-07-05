@@ -1,4 +1,7 @@
-""" TODO document
+""" Implementation of how features are handled.
+
+The methods here completement the data structures in `anica.abstractblock`
+with a connection to the concrete features of the instruction schemes.
 """
 
 from collections import defaultdict

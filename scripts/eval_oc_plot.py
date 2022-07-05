@@ -154,8 +154,6 @@ def main():
 
         proc_pool.close()
 
-        # TODO records
-
         data = { 'preds': [], 'idx': [], 'num_covered': []}
         for r in records:
             preds = r['predictors']

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-""" TODO document
+""" A small script to compute how many of a given number of sampled concrete
+basic blocks are subsumed by a given abstract block.
 """
 
 import argparse

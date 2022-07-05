@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-"""A small script with tools to get an overview of the number of deviations
-between several BB instruction throughput predictors.
-
-TODO mode of operation
+"""A small script with tools to get an overview of the number of
+inconsistencies between several BB instruction throughput predictors.
 """
 
 import argparse
