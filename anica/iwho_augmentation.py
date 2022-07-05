@@ -1,4 +1,8 @@
-""" TODO document
+""" Functionality that is closely related to IWHO components, but specific to
+the AnICA application.
+
+Mainly, this concerns alias information on operands that we have because we
+know how AnICA samples basic blocks.
 """
 
 import iwho
@@ -56,6 +60,9 @@ class IWHOAugmentation:
         return not allowed_classes1.isdisjoint(allowed_classes2)
 
     def skip_for_aliasing(self, op_scheme):
+        """ Return `True` if the operand scheme should not be considered for
+        aliases.
+        """
         if op_scheme.is_fixed():
             operand = op_scheme.fixed_operand
             if isinstance(operand, iwho.x86.RegisterOperand):
@@ -93,6 +100,10 @@ class IWHOAugmentation:
     # similarly, r14 is a memory base register, even though we don't use it
 
     def allowed_operands(self, op_scheme):
+        """ For an operand scheme, return operands that we can use in AnICA to
+        instantiate them. They should be a subset of those allowed by the iwho
+        constraints.
+        """
         if op_scheme.is_fixed():
             return {op_scheme.fixed_operand}
         constraint = op_scheme.operand_constraint
