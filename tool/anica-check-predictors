@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 """ A small script to test whether predictors can handle all instructions.
+
+This might run for a while if the predictors are slow.
+Consider using `-w` to write failing schemes to files
 """
 
 import argparse

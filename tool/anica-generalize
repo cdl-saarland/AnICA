@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 """AnICA: Analyzing Inconsistencies of Code Analyzers
+
+This script is the entry point to generalize a single inconsistency with
+AnICA's generalization algorithm.
+Check the README for usage examples.
 """
 
 import argparse
@@ -80,7 +84,7 @@ class EndInteractive(Exception):
         self.ab = ab
 
 def interact(ab, expansions):
-    # TODO this is hacked and should be improved!
+    # this is somewhat hacked
     global finish_interactive
     if finish_interactive:
         return random.choice(expansions)
