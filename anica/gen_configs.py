@@ -1,3 +1,6 @@
+""" Helpers to generate a configuration environment with default configs for
+all relevant components.
+"""
 
 import os
 from pathlib import Path
@@ -7,6 +10,9 @@ from anica.abstractioncontext import AbstractionContext
 from iwho.configurable import store_json_config
 
 def gen_configs(dest_dir):
+    """ Insert a directory struture with config example files for all
+    AnICA components to the `dest_dir` directory.
+    """
     dest_dir = Path(dest_dir)
 
     here_dir = Path(__file__).parent
