@@ -12,14 +12,18 @@ from iwho.configurable import ConfigMeta
 
 import iwho.x86
 
-def is_memory_opscheme(opscheme):
+def is_memory_opscheme(opscheme: iwho.OperandScheme) -> bool:
+    """ Return `True` if `opscheme` is a scheme for a memory operand.
+    """
     # TODO this is x86 specific
     if opscheme.is_fixed():
         return isinstance(opscheme.fixed_operand, iwho.x86.MemoryOperand)
     else:
         return isinstance(opscheme.operand_constraint, iwho.x86.MemConstraint)
 
-def mem_access_width(opscheme):
+def mem_access_width(opscheme: iwho.OperandScheme) -> int:
+    """ Return the number of bits accessed by a memory operand `opscheme`.
+    """
     # TODO this is x86 specific
     if opscheme.is_fixed():
         return opscheme.fixed_operand.width
@@ -27,8 +31,11 @@ def mem_access_width(opscheme):
         return opscheme.operand_constraint.width
 
 
-def extract_feature(iwho_ctx, ischeme, feature):
-    """ TODO document
+def extract_feature(iwho_ctx: iwho.Context, ischeme: iwho.InsnScheme, feature: str):
+    """ Obtain the value corresponding to the given `feature` string for a
+    given InsnScheme.
+
+    If you want to add a new feature, you need to add a case here.
     """
     if feature == 'exact_scheme':
         return ischeme
@@ -88,7 +95,7 @@ def extract_feature(iwho_ctx, ischeme, feature):
 
 _default_features = [
         ["exact_scheme", "singleton"],
-        ["mnemonic", ["editdistance", 3]], # "singleton"
+        ["mnemonic", ["editdistance", 3]],
         ["opschemes", "subset"],
         ["memory_usage", "subset_or_definitely_not"],
         ["uops_on_SKL", ["log_ub", 5]],
@@ -105,9 +112,15 @@ class InsnFeatureManager(metaclass=ConfigMeta):
     It provides indices to quickly compute InsnSchemes that fulfill constraints
     given as AbstractFeatures through the `compute_feasible_schemes` method and
     it knows how to initialize abstract features.
+    The indices here are key for a decent sampling performance.
 
     Special feature names:
-        - exact_scheme
+        - exact_scheme (does not need an index because it has an obvious 1-to-1
+          mapping to the represented `InsnScheme`)
+
+    If you want to implement new feature abstractions, you need to implement
+    new cases in the `_build_index()`, `lookup()`, and
+    `init_abstract_features()` methods here.
     """
 
     config_options = dict(
@@ -134,6 +147,11 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         self.editdist_indices = dict()
 
     def _build_index(self):
+        """ Initialize the `InsnScheme` indices for each configured feature.
+
+        If you want to implement new feature abstractions, you need to
+        implement a case that is compatible to the `lookup()` method here.
+        """
         # add indices for all the relevant features
         for key, kind in self.features:
             if key in self.not_indexed:
@@ -177,6 +195,12 @@ class InsnFeatureManager(metaclass=ConfigMeta):
                     assert False, f"unknown feature kind for key {key}: {kind}"
 
     def init_abstract_features(self):
+        """ Initialize the `AbstractFeature`s for an `AbstractInsn` according
+        to the configured features.
+
+        If you want to implement new feature abstractions, you need to
+        implement a case here.
+        """
         res = dict()
         for key, kind in self.features:
             args = []
@@ -244,6 +268,9 @@ class InsnFeatureManager(metaclass=ConfigMeta):
     def lookup(self, feature_key, value):
         """ Return a set of InsnSchemes that matches the constraint implied by
         `value` on the feature given by `feature_key`.
+
+        If you want to implement new feature abstractions, you need to
+        implement a case here, using an index computed in `_build_indices`.
         """
         assert not value.is_top() and not value.is_bottom()
 
@@ -298,6 +325,11 @@ class InsnFeatureManager(metaclass=ConfigMeta):
             return res
 
     def get_editdists(self, feature_key, base):
+        """ Get a (cached) list of `(concrete_feature, edit_distance)` pairs
+        for the `base` and sort it by ascending edit distance.
+
+        This is used for the `EditDistanceAbstractFeature`.
+        """
         index = self.editdist_indices.get(feature_key)
         if index is None:
             index = dict()
@@ -315,6 +347,9 @@ class InsnFeatureManager(metaclass=ConfigMeta):
         return res
 
     def extract_features(self, ischeme: iwho.InsnScheme):
+        """ Produce a dict with values for all configured features for the
+        given `ischeme`.
+        """
         assert ischeme is not None
         remaining_features = set(self.index_order)
 

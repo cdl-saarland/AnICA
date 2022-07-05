@@ -4,6 +4,10 @@ representations of sets of 'conrete' basic blocks.
 Those abstractions have methods to sample from the represented concrete blocks,
 as well as ways to systematically extend the set of represented concrete
 blocks.
+
+The abstractions provide methods to store them to/load them from json
+dictionaries. Be sure to use a `JSONReferenceManager` to en/decode special JSON
+objects before storing / after loading json files.
 """
 
 from abc import ABC, abstractmethod
@@ -14,7 +18,7 @@ import itertools
 import math
 import random
 import textwrap
-from typing import Optional, Union, Sequence
+from typing import Union, Sequence
 
 import editdistance
 import iwho
@@ -25,18 +29,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 class SamplingError(Exception):
-    """ Something went wrong with sampling
+    """ Exception to indicate that something went wrong with sampling
     """
 
     def __init__(self, message):
         super().__init__(message)
 
-# TODO document json funcitonality, mention that acfg.introduce_json_references
-# and acfg.resolve_json_references should be used
 
 class Expandable(ABC):
     """Abstract base class for objects representing an element of a partially
-    ordered set with methods to expand the object, i.e. to change it to an
+    ordered set with methods to expand the object, i.e., to change it to an
     element that is larger.
     """
 
@@ -44,9 +46,11 @@ class Expandable(ABC):
     def get_possible_expansions(self):
         """ Return a list of possible expansions for `apply_expansion()`.
 
-        The list contains tuples of an expansion and a value that corresponds
-        to its estimated benefit in the amount of freedom that it would give
-        the sampling.
+        The list contains tuples `(expansion, (benefit, does_change))`.
+        The `expansion` can be passed to `apply_expansion`, the `benefit` is
+        the greater the more freedom it gives to the sampling (heuristically),
+        and `does_change` is `False` if applying the expansion does not affect
+        sampling at all.
         """
 
         pass
@@ -60,7 +64,13 @@ class AbstractFeature(Expandable, ABC):
     """ Abstract base class for the most atomic abstraction component.
 
     Several of these are used to abstract instructions and aliasing relations.
+
+    Instances of this class are complemented by code in the
+    `InsnFeatureManager`. If you want to add a new AbstractFeature, you will
+    need to create a new subclass here and add code to build the index in
+    `anica.insnfeaturemanager`.
     """
+
     class SpecialValue(Enum):
         """ Special values for minimal and maximal values that may be used in
         implementations of this interface.
@@ -84,29 +94,54 @@ class AbstractFeature(Expandable, ABC):
 
     @abstractmethod
     def is_top(self) -> bool:
+        """ Return `True` iff this is a maximal object in the partial order of
+        possible abstractions for this component.
+        """
         pass
 
     @abstractmethod
     def is_bottom(self) -> bool:
+        """ Return `True` iff this is a minimal object in the partial order of
+        possible abstractions for this component.
+        """
         pass
 
     @abstractmethod
     def set_to_top(self):
+        """ Change the feature to a maximal object in the partial order of
+        possible abstractions for this component.
+        """
         pass
 
     @abstractmethod
     def subsumes(self, other: "AbstractFeature") -> bool:
+        """ Return `True` if `self` is greater than `other` in the partial order
+        of possible abstractions for this component.
+        """
         pass
 
     @abstractmethod
     def subsumes_feature(self, feature) -> bool:
+        """ Return `True` if the `feature` value is represented by this abstraction.
+        """
         pass
 
     @abstractmethod
     def join(self, feature):
+        """ Expand this abstraction to also represent `feature`.
+        """
         pass
 
 class EditDistanceAbstractFeature(AbstractFeature):
+    """ An `AbstractFeature` to represent string-valued features.
+
+    An abstract value can either be TOP (and represent all strings) or
+    represent all strings whose Levenshtein editing distance from `self.base`
+    is less than or equal to `self.curr_dist`.
+    Expansions increase `self.curr_dist` if it is less than `self.max_dist` or
+    set it to TOP otherwise.
+    """
+
     def __init__(self, max_dist):
         self.top = False
         self.base = None
@@ -201,9 +236,16 @@ class EditDistanceAbstractFeature(AbstractFeature):
 
 
 class LogUpperBoundAbstractFeature(AbstractFeature):
-    """ An abstract feature that constrains the represented insn schemes with
+    """ An `AbstractFeature` that constrains the represented `InsnScheme`s with
     an upper bound on the number of entries in the concrete feature.
+    The feature values are expected to be sets of objects.
     Upper bounds are restricted to powers of two until some fixed maximum.
+
+
+    An abstract value can either be TOP (and represent all sets) or
+    represent all sets whose size is smaller than `self.val ** 2`.
+    Expansions increase `self.val` if it is less than `self.max_ub` or
+    set it to TOP otherwise.
     """
     def __init__(self, max_ub):
         self.val = AbstractFeature.BOTTOM
@@ -285,6 +327,13 @@ class LogUpperBoundAbstractFeature(AbstractFeature):
 
 
 class SingletonAbstractFeature(AbstractFeature):
+    """ An `AbstractFeature` to represent any kind of feature.
+
+    An abstract value can either be TOP (and represent all values) or
+    represent a specific value stored in `self.val`.
+    Expansions set it to TOP.
+    """
+
     def __init__(self):
         self.val = AbstractFeature.BOTTOM
 
@@ -365,8 +414,10 @@ class SingletonAbstractFeature(AbstractFeature):
 
 
 class SubSetAbstractFeature(AbstractFeature):
-    """ Represents all sets of items that are a (non-strict) superset of
-    self.val.
+    """ An `AbstractFeature` to represent all sets of arbitrarily-valued items
+    that are a (non-strict) superset of `self.val`.
+
+    Expansions remove an item from `self.val`.
     """
     def __init__(self):
         self.val = AbstractFeature.BOTTOM
@@ -458,7 +509,7 @@ class SubSetAbstractFeature(AbstractFeature):
 
 
 class SubSetOrDefinitelyNotAbstractFeature(AbstractFeature):
-    r""" An abstract domain for representing all sets of items that are a
+    r""" An `AbstractFeature` for representing all sets of items that are a
     (non-strict) superset of a set of feature values and the set of items where
     no feature value applies.
 
@@ -607,8 +658,12 @@ class SubSetOrDefinitelyNotAbstractFeature(AbstractFeature):
                 self.subfeature.join(feature)
 
 class AbstractInsn(Expandable):
-    """ An instance of this class represents a set of (concrete) InsnSchemes
+    """ An instance of this class represents a set of (concrete) `InsnScheme`s
     that share certain features.
+
+    The represented `InsnSchemes` are determined as the set of `InsnSchemes`
+    whose feature values are represented by the corresponding abstractions in
+    `self.features`.
     """
 
     def __init__(self, actx: "AbstractionContext"):
@@ -713,8 +768,8 @@ class AbstractInsn(Expandable):
         self.features[key].apply_expansion(inner_expansion)
 
     def subsumes(self, other: "AbstractInsn") -> bool:
-        """ Check if all concrete instruction instances represented by other
-        are also represented by self.
+        """ Check if all concrete instruction instances represented by `other`
+        are also represented by `self`.
         """
         for k, abs_feature in self.features.items():
             other_feature = other.features[k]
@@ -724,12 +779,12 @@ class AbstractInsn(Expandable):
         return True
 
     def join(self, insn_scheme: Union[iwho.InsnScheme, None]):
-        """ Update self so that it additionally represents all instances of
-        insn_scheme (and possibly, due to over-approximation, even more
-        insn instances).
+        """ Update `self` so that it additionally represents all instances of
+        `insn_scheme` (and possibly, due to over-approximation, even more
+        instruction instances).
 
-        If insn_scheme is None, the instruction is considered "not present" in
-        the basic block.
+        If `insn_scheme` is `None`, the instruction is considered "not present"
+        in the basic block.
         """
 
         insn_features = self.actx.insn_feature_manager.extract_features(insn_scheme)
@@ -741,7 +796,9 @@ class AbstractInsn(Expandable):
         """ Randomly choose one from the set of concrete instruction schemes
         represented by this abstract instruction.
 
-        No scheme from the insn_scheme_blacklist will be chosen.
+        No scheme from the `insn_scheme_blacklist` will be chosen.
+
+        Raises a `SampingError` if sampling fails.
         """
         feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(self.features)
 
@@ -752,6 +809,13 @@ class AbstractInsn(Expandable):
         return random.choice(tuple(feasible_schemes))
 
     def precompute_sampler(self, insn_scheme_blacklist: Sequence[iwho.InsnScheme]=[]):
+        """ Compute the common expensive components to `sample` and return a
+        dummy object with a `sample` method that is equivalent but faster to
+        `self.sample`.
+
+        Using this is a good idea if you want to sample several times from the
+        same `AbstractInsn`.
+        """
         feasible_schemes = self.actx.insn_feature_manager.compute_feasible_schemes(self.features)
         feasible_schemes.difference_update(insn_scheme_blacklist)
 
@@ -766,10 +830,13 @@ def _lists2tuples(obj):
 
 
 def _transitive_closure(same):
-    """ Expand the symmetric relation implied by same to its transitive closure.
+    """ Expand the symmetric relation implied by `same` to its transitive
+    closure.
 
-    same is expexted to be a dictionary mapping things X to sets of different
+    `same` is expected to be a dictionary mapping things X to sets of different
     things that are related to X.
+    It needs to be symmetric, so whenever an entry `X -> {..., Y, ...}` is in
+    the dictionary, there needs to be an inverse entry `Y -> {..., X, ...}`.
     """
     total_steps = 0
     for k in same.keys():
@@ -798,10 +865,14 @@ def _transitive_closure(same):
 class AbstractAliasInfo(Expandable):
     """ An object of this class represents the aliasing relationships between
     (operands of) instructions of a basic block.
+
+    Operands are represented as pairs of an index of an `AbstractInsn` in the
+    `AbstractBlock` and an operand index for that `AbstractInsn`.
     """
 
     def __init__(self, actx):
         self.actx = actx
+
         # A mapping from pairs of (instruction index, operand index) pairs to a
         # boolean SingletonAbstractFeature.
         # An entry for (op1, op2) means "if op1 and op2 allow for aliasing,
@@ -1228,7 +1299,7 @@ class AbstractAliasInfo(Expandable):
         return bb
 
 class AbstractBlock(Expandable):
-    """ An instance of this class represents a set of (concrete) BasicBlocks.
+    """ An instance of this class represents a set of (concrete) basic blocks.
     """
 
     def __init__(self, actx: "AbstractionContext", bb: iwho.BasicBlock):
@@ -1249,6 +1320,9 @@ class AbstractBlock(Expandable):
 
     @staticmethod
     def make_top(actx, num_insns):
+        """ Create a new `AbstractBlock` and initialize it to represent all
+        basic blocks.
+        """
         res = AbstractBlock(actx, None)
         for x in range(num_insns):
             ai = AbstractInsn(actx)
@@ -1397,10 +1471,10 @@ class AbstractBlock(Expandable):
 
         No scheme from the insn_scheme_blacklist will be chosen.
 
-        May throw a SamplingError in case sampling is not possible. This could
-        be because the constraints are actually contradictory (rather uncommon)
-        or because the polynomial sampling algorithm took a wrong path trying
-        to solve the NP-hard sampling problem.
+        May throw a `SamplingError` in case sampling is not possible. This
+        could be because the constraints are actually contradictory (rather
+        uncommon) or because the polynomial sampling algorithm took a wrong
+        path trying to solve the NP-hard sampling problem.
         """
         insn_schemes = []
         for ai in self.abs_insns:
@@ -1414,6 +1488,13 @@ class AbstractBlock(Expandable):
         return bb
 
     def precompute_sampler(self, insn_scheme_blacklist: Sequence[iwho.InsnScheme]=[]):
+        """ Compute the common expensive components to `sample` and return a
+        dummy object with a `sample` method that is equivalent but faster to
+        `self.sample`.
+
+        Using this is a good idea if you want to sample several times from the
+        same `AbstractBlock`.
+        """
         res = AbstractBlock(self.actx, bb=None)
 
         sampler_absinsns = []
@@ -1462,6 +1543,10 @@ class AbstractBlock(Expandable):
 
 
 class PrecomputedSamplerAbsInsn:
+    """ A dummy replacement for `AbstractInsn`s that only support sampling from
+    a pre-computed set of `iwho.InsnScheme`s.
+    """
+
     def __init__(self, allowed_schemes):
         self.allowed_schemes = tuple(allowed_schemes)
 

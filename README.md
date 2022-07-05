@@ -96,7 +96,7 @@ They are used in AnICA if indicated so in the campaign config.
 
 
 ### Run AnICA Campaigns
-
+TODO
 
 ### Generalize a specific basic block
 TODO
@@ -104,8 +104,28 @@ TODO
 ### Add a new Throughput Predictor
 TODO
 
-### Add a new Feature Domain
-TODO
+### Add a new Feature Kind
+If you want to expand AnICA to reason about new aspects of instruction schemes, you will need to add a new feature to the `InsnFeatureManager`.
+It is located in the `anica.insnfeaturemanager` module.
+
+You need to expand the `extract_feature` function there with a case that extracts the desired information from any given `InsnScheme`.
+
+A shortcut for this implementation is possible if you only want to extract the feature from the uops.info xml file.
+Then, you can just expand the `extract_features` function in `lib/iwho/scripts/scheme_extractor_uops_info.py` to add a value for the feature to the results dictionary (and regenerate the instruction schemes there with `lib/iwho/build_schemes.sh`).
+The default case in the `InsnfeatureManager` tries to look up any unknown feature there.
+
+With the `extract_feature` case in place, you can add an entry for the feature in the `insn_feature_manager.features` list in your abstraction configuration, and optionally also to the `_default_features` in the `anica.insnfeaturemanager` module.
+
+
+### Add a new Feature Abstraction
+If you want to expand AnICA with a new way of representing subsets of instruction schemes, you need to implement a new abstract feature.
+
+Start by implementing a new subclass of `AbstractFeature` in `anica.abstractblock` (and feel free to take inspiration from the existing ones).
+Additionally, you need to extend the `lookup()` and `init_abstract_features()` methods in the `InsnFeatureManager` (in the `anica.insnfeaturemanager` module).
+The latter determines the interaction with `insn_feature_manager.features` entries in your abstraction config and needs to initialize an object of your `AbstractFeature` implementation.
+The former queries for a set of `InsnScheme`s that match an instance of your `AbstractFeature`.
+For decent performance, your `lookup` implementation should use an index whose construction you can implement in the `_build_index()` method.
+Take inspiration from the documentation there and the existing abstract features.
 
 
 ## Design and Rationale
