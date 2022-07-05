@@ -1,4 +1,5 @@
-""" TODO document
+""" Functions to compute metrics on how many basic blocks from a given set are
+covered by a set of abstract blocks.
 """
 
 from collections import defaultdict
@@ -20,6 +21,12 @@ else:
 from anica.satsumption import check_subsumed
 
 def get_table_metrics(actx, all_abs, interesting_bbs, total_num_bbs):
+    """ Compute a metrics corresponding to the evaluation table in the AnICA
+    paper for a selection of `AbstractBlock`s and interesting concrete basic
+    blocks. `total_num_bbs` should be the total number of (interesting and
+    non-interesting) basic blocks in the set from which the `interesting_bbs`
+    were taken.
+    """
     interesting_str, interesting_dict, interesting_covered_per_ab = get_coverage_metrics(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs)
 
     num_interesting = len(interesting_bbs)
@@ -42,6 +49,10 @@ def get_table_metrics(actx, all_abs, interesting_bbs, total_num_bbs):
     return result
 
 def get_complete_coverage(actx, all_abs, all_bbs):
+    """ Compute a dictionary that contains for each abstract block a set of all
+    concrete basic blocks that it subsumes. Both entity kinds are represented
+    by numerical indices into the argument lists.
+    """
     cover_map = defaultdict(set)
 
     for ab_idx, ab in enumerate(all_abs):
@@ -246,6 +257,8 @@ def compute_optimal_covering_set(actx, all_abs, all_bbs, num_abs_taken):
 
 
 def get_coverage_metrics(actx, all_abs, all_bbs):
+    """ Legacy function to compute more coverage metrics in scripts.
+    """
     covered = []
 
     not_covered = all_bbs
