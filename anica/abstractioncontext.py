@@ -1,4 +1,8 @@
-""" TODO document
+""" Collection of global, configurable objects that AnICA needs.
+
+The center is the `AbstractionContext` which encapsulates all such objects.
+It basically covers all the configuration options specified in an abstraction
+config.
 """
 
 from copy import deepcopy
@@ -17,6 +21,8 @@ from iwho.configurable import ConfigMeta
 import iwho
 
 class DiscoveryConfig(metaclass=ConfigMeta):
+    """ Configuration options for the discovery and generalization algorithm.
+    """
     config_options = dict(
         discovery_batch_size = (20,
             'the number of basic blocks to sample at a time when looking for '
@@ -39,6 +45,8 @@ class DiscoveryConfig(metaclass=ConfigMeta):
 
 
 class SamplingConfig(metaclass=ConfigMeta):
+    """ Configuration options for the basic block sampling process.
+    """
     config_options = dict(
             wrap_in_loop = (False,
                 'if true, enclose the sampled basic blocks with a simple loop '
@@ -53,12 +61,12 @@ class SamplingConfig(metaclass=ConfigMeta):
 
 class AbstractionContext:
     """ An instance of the Context pattern to collect and manage the necessary
-    objects for performing a deviation discovery campaign.
+    objects for performing an AnICA discovery campaign.
     """
 
     def __init__(self, config, restrict_to_insns_for=None):
         """
-        restrict_to_insns_for: If a list of predictor keys is provided, the
+        `restrict_to_insns_for`: If a list of predictor keys is provided, the
         iwho context will be restricted to instructions that are supported by
         all of these predictors (additionally to restrictions specified in the
         iwho config).
