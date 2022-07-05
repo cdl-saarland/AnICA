@@ -1,3 +1,6 @@
+""" Methods to configure and compute when groups of throughput predictions for
+a basic block are interesting.
+"""
 
 import math
 from typing import Sequence
@@ -39,7 +42,7 @@ class InterestingnessMetric(metaclass=ConfigMeta):
     def compute_interestingness(self, eval_res):
         """ Compute the interestingness of a number of evaluation results.
 
-        If use_absolute_difference is not given:
+        If `use_absolute_difference` is not given:
             Compute a (symmetric) relative difference between the throughputs.
         If it is:
             Compute the absolute difference between the largest and the
