@@ -101,8 +101,14 @@ TODO
 ### Generalize a specific basic block
 TODO
 
+### Add a new Throughput Predictor Configuration
+If you want to use a throughput predictor witha provided wrapper with new command line options, you just need to add a new entry to the json dict in `predictors/pred_registry.json` in your AnICA config environment with a suitable unique key.
+You may take inspiration from the `predictors/pred_registry_template.json` template collection.
+
 ### Add a new Throughput Predictor
-TODO
+To evaluate a new throughput predictor, you need to implement a new wrapper for it in the `iwho.predictors` package.
+Be sure to base your wrapper on one or more of the existing ones, and to add the new one to the available classes in `lib/iwho/iwho/predictors/__init__.py`.
+Lastly, you need to add a corresponding entry to the predictor registry in your configuration environment.
 
 ### Add a new Feature Kind
 If you want to expand AnICA to reason about new aspects of instruction schemes, you will need to add a new feature to the `InsnFeatureManager`.
