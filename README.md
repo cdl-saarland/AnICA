@@ -128,19 +128,6 @@ For decent performance, your `lookup` implementation should use an index whose c
 Take inspiration from the documentation there and the existing abstract features.
 
 
-## Design and Rationale
-
-For the theoretical workings of AnICA, please refer to the paper (TODO: link).
-
-### Campaign Structure
-A **campaign** is a run of the AnICA discovery algorithm for a (non-empty) set of basic block throughput predictors.
-
-Each campaign is subdivided into **batches**.
-In each batch, a fixed number of basic blocks (configured with the `discovery/discovery_batch_size` option in the abstraction config) is sampled randomly.
-Campaigns can only terminate (regularly) right after completely processing a batch.
-
-
-
 ## Directory Overview
 
 * `./anica` - This directory contains the python modules that constitute the AnICA library.
