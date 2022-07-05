@@ -204,6 +204,11 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         per_batch_entry['sampling_time'] = sampling_time
 
         if len(concrete_bbs) == 0:
+            per_batch_entry['num_interesting'] = 0
+            per_batch_entry['interestingness_time'] = 0
+            per_batch_entry['per_interesting_sample_stats'] = []
+            per_batch_entry['num_interesting_subsumed'] = 0
+            per_batch_entry['batch_time'] = 0
             report['seconds_passed'] = (datetime.now() - start_time).total_seconds()
             write_report()
 
