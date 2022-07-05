@@ -1,3 +1,6 @@
+""" A selection of helpful tools, in particular: for measuring the run time of
+code portions.
+"""
 
 from collections import defaultdict
 import functools
@@ -10,9 +13,15 @@ import logging
 
 
 class TimerDeco:
+    """ Function decorators to measure the (accumulated) time spent between
+    entering a function and returning from it.
+
+    Use the Timer and Sub static methods to decorate with a toplevel timer or a
+    subtimer.
+    """
+
     @staticmethod
     def Timer(**timer_args):
-        """TODO document"""
         def timer_deco_impl(func):
             @functools.wraps(func)
             def timer_wrapper_impl(*inner_args, **inner_kwargs):
