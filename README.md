@@ -13,12 +13,20 @@ There is a webapp-based user interface to explore AnICA campaigns.
 An installation of the UI contains a full AnICA installation, you might
 therefore consider to just install the UI.
 
+## Maturity
+
+This is a research prototype, expect things to break!
+
 
 ## Installation
 
 These steps are for installing AnICA on its own. If you install AnICA as part
 of the AnICA UI, follow the steps there instead of the ones here. In
 particular, AnICA UI and AnICA should use the same virtual python environment.
+
+Make sure that you have `llvm-mc` on your path (most likely by installing [LLVM](https://llvm.org/)).
+It is used by the IWHO subcomponent (at `lib/iwho`) to handle basic instruction (dis)assembly tasks.
+Furthermore, you need a python3 setup with the `venv` standard module available.
 
 1. Get the repository and its submodule(s):
     ```
@@ -31,7 +39,7 @@ particular, AnICA UI and AnICA should use the same virtual python environment.
    ```
    ./setup_venv.sh
    ```
-   Whenever you run AnICA commands, from a shell, you need to have activated
+   Whenever you run AnICA commands from a shell, you need to have activated
    the virtual environment in this shell before:
    ```
    source ./env/anica/bin/activate
