@@ -45,6 +45,7 @@ generated_html/
 
 # venv stuff
 env
+html
 
 *.egg-info
 dist/
