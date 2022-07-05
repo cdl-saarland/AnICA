@@ -168,7 +168,7 @@ Take inspiration from the documentation there and the existing abstract features
 ## Directory Overview
 
 * `./anica` - This directory contains the python modules that constitute the AnICA library.
-  The most notable modules are `discovery.py`, which contains the core algorithms, and `abstractblock.py` containing the implementation of the basic block abstraction.
+  The most notable modules are `anica.discovery`, which contains the core algorithms, and `anica.abstractblock` containing the implementation of the basic block abstraction.
 
 * `./tool` - This directory provides the entry-point python scripts to use AnICA.
 
