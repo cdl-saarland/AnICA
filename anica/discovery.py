@@ -1,3 +1,5 @@
+""" Implementation of the core AnICA algorithms: discovery and generalization.
+"""
 
 from typing import Optional, Sequence
 from copy import deepcopy
@@ -63,7 +65,7 @@ def sample_block_list(abstract_bb, num, insn_scheme_blacklist=None, remarks=None
 
 
 def discover(actx: AbstractionContext, termination={}, start_point: Optional[AbstractBlock] = None, out_dir: Optional[Path]=None):
-    """ Run the central deviation discovery algorithm.
+    """ Run the central inconsistency discovery algorithm.
 
     If an AbstractBlock is given as `start_point`, discovery will only sample
     from it for finding new starting points for generalization. Otherwise, a
@@ -95,7 +97,6 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
 
     discovery_batch_size = actx.discovery_cfg.discovery_batch_size
 
-    # TODO allow previous ones
     discoveries = []
 
     max_num_batches = math.inf
@@ -215,7 +216,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
             logger.info("terminating discovery loop: failed to sample any concrete blocks")
             break
 
-        # TODO we might want to avoid generating the result_ref here, to allow more parallelism
+        # TODO improvement: we could avoid generating the result_ref here, to allow more parallelism
         start_interestingness_time = datetime.now()
         interesting_bbs, result_ref = actx.interestingness_metric.filter_interesting(concrete_bbs)
         interestingness_time = ((datetime.now() - start_interestingness_time) / timedelta(milliseconds=1)) / 1000
@@ -367,6 +368,7 @@ def discover(actx: AbstractionContext, termination={}, start_point: Optional[Abs
         report['num_batches'] = curr_num_batches
         write_report()
 
+    # the final subsumption check happens in `add_metrics.py` in the AnICA UI.
     return discoveries
 
 def minimize(actx, concrete_bb):
@@ -444,7 +446,7 @@ def generalize(actx: AbstractionContext, abstract_bb: AbstractBlock, strategy: s
     # results
     do_not_expand = set()
 
-    while True: # TODO add a termination condition, e.g. based on a budget adjusted by potential usefulness? At least a fixed upper bound should exist, so that a bug in the expansion cannot lead to endless loops
+    while True:
         # create a deepcopy to expand
         working_copy = deepcopy(abstract_bb)
 
