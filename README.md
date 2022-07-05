@@ -96,10 +96,41 @@ They are used in AnICA if indicated so in the campaign config.
 
 
 ### Run AnICA Campaigns
-TODO
+Make sure that you are in your AnICA configuration environment and that the AnICA virtual environment is activated.
+Then, choose (or adjust) a campaign configuration file in `./configs/campaign` (and, if necessary, the other config files it references) so that it specifies the campaign(s) you want to run.
 
-### Generalize a specific basic block
-TODO
+Optionally, you can check your campaign config first:
+```
+anica-discover -c ./configs/campaign/<your-config>.json ./results/ --check-config
+```
+If successful, it estimates the time required for all campaigns that have a time-based termination condition.
+The check-config command does create subdirectories in the specified `./results` directory, you might want to remove them before running the actual campaigns.
+
+Finally, you can run your campaigns for real.
+This can take a while (and, depending on your configuration, might never terminate).
+```
+anica-discover -c ./configs/campaign/<your-config>.json ./results/
+```
+The campaign results are written to subdirectories of the specified `./results` directory (or any other directory you specify).
+You can now add metrics to them and import them to the AnICA UI for inspection.
+
+
+### Generalize a Specific Basic Block
+Make sure that you are in your AnICA configuration environment and that the AnICA virtual environment is activated.
+Then, choose (or adjust) an abstraction configuration file in `./configs/abstraction` (and, if necessary, the other config files it references) so that it specifies the generalization parameters you want to use.
+
+Write the basic block that you want to generalize in textual assembly form to a file.
+
+Run the generalization as follows:
+```
+anica-generalize -c ./configs/abstraction/<your-config>.json -o ./results <your-asm-file>.s <first-predictor-key> <second-predictor-key>
+```
+The generalization results are written to subdirectories of the specified `./results` directory (or any other directory you specify).
+You can now import them to the AnICA UI for inspection.
+
+If you provide the `-i` flag, you enter the "text adventure mode", where you can interactively select which generalization steps should be performed.
+Check `--help` for more possible arguments.
+
 
 ### Add a new Throughput Predictor Configuration
 If you want to use a throughput predictor witha provided wrapper with new command line options, you just need to add a new entry to the json dict in `predictors/pred_registry.json` in your AnICA config environment with a suitable unique key.
