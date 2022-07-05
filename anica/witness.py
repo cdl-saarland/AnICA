@@ -1,3 +1,9 @@
+""" Implementation of a representation of the generalization tree, i.e., the
+trace expansions performed in an AnICA generalization.
+
+These traces can be visualized in the AnICA UI.
+"""
+
 from copy import deepcopy
 import json
 from typing import Optional
@@ -8,6 +14,22 @@ from .abstractblock import AbstractBlock
 from iwho.configurable import store_json_config, load_json_config
 
 class WitnessTrace:
+    """ Representation of a generalization tree, i.e., the trace expansions
+    performed in an AnICA generalization.
+
+    Traces are characterized by a starting AbstractBlock (typically
+    representing a small number of basic blocks) and a sequence of `Witness`es
+    for the steps of the generalization algorithm.
+    A step can
+    - reject an expansion (the expanded AbstractBlock is a leaf in the
+      generalization tree, generalization continues from the previous
+      candidate AbstractBlock)
+    - take an expansion (the expanded AbstractBlock is not a leaf in the tree,
+      generalization continues from the new AbstractBlock).
+    - terminate (a leaf, if no more helpful expansions are possible).
+
+    """
+
     class Witness:
         def __init__(self, expansion, taken: bool, terminate: bool, comment: Optional[str], measurements):
             self.expansion = expansion
@@ -24,7 +46,6 @@ class WitnessTrace:
             return WitnessTrace.Witness(**json_dict)
 
     def __init__(self, abs_block):
-        # TODO this should probably contain the config as well
         self.start = deepcopy(abs_block)
         self.trace = []
 
@@ -59,6 +80,12 @@ class WitnessTrace:
         self.trace.append(witness)
 
     def replay(self, index=None, validate=False):
+        """ Replay a portion of the generalization steps in this trace, up to
+        the specified `index` (or the entire trace, if `index` is `None`) and
+        return the resulting AbstractBlock.
+        If `validate` is `True`, check at each step that the new
+        `AbstractBlock` really expands the old one.
+        """
         if index is None:
             trace = self.trace
         else:
@@ -80,6 +107,10 @@ class WitnessTrace:
         return res
 
     def iter(self, taken_only=False):
+        """ Co-routine to iterate over the trace, enumerating all considered
+        `AbstractBlock` candidates. If `taken_only` is `True`, skip all
+        rejected candidates.
+        """
         res = deepcopy(self.start)
         for witness in self.trace:
             if witness.terminate:
@@ -142,6 +173,8 @@ class WitnessTrace:
         return trace
 
     def to_dot(self):
+        """ Visualize the generalization tree in the graphviz format.
+        """
         g = Digraph()
 
         running_id = 0
