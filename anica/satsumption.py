@@ -321,8 +321,8 @@ def ab_coverage(ab, num_samples, bb_len=None):
 
 def check_subsumed_aa_arbitrary_order(ab1, ab2, print_assignment=False):
     """ IMPORTANT!
-    THIS IMPLEMENTATION HAS BEEN DEEMED UNREASONABLE since changing up the
-    order affects the block semeantics probably too severly.
+    This implementation should not be used since changing up the order affects
+    the block semeantics probably too severly.
 
     Check whether ab2 represents all concrete blocks that ab1 represents
     (wrt the abstraction context).
@@ -432,7 +432,7 @@ def check_subsumed_aa_arbitrary_order(ab1, ab2, print_assignment=False):
 
 def check_subsumed_arbitrary_order(bb: BasicBlock, ab: AbstractBlock, print_assignment=False, precomputed_schemes=None):
     """ IMPORTANT!
-    THIS IMPLEMENTATION HAS BEEN DEEMED UNREASONABLE since changing up the
+    This implementation should not be used since changing up the
     order affects the block semeantics probably too severly.
 
     Check if the concrete basic block bb contains a pattern that is
