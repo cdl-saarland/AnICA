@@ -1,4 +1,8 @@
-""" TODO document
+""" Implementation of a purely random exploration of the space of basic blocks
+to find inconsistencies. AnICA's algorithm is designed to be more helpful than
+this.
+
+Currently unused.
 """
 
 from collections import defaultdict
@@ -14,6 +18,10 @@ import iwho
 import iwho.x86 as x86
 
 def explore(ctx, schemes, predman, result_base_path, *, max_num_insns=10, num_batches=10, batch_size=10):
+    """ Sample `num_batches` * `batch_size` random basic blocks with at most
+    `max_num_insns` instructions, use predictors to estimate their throughput,
+    and store the results.
+    """
     instor = x86.RandomRegisterInstantiator(ctx)
 
     base_dir = pathlib.Path(result_base_path)
