@@ -45,6 +45,8 @@ def main():
 
     argparser.add_argument('--loop', action='store_true', help='if set, loop through the campaign config indefinitely')
 
+    argparser.add_argument('--split-configs', action='store_true', help='if set, only dump all campaign configs in individual files to the destination directory and terminate')
+
     argparser.add_argument('--check-config', action='store_true', help='if set, do not do any real discovery, only check that the configuration is plausible')
 
     argparser.add_argument('-s', '--seed', type=int, default=default_seed, metavar="N",
@@ -85,6 +87,13 @@ def main():
             print(f"config template expanded to {num_pairs} configs")
         else:
             all_campaign_configs.append(c)
+
+    if args.split_configs:
+        for idx, config in enumerate(all_campaign_configs):
+            pred_str = "_v_".join(config['predictors'])
+            fn = outdir / "campaign_{:03}_{}.json".format(idx, pred_str)
+            store_json_config(config, fn)
+        sys.exit(0)
 
     # to not require interactivity: query for the sudo password once, in the
     # beginning, if necessary
