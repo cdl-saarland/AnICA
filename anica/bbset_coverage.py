@@ -20,7 +20,7 @@ else:
 
 from anica.satsumption import check_subsumed
 
-def get_table_metrics(actx, all_abs, interesting_bbs, total_num_bbs):
+def get_table_metrics(actx, all_abs, interesting_bbs, total_num_bbs, heuristic=False):
     """ Compute a metrics corresponding to the evaluation table in the AnICA
     paper for a selection of `AbstractBlock`s and interesting concrete basic
     blocks. `total_num_bbs` should be the total number of (interesting and
@@ -31,8 +31,10 @@ def get_table_metrics(actx, all_abs, interesting_bbs, total_num_bbs):
 
     num_interesting = len(interesting_bbs)
 
-    num_interesting_bbs_covered_top10, top10_abs = compute_heuristic_covering_set(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, num_abs_taken=10)
-    # num_interesting_bbs_covered_top10, top10_abs = compute_optimal_covering_set(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, num_abs_taken=10)
+    if heuristic:
+        num_interesting_bbs_covered_top10, top10_abs = compute_heuristic_covering_set(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, num_abs_taken=10)
+    else:
+        num_interesting_bbs_covered_top10, top10_abs = compute_optimal_covering_set(actx=actx, all_abs=all_abs, all_bbs=interesting_bbs, num_abs_taken=10)
 
     percent_interesting_bbs_covered_top10 = (num_interesting_bbs_covered_top10 * 100) / num_interesting
 
