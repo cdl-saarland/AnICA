@@ -3,6 +3,7 @@ covered by a set of abstract blocks.
 """
 
 from collections import defaultdict
+import itertools
 
 ORTOOLS=0
 Z3=1
@@ -307,3 +308,75 @@ def get_coverage_metrics(actx, all_abs, all_bbs):
             'percent_not_covered': percent_not_covered,
         }
     return res_str, res_dict, covered_per_ab
+
+
+def make_heatmap(keys, data, err_threshold, paper_mode=False):
+    import pandas as pd
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    all_keys = set(keys)
+    all_keys.discard('bb')
+    all_keys = sorted(all_keys)
+    if paper_mode:
+        all_keys = [
+            "iaca.hsw",
+            "llvm-mca.13-r+a.hsw",
+            "llvm-mca.9-r+a.hsw",
+            "osaca.0.4.6.hsw",
+            "uica.hsw",
+            "ithemal.bhive.hsw",
+            "difftune.artifact.hsw",
+        ]
+
+    def latex_pred_name(x):
+        if paper_mode:
+            components = x.split('.')
+            if x.startswith('llvm-mca'):
+                return "llvm-mca " + components[1].split('-')[0]
+            elif x.startswith('iaca'):
+                return "IACA"
+            elif x.startswith('uica'):
+                return "uiCA"
+            elif x.startswith('difftune'):
+                return "DiffTune"
+            elif x.startswith('osaca'):
+                return "OSACA"
+            elif x.startswith('ithemal'):
+                return "Ithemal"
+            else:
+                return components[0]
+        else:
+            return x
+
+    heatmap_data = defaultdict(dict)
+    # for k1, k2 in itertools.product(all_keys, repeat=2):
+    for k1, k2 in itertools.combinations_with_replacement(all_keys, r=2):
+        res = 0
+        for row in data:
+            # TODO improvement: use a generalized version from interestingness.py
+            values = [float(row[k1]), float(row[k2])]
+            if any(map(lambda x: x <= 0, values)):
+                res += 1
+                continue
+            rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
+            if rel_error >= err_threshold:
+                res += 1
+        heatmap_data[latex_pred_name(k1)][latex_pred_name(k2)] = 100 * res / len(data)
+
+    df = pd.DataFrame(heatmap_data)
+    cmap = sns.color_palette("rocket", as_cmap=True)
+
+    fig, ax = plt.subplots(figsize=(8.0,6.0))
+    p = sns.heatmap(df, annot=True, fmt=".0f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=100.0, ax=ax, cbar_kws={'format': '%.0f%%', 'label': f"% of blocks with rel. difference > {100 * err_threshold:.0f}%"})
+    # plt.title(f"Percentage of blocks with a rel. error >= {err_threshold} on a set of {len(data)} blocks")
+
+    # locs, labels = plt.xticks()
+    # plt.setp(labels, rotation=30)
+    p.set_xticklabels(p.get_xticklabels(), rotation=30, horizontalalignment='right')
+
+    fig.tight_layout()
+
+    return fig
+
+

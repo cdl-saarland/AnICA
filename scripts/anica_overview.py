@@ -7,7 +7,6 @@ inconsistencies between several BB instruction throughput predictors.
 import argparse
 from collections import defaultdict
 import csv
-import itertools
 
 import os
 import random
@@ -21,77 +20,11 @@ sys.path.append(import_path)
 
 from anica.abstractblock import AbstractBlock, SamplingError
 from anica.abstractioncontext import AbstractionContext
+from anica.bbset_coverage import make_heatmap
 from iwho.configurable import load_json_config
 
 import logging
 logger = logging.getLogger(__name__)
-
-def make_heatmap(keys, data, err_threshold, filename='heatmap.png'):
-    import pandas as pd
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-
-    all_keys = set(keys)
-    all_keys.discard('bb')
-    all_keys = sorted(all_keys)
-    print(",\n".join(map(lambda x: '"' + x + '"', all_keys)))
-    all_keys = [
-        "iaca.hsw",
-        "llvm-mca.13-r+a.hsw",
-        "llvm-mca.9-r+a.hsw",
-        "osaca.0.4.6.hsw",
-        "uica.hsw",
-        "ithemal.bhive.hsw",
-        "difftune.artifact.hsw",
-        # "llvm-mca.8-r+a.hsw",
-    ]
-
-    def latex_pred_name(x):
-        components = x.split('.')
-        if x.startswith('llvm-mca'):
-            return "llvm-mca " + components[1].split('-')[0]
-        elif x.startswith('iaca'):
-            return "IACA"
-        elif x.startswith('uica'):
-            return "uiCA"
-        elif x.startswith('difftune'):
-            return "DiffTune"
-        elif x.startswith('osaca'):
-            return "OSACA"
-        elif x.startswith('ithemal'):
-            return "Ithemal"
-        else:
-            return components[0]
-
-    heatmap_data = defaultdict(dict)
-    # for k1, k2 in itertools.product(all_keys, repeat=2):
-    for k1, k2 in itertools.combinations_with_replacement(all_keys, r=2):
-        print(f"{k1}, {k2}")
-        res = 0
-        for row in data:
-            # TODO use a generalized version from interestingness.py
-            values = [float(row[k1]), float(row[k2])]
-            if any(map(lambda x: x <= 0, values)):
-                res += 1
-                continue
-            rel_error = ((max(values) - min(values)) / sum(values)) * len(values)
-            if rel_error >= err_threshold:
-                res += 1
-        heatmap_data[latex_pred_name(k1)][latex_pred_name(k2)] = 100 * res / len(data)
-
-    df = pd.DataFrame(heatmap_data)
-    cmap = sns.color_palette("rocket", as_cmap=True)
-
-    fig, ax = plt.subplots(figsize=(4.5,3.2))
-    p = sns.heatmap(df, annot=True, fmt=".0f", square=True, linewidths=.5, cmap=cmap, vmin=0.0, vmax=100.0, ax=ax, cbar_kws={'format': '%.0f%%', 'label': f"Ratio of blocks with rel. difference > {100 * err_threshold:.0f}%"})
-    # plt.title(f"Percentage of blocks with a rel. error >= {err_threshold} on a set of {len(data)} blocks")
-
-    # locs, labels = plt.xticks()
-    # plt.setp(labels, rotation=30)
-    p.set_xticklabels(p.get_xticklabels(), rotation=30, horizontalalignment='right')
-
-    plt.tight_layout()
-    plt.savefig(filename)
 
 
 def main():
@@ -189,7 +122,9 @@ def main():
         if args.input is None:
             print("Error: Asking for a heatmap without input!", file=sys.stderr)
             sys.exit(1)
-        make_heatmap(keys, data, err_threshold=args.threshold, filename=args.heatmap)
+        fig = make_heatmap(keys, data, err_threshold=args.threshold, paper_mode=True)
+        fig.savefig(args.heatmap)
+
         sys.exit(0)
 
     # set the predictors we need
