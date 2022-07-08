@@ -92,7 +92,7 @@ def main():
         for idx, config in enumerate(all_campaign_configs):
             pred_str = "_v_".join(config['predictors'])
             fn = outdir / "campaign_{:03}_{}.json".format(idx, pred_str)
-            store_json_config(config, fn)
+            store_json_config([config], fn)
         sys.exit(0)
 
     # to not require interactivity: query for the sudo password once, in the
